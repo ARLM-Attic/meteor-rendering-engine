@@ -356,7 +356,7 @@ namespace Meteor.Rendering
 		{
 			Viewport viewport = graphicsDevice.Viewport;
 			viewport.MinDepth = 0.0f;
-			viewport.MaxDepth = 0.9999f;
+			viewport.MaxDepth = 0.99999f;
 			graphicsDevice.Viewport = viewport;
 
 			graphicsDevice.DepthStencilState = DepthStencilState.Default; 
@@ -482,7 +482,7 @@ namespace Meteor.Rendering
 			
 			// Confine the depth range to a very far distance
 			Viewport viewport = graphicsDevice.Viewport;
-			viewport.MinDepth = 0.999f;
+			viewport.MinDepth = 0.99999f;
 			viewport.MaxDepth = 1.0f;
 			graphicsDevice.Viewport = viewport;
 

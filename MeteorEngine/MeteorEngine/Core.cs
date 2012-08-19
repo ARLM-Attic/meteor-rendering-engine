@@ -21,8 +21,11 @@ namespace Meteor
 
         /// Scenes used for rendering
 		List <Scene> scenes; 
-
         Scene currentScene;
+
+		/// Render profiles used for rendering
+		List <RenderProfile> renderProfiles; 
+		RenderProfile currentRenderProfile;
 
 		/// Utility classes
 		RenderStats renderStats;
@@ -41,18 +44,9 @@ namespace Meteor
             normal,
             lights
         };
-
-        enum RenderMethod
-        {
-			lpp,
-            deferred,
-        };
         
         /// Specifies which render target to display
         public RtView rtView;
-
-        /// Specifies what rendering method is used
-        RenderMethod renderMethod;
 
         /// Useful for all DrawableComponents
         SpriteFont font;
@@ -63,10 +57,6 @@ namespace Meteor
 
 		float targetWidth;
 		float targetHeight;
-
-		RenderProfile currentRenderProfile;
-		LightPrePassRenderer lightPrePassRenderer;
-		DeferredRenderer deferredRenderer;
 
 		/// Used to draw scenes
 		SceneRenderComponent sceneRenderer;
@@ -84,6 +74,7 @@ namespace Meteor
 
 			ranOnce = false;
 			currentRenderProfile = null;
+			renderProfiles = new List<RenderProfile>();
 			debugString = new StringBuilder(64, 64);
 
             // Setup rendering components
@@ -101,9 +92,6 @@ namespace Meteor
 			scenes.Add(scene);
 			currentScene = scenes[scenes.Count - 1];
 
-			deferredRenderer.MapInputs(currentScene, currentCamera);
-			lightPrePassRenderer.MapInputs(currentScene, currentCamera);
-
 			return currentScene;
 		}
 
@@ -114,10 +102,21 @@ namespace Meteor
 			currentCamera = cameras[cameras.Count - 1];
 			currentCamera.Initialize(targetWidth, targetHeight);
 
-			deferredRenderer.MapInputs(currentScene, currentCamera);
-			lightPrePassRenderer.MapInputs(currentScene, currentCamera);
-
 			return currentCamera;
+		}
+
+		/// <summary>
+		/// Create and add a render profile based on its type
+		/// </summary>
+
+		public void AddRenderProfile(Type renderProfileType)
+		{
+			RenderProfile profile = 
+				(RenderProfile)Activator.CreateInstance(renderProfileType, ServiceContainer, content);
+
+			renderProfiles.Add(profile);
+			currentRenderProfile = renderProfiles[renderProfiles.Count - 1];
+			currentRenderProfile.MapInputs(currentScene, currentCamera);
 		}
 
 		/// <summary>
@@ -156,9 +155,6 @@ namespace Meteor
 			targetHeight = graphicsDevice.Viewport.Height;
 
 			// Load up all available render profiles
-			deferredRenderer = new DeferredRenderer(ServiceContainer, content);
-			lightPrePassRenderer = new LightPrePassRenderer(ServiceContainer, content);
-
 			sceneRenderer = new SceneRenderComponent(graphicsDevice, content);
 			quadRenderer = new QuadRenderComponent(graphicsDevice);
 
@@ -172,28 +168,6 @@ namespace Meteor
             lastKeyboardState = currentKeyboardState;
             currentKeyboardState = Keyboard.GetState();
 			
-			if (!ranOnce) 
-			{
-				currentRenderProfile = lightPrePassRenderer;
-				ranOnce = true;
-			}
-
-            // Toggle between deferred and light pre-pass rendering
-            if (currentKeyboardState.IsKeyDown(Keys.P) &&
-                lastKeyboardState.IsKeyUp(Keys.P))
-            {
-                renderMethod = 1 - renderMethod;
-
-				if (renderMethod == RenderMethod.deferred)
-				{
-					currentRenderProfile = deferredRenderer;
-				}
-				else
-				{
-					currentRenderProfile = lightPrePassRenderer;
-				}
-            }
-
 			// Toggle debug render target display
 			if (currentKeyboardState.IsKeyDown(Keys.E) &&
 				lastKeyboardState.IsKeyUp(Keys.E))
@@ -320,9 +294,9 @@ namespace Meteor
 				new Vector2(4, font.LineSpacing + height), Color.White);
 			debugString.Clear();
 
-			Color color = (renderMethod == 0) ? Color.LawnGreen : Color.Orange;
-            String rendering = (renderMethod == RenderMethod.deferred) ?
-                "Using deferred rendering" : "Using light pre-pass rendering";
+			//Color color = (renderMethod == 0) ? Color.LawnGreen : Color.Orange;
+            //String rendering = (renderMethod == RenderMethod.deferred) ?
+             //   "Using deferred rendering" : "Using light pre-pass rendering";
 			debugString.Append("GPU: ").Concat((float)renderStats.GpuTime, 2);
 			debugString.Append("ms");
 
@@ -341,9 +315,9 @@ namespace Meteor
 				new Vector2(4, font.LineSpacing * 3 + height), Color.White);
 			debugString.Clear();
 
-			spriteBatch.DrawString(font, debugString.Append("(P) ").Append(rendering),
-				new Vector2(4, font.LineSpacing * 4 + height), color);
-			debugString.Clear();
+			//spriteBatch.DrawString(font, debugString.Append("(P) ").Append(rendering),
+			//	new Vector2(4, font.LineSpacing * 4 + height), color);
+			//debugString.Clear();
 
 			spriteBatch.DrawString(font, debugString.Append("Visible meshes: ").Concat(currentScene.visibleMeshes),
 				new Vector2(4, font.LineSpacing * 5 + height), Color.White);

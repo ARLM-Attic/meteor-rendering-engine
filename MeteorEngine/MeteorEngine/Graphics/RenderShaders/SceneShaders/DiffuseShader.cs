@@ -19,7 +19,7 @@ namespace Meteor.Rendering
 
             // Diffuse render target
 			diffuseRT = profile.AddRenderTarget(backBufferWidth,
-                backBufferHeight, SurfaceFormat.Color, DepthFormat.Depth24);
+                backBufferHeight, SurfaceFormat.Rgba64, DepthFormat.Depth24);
 
 			outputTargets = new RenderTarget2D[] 
 			{

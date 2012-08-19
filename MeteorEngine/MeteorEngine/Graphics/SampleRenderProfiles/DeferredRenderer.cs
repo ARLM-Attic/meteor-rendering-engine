@@ -10,7 +10,7 @@ using Meteor.Rendering;
 
 namespace Meteor.Rendering
 {
-	class DeferredRenderer : RenderProfile
+	public class DeferredRenderer : RenderProfile
 	{
 		/// Used for drawing the GBuffer
 		GBufferShader gBuffer;

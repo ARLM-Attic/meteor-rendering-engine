@@ -9,7 +9,7 @@ using Meteor.Resources;
 
 namespace Meteor.Rendering
 {
-	class LightPrePassRenderer : RenderProfile
+	public class LightPrePassRenderer : RenderProfile
 	{
 		/// Used for drawing the GBuffer
 		BaseRenderer smallGBuffer;
@@ -103,21 +103,19 @@ namespace Meteor.Rendering
 			// Create the lighting map
 			smallGBuffer.Draw();
 			lights.Draw();
-			//ssao.Draw();
-			//blur.Draw();
 
 			// Combine with lighting
-			composite.Draw();
+			//composite.Draw();
 
 			// Post effects
-			dlaa.Draw();
+			//dlaa.Draw();
 
 			// Copy DLAA render output
-			copy.Draw();
-			blur.Draw();
+			//copy.Draw();
+			//blur.Draw();
 
 			//dof.Draw();
-			output = dof.Draw()[0];
+			output = composite.Draw()[0];//dof.Draw()[0];
 		}
 	}
 }

@@ -36,7 +36,7 @@ namespace Meteor.Rendering
 		/// Used for shadow mappings
 		Camera lightCamera;
 		const int shadowMapSize = 768;
-		const int numCascades = 8;
+		const int numCascades = 4;
 
 		public float shadowBrightness = 0.1f;
 		Matrix[] lightViewProj;
@@ -73,14 +73,14 @@ namespace Meteor.Rendering
 		{
 			// Lighting render target
 			lightRT = profile.AddRenderTarget(backBufferWidth, backBufferHeight,
-				SurfaceFormat.HdrBlendable, DepthFormat.None);
+				SurfaceFormat.Color, DepthFormat.None);
 
 			// Light and combined effect targets
 			depthRT = new RenderTarget2D[3];
 			for (int i = 0; i < 3; i++)
 			{
 				depthRT[i] = profile.AddRenderTarget(shadowMapSize * 4, shadowMapSize * 2,
-					SurfaceFormat.Vector2, DepthFormat.Depth24);
+					SurfaceFormat.Single, DepthFormat.Depth24);
 			}
 
 			cubeDepthRT = new RenderTargetCube(GraphicsDevice, 1024, false,
@@ -226,8 +226,7 @@ namespace Meteor.Rendering
 
 		private void DrawDirectionalLightShadows(Scene scene, Camera camera)
 		{
-			sceneRenderer.IgnoreCulling(scene, camera);
-			int j = 0;
+			int lightID = 0;
 
 			foreach (DirectionLight light in scene.directionalLights)
 			{
@@ -241,7 +240,7 @@ namespace Meteor.Rendering
 					lightCamera.SetOrientation(new Vector2(yaw, pitch));
 					lightCamera.Update();
 
-					GraphicsDevice.SetRenderTarget(depthRT[j]);
+					GraphicsDevice.SetRenderTarget(depthRT[lightID]);
 					GraphicsDevice.Clear(Color.White);
 
 					for (int cascade = 0; cascade < numCascades; cascade++)
@@ -269,7 +268,7 @@ namespace Meteor.Rendering
 						sceneRenderer.CullModelMeshes(scene, lightCamera);
 						sceneRenderer.Draw(scene, depthEffect);
 					}
-					j++;
+					lightID++;
 				}
 			}
 		}

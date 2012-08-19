@@ -53,8 +53,8 @@ namespace Meteor.Rendering
 			GraphicsDevice.Clear(Color.Transparent);
 
 			// Reset the sampler states after SpriteBatch
-			GraphicsDevice.SamplerStates[0] = SamplerState.LinearWrap;
-			GraphicsDevice.SamplerStates[1] = SamplerState.LinearWrap;
+			GraphicsDevice.SamplerStates[0] = SamplerState.PointWrap;
+			GraphicsDevice.SamplerStates[1] = SamplerState.PointWrap;
 
 			// Clear the G-Buffer
 			clearBufferEffect.CurrentTechnique = clearBufferEffect.Techniques["Clear"];
