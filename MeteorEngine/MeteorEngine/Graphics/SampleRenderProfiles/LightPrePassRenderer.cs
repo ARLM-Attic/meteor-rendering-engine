@@ -36,7 +36,7 @@ namespace Meteor.Rendering
 		BaseRenderer dof;
 
 		/// FXAA effect
-		BaseRenderer dlaa;
+		BaseRenderer fxaa;
 
 		/// SSAO effect
 		BaseRenderer ssao;
@@ -56,6 +56,9 @@ namespace Meteor.Rendering
 		{
 			base.Initialize();
 
+			// This render profile uses the RendererFactory to load shader passes
+			// that are available in the map of RenderShader types.
+
 			smallGBuffer = rendererFactory.Create("SmallGBufferShader", this, content);
 			lights = rendererFactory.Create("LightShader", this, content);
 			diffuse = rendererFactory.Create("DiffuseShader", this, content);
@@ -65,7 +68,7 @@ namespace Meteor.Rendering
 			ssao = rendererFactory.Create("SSAOShader", this, content);
 			dof = rendererFactory.Create("DepthOfFieldShader", this, content);
 			bloom = rendererFactory.Create("BloomShader", this, content);
-			dlaa = rendererFactory.Create("FXAAShader", this, content);
+			fxaa = rendererFactory.Create("FXAAShader", this, content);
 		}
 
 		/// <summary>
@@ -79,12 +82,12 @@ namespace Meteor.Rendering
 			diffuse.SetInputs(scene, camera, null);
 			lights.SetInputs(scene, camera, smallGBuffer.outputs);
 			composite.SetInputs(scene, camera, diffuse.outputs[0], lights.outputs[0], ssao.outputs[0]);
-			dlaa.SetInputs(composite.outputs);
-			blur.SetInputs(dlaa.outputs);
-			copy.SetInputs(dlaa.outputs);
-			dof.SetInputs(dlaa.outputs[0], copy.outputs[0], smallGBuffer.outputs[1]);
+			fxaa.SetInputs(composite.outputs);
+			blur.SetInputs(fxaa.outputs);
+			copy.SetInputs(fxaa.outputs);
+			dof.SetInputs(fxaa.outputs[0], copy.outputs[0], smallGBuffer.outputs[1]);
 			ssao.SetInputs(scene, camera, smallGBuffer.outputs);
-			bloom.SetInputs(dlaa.outputs);
+			bloom.SetInputs(fxaa.outputs);
 
 			(composite as CompositeShader).includeSSAO = 0;
 

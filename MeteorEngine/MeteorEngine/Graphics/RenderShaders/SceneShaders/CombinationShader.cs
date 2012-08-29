@@ -33,7 +33,7 @@ namespace Meteor.Rendering
 			outputTargets[0] = finalRT;
 
 			// Load the shader effects
-			finalComboEffect = content.Load<Effect>("Effects\\finalCombo");
+			finalComboEffect = content.Load<Effect>("Effects\\combination");
 		}
 
 		/// <summary>

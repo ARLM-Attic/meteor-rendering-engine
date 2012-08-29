@@ -73,7 +73,7 @@ namespace Meteor.Rendering
 		{
 			// Lighting render target
 			lightRT = profile.AddRenderTarget(backBufferWidth, backBufferHeight,
-				SurfaceFormat.Color, DepthFormat.None);
+				SurfaceFormat.HdrBlendable, DepthFormat.None);
 
 			// Light and combined effect targets
 			depthRT = new RenderTarget2D[3];

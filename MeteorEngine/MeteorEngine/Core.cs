@@ -34,7 +34,6 @@ namespace Meteor
 
         /// Parameters to set render options
         int rtIndex = 0;
-		bool ranOnce = true;
 		bool debugText = true;
 
         public enum RtView
@@ -72,7 +71,6 @@ namespace Meteor
 			content = new ContentManager(services, "MeteorEngine.Content"); 
 			renderStats = new RenderStats();
 
-			ranOnce = false;
 			currentRenderProfile = null;
 			renderProfiles = new List<RenderProfile>();
 			debugString = new StringBuilder(64, 64);
@@ -111,8 +109,10 @@ namespace Meteor
 
 		public void AddRenderProfile(Type renderProfileType)
 		{
-			RenderProfile profile = 
-				(RenderProfile)Activator.CreateInstance(renderProfileType, ServiceContainer, content);
+			//RenderProfile profile = 
+			//	(RenderProfile)Activator.CreateInstance(renderProfileType, ServiceContainer, content);
+
+			RenderProfile profile = new DeferredRenderer(ServiceContainer, content);
 
 			renderProfiles.Add(profile);
 			currentRenderProfile = renderProfiles[renderProfiles.Count - 1];

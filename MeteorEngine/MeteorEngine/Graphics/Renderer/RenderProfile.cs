@@ -90,6 +90,7 @@ namespace Meteor.Rendering
 		public RenderProfile(IServiceProvider service, ContentManager content)
 			: base(service)
 		{
+			// Build a map of available RenderShaders
 			rendererFactory = new RendererFactory();
 
 			renderTasks = new Dictionary<string, BaseRenderer>();

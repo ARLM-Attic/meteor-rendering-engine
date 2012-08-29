@@ -17,7 +17,7 @@ namespace Meteor.Rendering
 		RenderTarget2D finalRT;
 
 		/// Combines lights with diffuse color
-		Effect dlaaEffect;
+		Effect fxaaEffect;
 
 		public FXAAShader(RenderProfile profile, ContentManager content)
 			: base(profile, content) 
@@ -32,10 +32,7 @@ namespace Meteor.Rendering
 			};
 
 			// Load the shader effects
-			dlaaEffect = content.Load<Effect>("Effects\\fxaa");
-
-			//dlaaEffect.Parameters["bgl_RenderedTextureWidth"].SetValue(backBufferWidth);
-			//dlaaEffect.Parameters["bgl_RenderedTextureHeight"].SetValue(backBufferHeight);
+			fxaaEffect = content.Load<Effect>("Effects\\fxaa");
 		}
 
 		/// <summary>
@@ -47,16 +44,16 @@ namespace Meteor.Rendering
 			renderStopWatch.Reset();
 			renderStopWatch.Restart();
 
-			dlaaEffect.CurrentTechnique = dlaaEffect.Techniques[0];
+			fxaaEffect.CurrentTechnique = fxaaEffect.Techniques[0];
 
 			GraphicsDevice.BlendState = BlendState.AlphaBlend;
 			GraphicsDevice.SetRenderTarget(finalRT);
 			GraphicsDevice.Clear(Color.Transparent);
 
 			// FXAA effect
-			dlaaEffect.Parameters["halfPixel"].SetValue(halfPixel);
-			dlaaEffect.Parameters["Texture"].SetValue(inputTargets[0]);
-			dlaaEffect.CurrentTechnique.Passes[0].Apply();
+			fxaaEffect.Parameters["halfPixel"].SetValue(halfPixel);
+			fxaaEffect.Parameters["Texture"].SetValue(inputTargets[0]);
+			fxaaEffect.CurrentTechnique.Passes[0].Apply();
 			quadRenderer.Render(Vector2.One * -1, Vector2.One);
 
 			renderStopWatch.Stop();
