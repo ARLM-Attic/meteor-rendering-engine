@@ -143,6 +143,9 @@ PixelShaderOutput1 PixelShaderGBuffer(VertexShaderOutput input)
     output.Color = tex2D(diffuseSampler, input.TexCoord);
 	clip(output.Color.a - 0.5);
 
+	// Gamma correct
+	output.Color.rgb *= output.Color.rgb;
+
     // Output the normal, in [0,1] space
     float3 normalFromMap = tex2D(normalMapSampler, input.TexCoord);
 
@@ -186,11 +189,14 @@ PixelShaderOutput2 PixelShaderSmallGBuffer(VertexShaderOutput input)
     return output;
 }
 
-float4 PixelShaderForwardRender(VertexShaderOutput input) : COLOR0
+float4 PixelShaderDiffuseRender(VertexShaderOutput input) : COLOR0
 {
 	// First check if mask channel is opaque
 	float4 diffuse = tex2D(diffuseSampler, input.TexCoord);
 	clip(diffuse.a - 0.5);
+
+	// Gamma correct
+	diffuse.rgb *= diffuse.rgb;
 
 	// Just output the diffuse color
 	return diffuse;
@@ -297,23 +303,23 @@ technique SmallGBufferAnimated
 
 /// Separately render the diffuse/albedo component to combine, for light pre-pass.
 
-technique ForwardRender
+technique DiffuseRender
 {
     pass Pass1
     {
 		AlphablendEnable = false;
         VertexShader = compile vs_2_0 VertexShaderFunction();
-        PixelShader = compile ps_2_0 PixelShaderForwardRender();
+        PixelShader = compile ps_2_0 PixelShaderDiffuseRender();
     }
 }
 
-technique ForwardRenderAnimated
+technique DiffuseRenderAnimated
 {
     pass Pass1
     {
 		AlphablendEnable = false;
         VertexShader = compile vs_2_0 VertexShaderSkinnedAnimation();
-        PixelShader = compile ps_2_0 PixelShaderForwardRender();
+        PixelShader = compile ps_2_0 PixelShaderDiffuseRender();
     }
 }
 
@@ -331,13 +337,4 @@ technique Skybox
     }
 }
 
-/// Copy a render target straight as is
 
-technique PassThrough
-{
-    pass Pass1
-    {
-        VertexShader = compile vs_2_0 BasicVS();
-        PixelShader = compile ps_2_0 BasicPS();
-    }
-}

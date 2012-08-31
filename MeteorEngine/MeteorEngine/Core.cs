@@ -109,10 +109,10 @@ namespace Meteor
 
 		public void AddRenderProfile(Type renderProfileType)
 		{
-			//RenderProfile profile = 
-			//	(RenderProfile)Activator.CreateInstance(renderProfileType, ServiceContainer, content);
+			RenderProfile profile = 
+				(RenderProfile)Activator.CreateInstance(renderProfileType, ServiceContainer, content);
 
-			RenderProfile profile = new DeferredRenderer(ServiceContainer, content);
+			//RenderProfile profile = new DeferredRenderer(ServiceContainer, content);
 
 			renderProfiles.Add(profile);
 			currentRenderProfile = renderProfiles[renderProfiles.Count - 1];
