@@ -93,7 +93,7 @@ namespace Meteor.Rendering
 			debugRenderTargets.Add(gBuffer.outputs[2]);
 			debugRenderTargets.Add(gBuffer.outputs[1]);
 			debugRenderTargets.Add(lights.outputs[0]);
-			debugRenderTargets.Add(lights.outputs[0]);
+			debugRenderTargets.Add(lights.outputs[1]);
 		}
 
 		public override void Draw(GameTime gameTime)

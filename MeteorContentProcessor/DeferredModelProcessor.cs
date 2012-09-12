@@ -29,6 +29,10 @@ namespace DeferredRenderingPipeline
         // data dictionary.
         public const string NormalMapKey = "NormalMap";
 
+		// this constant determines where we will look for the specular map in the opaque
+		// data dictionary.
+		public const string SpecularMapKey = "SpecularMap";
+
         /// <summary>
         /// We override this property from the base processor and force it to always
         /// return true: tangent frames are required for normal mapping, so they should
@@ -69,17 +73,6 @@ namespace DeferredRenderingPipeline
         }
         private string specularMapTexture;
 
-        [DisplayName("Specular Map Key")]
-        [Description("This will be the key that will be used to search the specular map in the opaque data of the model")]
-        [DefaultValue("SpecularMap")]
-        public string SpecularMapKey
-        {
-            get { return specularMapKey; }
-            set { specularMapKey = value; }
-        }
-        private string specularMapKey = "SpecularMap";
-
-		//private string alphaMaskKey = "AlphaMask";
 
         String directory;
 
@@ -137,36 +130,33 @@ namespace DeferredRenderingPipeline
                 }
                 pathToNormalMap = Path.Combine(directory, pathToNormalMap);
 
-                string specularMapPath;
+                string pathToSpecularMap;
 
                 //If the SpecularMapTexture property is set, we use it
                 if (String.IsNullOrEmpty(SpecularMapTexture))
                 {
                     //If SpecularMapTexture is not set, we look into the opaque data of the model, 
                     //and search for a texture with the key equal to specularMapKey
-                    specularMapPath = mesh.OpaqueData.GetValue<string>(specularMapKey, null);
+                    pathToSpecularMap = mesh.OpaqueData.GetValue<string>(SpecularMapKey, null);
                 }
                 else
                 {
-                    specularMapPath = SpecularMapTexture;
+                    pathToSpecularMap = SpecularMapTexture;
                 }
 
-                if (specularMapPath == null)
+                if (pathToSpecularMap == null)
                 {
                     //we search, in the same directory as the model, for a texture named 
                     //meshname_s.tga
-                    specularMapPath = Path.Combine(directory, mesh.Name + "_s.tga");
-                    if (!File.Exists(specularMapPath))
+                    pathToSpecularMap = Path.Combine(directory, mesh.Name + "_s.tga");
+                    if (!File.Exists(pathToSpecularMap))
                     {
                         //if this fails also (that texture does not exist), 
                         //then we use a default texture, named null_specular.tga
-                        specularMapPath = "null_specular.tga";
+                        pathToSpecularMap = "../../null_specular.tga";
                     }
                 }
-                else
-                {
-                    specularMapPath = Path.Combine(directory, specularMapPath);
-                }
+				pathToSpecularMap = Path.Combine(directory, pathToSpecularMap);
 
                 foreach (GeometryContent geometry in mesh.Geometry)
                 {
@@ -181,19 +171,21 @@ namespace DeferredRenderingPipeline
                     else
                     {
                         geometry.Material.Textures.Add(NormalMapKey,
-                            new ExternalReference<TextureContent>(pathToNormalMap));
+							new ExternalReference<TextureContent>(pathToNormalMap));
                     }
 
                     // Add specular map textures
-                    if (geometry.Material.Textures.ContainsKey(specularMapKey))
+                    if (geometry.Material.Textures.ContainsKey(SpecularMapKey))
                     {
-                        ExternalReference<TextureContent> texRef = geometry.Material.Textures[specularMapKey];
-                        geometry.Material.Textures.Remove(specularMapKey);
+                        ExternalReference<TextureContent> texRef = geometry.Material.Textures[SpecularMapKey];
+                        geometry.Material.Textures.Remove(SpecularMapKey);
                         geometry.Material.Textures.Add("SpecularMap", texRef);
                     }
                     else
-                        geometry.Material.Textures.Add("SpecularMap",
-                                    new ExternalReference<TextureContent>(specularMapPath));
+					{
+                        //geometry.Material.Textures.Add("SpecularMap",
+						//	new ExternalReference<TextureContent>(pathToSpecularMap));
+					}
                 }
             }
 

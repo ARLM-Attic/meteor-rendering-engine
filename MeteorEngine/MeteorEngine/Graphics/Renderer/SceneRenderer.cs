@@ -281,7 +281,7 @@ namespace Meteor.Rendering
 		{
 			Viewport viewport = graphicsDevice.Viewport;
 			viewport.MinDepth = 0.0f;
-			viewport.MaxDepth = 0.9999f;
+			viewport.MaxDepth = 0.99999f;
 			graphicsDevice.Viewport = viewport;
 			graphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;
 
@@ -354,11 +354,12 @@ namespace Meteor.Rendering
 		public void Draw(Scene scene, Effect effect, BlendState blendState,
 			RasterizerState rasterizerState)
 		{
+			/*
 			Viewport viewport = graphicsDevice.Viewport;
 			viewport.MinDepth = 0.0f;
 			viewport.MaxDepth = 0.99999f;
 			graphicsDevice.Viewport = viewport;
-
+			*/
 			graphicsDevice.DepthStencilState = DepthStencilState.Default; 
 			graphicsDevice.RasterizerState = rasterizerState;
 			graphicsDevice.BlendState = blendState;

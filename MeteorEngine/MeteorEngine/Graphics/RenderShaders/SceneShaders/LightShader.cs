@@ -15,9 +15,6 @@ namespace Meteor.Rendering
 		/// Shadow pass
 		RenderTarget2D[] depthRT;
 
-		/// Cube map shadows
-		RenderTargetCube cubeDepthRT;
-
 		/// Handles directional lights
 		Effect directionalLightEffect;
 
@@ -35,8 +32,8 @@ namespace Meteor.Rendering
 
 		/// Used for shadow mappings
 		Camera lightCamera;
-		const int shadowMapSize = 768;
-		const int numCascades = 4;
+		const int shadowMapSize = 4096;
+		const int numCascades = 1;
 
 		public float shadowBrightness = 0.1f;
 		Matrix[] lightViewProj;
@@ -79,14 +76,9 @@ namespace Meteor.Rendering
 			depthRT = new RenderTarget2D[3];
 			for (int i = 0; i < 3; i++)
 			{
-				depthRT[i] = profile.AddRenderTarget(shadowMapSize * 4, shadowMapSize * 2,
-					SurfaceFormat.Single, DepthFormat.Depth24);
+				depthRT[i] = profile.AddRenderTarget(shadowMapSize * numCascades, shadowMapSize,
+					SurfaceFormat.Vector2, DepthFormat.Depth24);
 			}
-
-			cubeDepthRT = new RenderTargetCube(GraphicsDevice, 1024, false,
-				SurfaceFormat.Rg32, DepthFormat.Depth24);
-
-			//GraphicsDevice.SetRenderTarget(cubeDepthRT);
 
 			outputTargets = new RenderTarget2D[]
 			{
@@ -183,7 +175,7 @@ namespace Meteor.Rendering
 
 					// Project the shadow maps onto the scene
 					Vector2 shadowMapPixelSize = new Vector2(
-						1f / ((float)shadowMapSize * 4f), 1f / ((float)shadowMapSize * 2f));
+						1f / ((float)shadowMapSize * numCascades), 1f / (float)shadowMapSize);
 
 					// Set the common parameters for all shadow maps
 					directionalLightEffect.Parameters["shadowMapPixelSize"].SetValue(shadowMapPixelSize);
@@ -203,7 +195,6 @@ namespace Meteor.Rendering
 					}
 
 					directionalLightEffect.Parameters["cascadeSplits"].SetValue(splitNearFar);
-
 					directionalLightEffect.Parameters["lightViewProj"].SetValue(lightViewProj);
 					directionalLightEffect.Parameters["shadowMap"].SetValue(depthRT[j]);
 					j++;
@@ -247,17 +238,23 @@ namespace Meteor.Rendering
 					{
 						GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 
-						// Adjust viewport settings to draw to the correct portion
-						// of the render target
-						Viewport defaultView = GraphicsDevice.Viewport;
-						defaultView.Width = shadowMapSize;
-						defaultView.Height = shadowMapSize;
-						defaultView.X = shadowMapSize * (cascade % 4);
-						defaultView.Y = shadowMapSize * (cascade / 4);
-						GraphicsDevice.Viewport = defaultView;
-
+						// Set camera's near and far view distance
 						camera.GetFrustumSplit(cascade, numCascades);
 
+						// Adjust viewport settings to draw to the correct portion
+						// of the render target
+						Viewport viewport = GraphicsDevice.Viewport;
+						viewport.Width = shadowMapSize;
+						viewport.Height = shadowMapSize;
+						viewport.X = shadowMapSize * (cascade % 4);
+						viewport.Y = shadowMapSize * (cascade / 4);
+						GraphicsDevice.Viewport = viewport;
+						/*
+						viewport = GraphicsDevice.Viewport;
+						viewport.MinDepth = 0f;
+						viewport.MaxDepth = 0.99999f;
+						GraphicsDevice.Viewport = viewport;
+	*/
 						// Update view matrices
 						CreateLightViewProjMatrix(light.direction, lightCamera);
 

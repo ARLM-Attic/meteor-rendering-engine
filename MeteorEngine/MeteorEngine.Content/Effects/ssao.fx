@@ -144,7 +144,7 @@ float4 PixelShaderFunction(VertexShaderOutput IN) : COLOR0
 	float2 rand = getRandom(IN.TexCoord);
 
 	float depthVal = tex2D(depthSampler, IN.TexCoord).r;
-	if (depthVal >= 0.9999f)
+	if (depthVal >= 0.99999f)
 		return 1;
 
 	float ao = 0.0f;

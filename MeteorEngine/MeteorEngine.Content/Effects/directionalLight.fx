@@ -1,5 +1,5 @@
 
-#define NUM_CASCADES 4
+#define NUM_CASCADES 1
 
 float4x4 View;
 float4x4 Projection;
@@ -10,7 +10,7 @@ float4x4 invertViewProj;
 
 float2 halfPixel;
 float3 camPosition;
-float2x4 cascadeSplits;
+float cascadeSplits[NUM_CASCADES];
 
 float3 lightDirection;
 float3 lightColor;
@@ -85,30 +85,28 @@ float3 LinearFilter4Samples(sampler smp, float brightness, float2 texCoord, floa
 	float4x4 samples = (float4x4)0; 
 	float4 newSamples;
 
-	for (int i = 0; i < 1; i++)
+	for (int i = 0; i < 4; i++)
 	{
 		samples[i].x = tex2D(smp, texCoord + float2(i%2,     i/2) * shadowMapPixelSize).r > ourdepth;
 		samples[i].y = tex2D(smp, texCoord + float2(i%2 + 1, i/2) * shadowMapPixelSize).r > ourdepth;
 		samples[i].z = tex2D(smp, texCoord + float2(i%2,     i/2 + 1) * shadowMapPixelSize).r > ourdepth;
 		samples[i].w = tex2D(smp, texCoord + float2(i%2 + 1, i/2 + 1) * shadowMapPixelSize).r > ourdepth;
 
-		//newSamples[i] = dot(samples[i], 0.25f);  
-	} 
-
-	//float shadow = dot(samples[0], 0.25f);
+		newSamples[i] = dot(samples[i], 0.25f);  
+	}
 		
 	// Determine the lerp amounts           
 	float2 lerps;
-	lerps.x = frac(texCoord.x * shadowMapSize * 4.f);
-	lerps.y = frac(texCoord.y * shadowMapSize * 2.f);
+	lerps.x = frac(texCoord.x * shadowMapSize * ceil(NUM_CASCADES % 4.f));
+	lerps.y = frac(texCoord.y * shadowMapSize * ceil(NUM_CASCADES / 4.f));
 
 	// lerp between the shadow values to calculate our light amount
 
-	float shadow = lerp(lerp(samples[0].x, samples[0].y, lerps.x), 
-		lerp(samples[0].z, samples[0].w, lerps.x ), lerps.y) / 2.0f; 
+	//float shadow = lerp(lerp(samples[0].x, samples[0].y, lerps.x), 
+	//	lerp(samples[0].z, samples[0].w, lerps.x ), lerps.y) / 2.0f; 
 
-	//float shadow = lerp(lerp(newSamples.x, newSamples.y, lerps.x), 
-	//	lerp(newSamples.z, newSamples.w, lerps.x ), lerps.y); 	
+	float shadow = lerp(lerp(newSamples.x, newSamples.y, lerps.x), 
+		lerp(newSamples.z, newSamples.w, lerps.x ), lerps.y); 	
 	
 	return brightness * dim + ((1 - brightness * dim) * shadow);
 }
@@ -178,15 +176,7 @@ float4 PixelShaderShadowed(VertexShaderOutput input) : COLOR0
 		return float4(0.5, 0.5, 0.5, 0.15);
 
 	// Convert position to world space
-	float4 position;
-
-	position.xy = input.TexCoord.x * 2.0f - 1.0f;
-	position.y = -(input.TexCoord.y * 2.0f - 1.0f);
-	position.z = depthVal;
-	position.w = 1.0f;
-
-	position = mul(position, invertViewProj);
-	position /= position.w;
+	float4 position = CalculateWorldPosition(input.TexCoord, depthVal);
 
 	// Get linear depth space from viewport distance
 	float camNear = 0.001f;
@@ -200,7 +190,7 @@ float4 PixelShaderShadowed(VertexShaderOutput input) : COLOR0
 	
 	float shadowIndex = 0;
 	for (int i = 0; i < NUM_CASCADES; i++)  
-		shadowIndex += (linearZ > cascadeSplits[i / 4][i % 4]);
+		shadowIndex += (linearZ > cascadeSplits[i]);
 
 	// Get shadow map position projected in light view
 	float4 shadowMapPos = mul(position, lightViewProj[shadowIndex]);
@@ -209,11 +199,7 @@ float4 PixelShaderShadowed(VertexShaderOutput input) : COLOR0
 	float2 shadowTexCoord = shadowMapPos.xy / shadowMapPos.w / 2.0f + float2(0.5, 0.5);
 
 	shadowTexCoord.y = 1 - shadowTexCoord.y;
-	shadowTexCoord.x /= 4.f;
-	shadowTexCoord.y /= 2.f;
-
-	shadowTexCoord.x += (shadowIndex % 4) / 4.f;
-	shadowTexCoord.y += floor(shadowIndex / 4) / 2.f;
+	//shadowTexCoord.x /= float(NUM_CASCADES);
 
 	float shadowdepth = 0;
 				
@@ -222,6 +208,9 @@ float4 PixelShaderShadowed(VertexShaderOutput input) : COLOR0
 
 	shadowdepth = tex2D(shadowMapSampler, shadowTexCoord).r;
 	shadow = LinearFilter4Samples(shadowMapSampler, shadowBrightness, shadowTexCoord, ourdepth);
+
+	//if (shadowIndex == 1)
+	//	shadow = 0.f;
 
 	float3 diffuse = 0.f;
 	float4 normalData = tex2D(normalSampler, input.TexCoord);
@@ -275,8 +264,8 @@ technique NoShadow
 {
     pass Pass1
     {
-        VertexShader = compile vs_3_0 VertexShaderFunction();
-        PixelShader = compile ps_3_0 PixelShaderFunction();
+        VertexShader = compile vs_2_0 VertexShaderFunction();
+        PixelShader = compile ps_2_0 PixelShaderFunction();
     }
 }
 

@@ -337,4 +337,15 @@ technique Skybox
     }
 }
 
+/// Copy a render target straight as is
+
+technique PassThrough
+{
+    pass Pass1
+    {
+        VertexShader = compile vs_2_0 BasicVS();
+        PixelShader = compile ps_2_0 BasicPS();
+    }
+}
+
 
