@@ -97,7 +97,9 @@
     <Compile Include="Graphics\Components\Cameras\DragCamera.cs" />
     <Compile Include="Graphics\Components\Cameras\FreeCamera.cs" />
     <Compile Include="Graphics\Components\DrawableComponent.cs" />
-    <Compile Include="Graphics\Components\Drawables\EntityInstance.cs" />
+    <Compile Include="Graphics\Components\Drawables\EntityInstance.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Graphics\Components\Drawables\InstancedModel.cs" />
     <Compile Include="Graphics\Components\Lights\DirectionalLight.cs" />
     <Compile Include="Graphics\Components\Lights\PointLight.cs" />
@@ -110,7 +112,7 @@
     <Compile Include="Graphics\Helpers\RenderInput.cs" />
     <Compile Include="Graphics\Renderer\RenderProfile.cs" />
     <Compile Include="Graphics\Helpers\StringBuilderNumeric.cs" />
-    <Compile Include="Graphics\RenderShaders\BaseRenderer.cs" />
+    <Compile Include="Graphics\RenderShaders\BaseShader.cs" />
     <Compile Include="Graphics\RenderShaders\PostProcessingShaders\BloomShader.cs" />
     <Compile Include="Graphics\RenderShaders\PostProcessingShaders\BlurShader.cs" />
     <Compile Include="Graphics\RenderShaders\PostProcessingShaders\SSAOShader.cs" />

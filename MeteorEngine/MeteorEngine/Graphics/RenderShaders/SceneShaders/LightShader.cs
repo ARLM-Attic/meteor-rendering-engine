@@ -7,7 +7,7 @@ using Meteor.Resources;
 
 namespace Meteor.Rendering
 {
-	class LightShader : BaseRenderer
+	class LightShader : BaseShader
 	{
 		/// Light pass
 		RenderTarget2D lightRT;
@@ -33,7 +33,7 @@ namespace Meteor.Rendering
 		/// Used for shadow mappings
 		Camera lightCamera;
 		const int shadowMapSize = 1600;
-		const int numCascades = 3;
+		const int numCascades = 4;
 
 		public float shadowBrightness = 0.1f;
 		public float splitLambda = 0.5f;
@@ -80,7 +80,7 @@ namespace Meteor.Rendering
 			for (int i = 0; i < 3; i++)
 			{
 				depthRT[i] = profile.AddRenderTarget(shadowMapSize * 2, shadowMapSize * 2,
-					SurfaceFormat.Vector2, DepthFormat.Depth24);
+					SurfaceFormat.Single, DepthFormat.Depth24);
 			}
 
 			outputTargets = new RenderTarget2D[]
@@ -319,7 +319,7 @@ namespace Meteor.Rendering
 
 			// Create the projection matrix for the light
 			// The projection is orthographic since we are using a directional light
-			float projectionScale = 1.25f;
+			float projectionScale = 1.5f;
 			boxSize *= projectionScale;
 			lightCamera.Projection = Matrix.CreateOrthographic(boxSize.X, boxSize.Y, -boxSize.Z, boxSize.Z);
 		}

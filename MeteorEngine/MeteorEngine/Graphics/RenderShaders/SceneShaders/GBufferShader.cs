@@ -80,7 +80,7 @@ namespace Meteor.Rendering
 		}
 	}
 
-	public class SmallGBufferShader : BaseRenderer
+	public class SmallGBufferShader : BaseShader
 	{
 		/// Normals and specular power
 		protected RenderTarget2D normalRT;

@@ -91,7 +91,7 @@ namespace Meteor.Rendering
 
 			// Set the debug targets
 			debugRenderTargets.Add(gBuffer.outputs[2]);
-			debugRenderTargets.Add(gBuffer.outputs[1]);
+			debugRenderTargets.Add(gBuffer.outputs[0]);
 			debugRenderTargets.Add(lights.outputs[0]);
 			debugRenderTargets.Add(lights.outputs[1]);
 		}
@@ -103,7 +103,7 @@ namespace Meteor.Rendering
 			lights.Draw();
 
 			// Composite drawing
-			composite.Draw();
+			//composite.Draw();
 
 			// Post effects
 			//fxaa.Draw();
@@ -111,7 +111,7 @@ namespace Meteor.Rendering
 			//blur.Draw();
 
 			//dof.Draw();
-			output = bloom.Draw()[0];
+			output = composite.Draw()[0];//bloom.Draw()[0];
 		}
 	}
 }

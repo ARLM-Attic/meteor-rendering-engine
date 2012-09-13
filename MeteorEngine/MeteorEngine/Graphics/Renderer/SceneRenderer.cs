@@ -41,7 +41,7 @@ namespace Meteor.Rendering
 		/// For loading scene content
 		ContentManager content;
 		GraphicsDevice graphicsDevice;
-		Texture2D testTexture, testNormal;
+		Texture2D testNormal;
 		Texture2D blankTexture, blankSpecular;
 
 		MeshPrioritySort meshPrioritySort;
@@ -56,7 +56,6 @@ namespace Meteor.Rendering
             // Use standard GBuffer as a default
             shaderTechnique = "GBuffer";
 
-			testTexture = content.Load<Texture2D>("color_map");
 			testNormal = content.Load<Texture2D>("null_normal");
 			blankTexture = content.Load<Texture2D>("null_color");
 			blankSpecular = content.Load<Texture2D>("null_specular");

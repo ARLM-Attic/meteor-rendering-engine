@@ -10,55 +10,23 @@ using Meteor.Resources;
 
 namespace Meteor.Rendering
 {
-	/// <summary>
-	/// The 'Creator' abstract class
-	/// </summary>
-	public class RendererFactory
-	{
-		private Dictionary<string, Type> map = new Dictionary<string, Type>();
-
-		public RendererFactory()
-		{
-			Type[] rendererTypes = Assembly.GetAssembly(typeof(BaseRenderer)).GetTypes();
-
-			foreach (Type rendererType in rendererTypes)
-			{
-				// if (shapeType is not derived from Shape)
-				if (!typeof(BaseRenderer).IsAssignableFrom(rendererType) ||
-					rendererType == typeof(BaseRenderer))
-				{
-					continue;
-				}
-
-				// Automatically register the shape type.
-				map.Add(rendererType.Name, rendererType);
-			}
-		}
-
-		public BaseRenderer Create(string shaderName, RenderProfile profile, ContentManager content)
-		{
-			return (BaseRenderer)Activator.CreateInstance(map[shaderName], profile, content);
-		}
-	}
-
 	public abstract class RenderProfile : DrawableComponent
 	{
 		/// List to keep all renderers in order
-		protected Dictionary<string, BaseRenderer> renderTasks;
+		protected Dictionary<string, BaseShader> renderTasks;
 
 		/// Reference to the ContentManager to load assets
 		protected ContentManager content;
 
 		/// Track all possible starting points for this profile
 		/// (Currently not yet implemented)
-		protected Dictionary<string, BaseRenderer> startingPoints;
-		protected Dictionary<string, BaseRenderer>.Enumerator iter;
+		protected Dictionary<string, BaseShader> startingPoints;
+		protected Dictionary<string, BaseShader>.Enumerator iter;
 
 		/// Render targets used by all the rendering tasks
 		protected List<RenderTarget2D> renderTaskTargets;
 
 		protected RenderTarget2D output;
-		protected RendererFactory rendererFactory;
 
 		public RenderTarget2D Output
 		{
@@ -91,10 +59,8 @@ namespace Meteor.Rendering
 			: base(service)
 		{
 			// Build a map of available RenderShaders
-			rendererFactory = new RendererFactory();
-
-			renderTasks = new Dictionary<string, BaseRenderer>();
-			startingPoints = new Dictionary<string, BaseRenderer>();
+			renderTasks = new Dictionary<string, BaseShader>();
+			startingPoints = new Dictionary<string, BaseShader>();
 			iter = startingPoints.GetEnumerator();
 
 			debugRenderTargets = new List<RenderTarget2D>();
@@ -127,7 +93,7 @@ namespace Meteor.Rendering
 		/// Currently does nothing other than make a list
 		/// </summary> 
 
-		protected BaseRenderer AddRenderTask(BaseRenderer renderTask)
+		protected BaseShader AddRenderTask(BaseShader renderTask)
 		{
 			renderTasks.Add("Test", renderTask);
 			return renderTasks.Last().Value;
@@ -168,7 +134,7 @@ namespace Meteor.Rendering
 
 		public void DisposeRenderers(Object sender, EventArgs e)
 		{
-			foreach (BaseRenderer renderTask in renderTasks.Values)
+			foreach (BaseShader renderTask in renderTasks.Values)
 				renderTask.DisposeResources();
 
 			foreach (RenderTarget2D target in renderTaskTargets)

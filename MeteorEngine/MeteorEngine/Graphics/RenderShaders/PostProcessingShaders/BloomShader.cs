@@ -7,7 +7,7 @@ using Meteor.Resources;
 
 namespace Meteor.Rendering
 {
-	public class BloomShader : BaseRenderer
+	public class BloomShader : BaseShader
 	{
 		/// Configurable parameters
 		EffectParameter threshold;

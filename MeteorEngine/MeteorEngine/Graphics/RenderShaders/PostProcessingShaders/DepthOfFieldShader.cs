@@ -6,7 +6,7 @@ using Microsoft.Xna.Framework.Content;
 
 namespace Meteor.Rendering
 {
-	public class DepthOfFieldShader : BaseRenderer
+	public class DepthOfFieldShader : BaseShader
     {
         /// Final combined pass
         RenderTarget2D dofRT;
@@ -17,10 +17,10 @@ namespace Meteor.Rendering
         Effect blurEffect;
 
 		/// Focal distance
-		public float focalDistance = 0.02f;
+		public float focalDistance = 0.01f;
 
 		/// Range of focus
-		public float focalRange = 0.2f;
+		public float focalRange = 0.4f;
 
         public DepthOfFieldShader(RenderProfile profile, ContentManager content)
             : base(profile, content)

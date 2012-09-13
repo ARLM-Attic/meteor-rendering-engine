@@ -118,6 +118,8 @@ namespace Meteor.Resources
 				(split / (float)numSplits);
 
 			nearSplitPlaneDistance = fLog * lambda + fLinear * (1 - lambda);
+			if (split > 0)
+				nearSplitPlaneDistance *= 0.95f;
 
 			return new Vector2(nearSplitPlaneDistance, farSplitPlaneDistance);
 		}

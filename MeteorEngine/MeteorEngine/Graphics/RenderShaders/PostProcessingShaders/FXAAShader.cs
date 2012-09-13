@@ -11,7 +11,7 @@ namespace Meteor.Rendering
 	/// A nice post-effect for deferred rendering
 	/// </summary>
 
-	public class FXAAShader : BaseRenderer
+	public class FXAAShader : BaseShader
 	{
 		/// Final combined pass
 		RenderTarget2D finalRT;

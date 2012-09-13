@@ -6,7 +6,7 @@ using Microsoft.Xna.Framework.Content;
 
 namespace Meteor.Rendering
 {
-	class CompositeShader : BaseRenderer
+	class CompositeShader : BaseShader
 	{
 		/// Final combined pass
 		RenderTarget2D finalRT;

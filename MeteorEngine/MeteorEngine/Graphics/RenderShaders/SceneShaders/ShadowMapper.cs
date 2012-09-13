@@ -7,7 +7,7 @@ using Meteor.Resources;
 
 namespace Meteor.Rendering
 {
-	public abstract class ShadowMapper : BaseRenderer
+	public abstract class ShadowMapper : BaseShader
 	{
 		/// Shadow map
 		protected RenderTarget2D shadowRT;

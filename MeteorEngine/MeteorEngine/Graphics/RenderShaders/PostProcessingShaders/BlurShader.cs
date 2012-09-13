@@ -7,7 +7,7 @@ using Meteor.Resources;
 
 namespace Meteor.Rendering
 {
-	public class BlurShader : BaseRenderer
+	public class BlurShader : BaseShader
     {
         /// Final combined pass
         RenderTarget2D[] finalRT;

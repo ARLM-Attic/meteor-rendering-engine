@@ -7,7 +7,7 @@ using Meteor.Resources;
 
 namespace Meteor.Rendering
 {
-	public class DiffuseShader : BaseRenderer
+	public class DiffuseShader : BaseShader
     {
         /// Color and specular intensity
         RenderTarget2D diffuseRT;

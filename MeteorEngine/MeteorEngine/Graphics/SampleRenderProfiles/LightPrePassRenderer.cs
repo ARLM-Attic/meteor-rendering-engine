@@ -12,34 +12,34 @@ namespace Meteor.Rendering
 	public class LightPrePassRenderer : RenderProfile
 	{
 		/// Used for drawing the GBuffer
-		BaseRenderer smallGBuffer;
+		BaseShader smallGBuffer;
 
 		/// Used for drawing the light map
-		BaseRenderer lights;
+		BaseShader lights;
 
 		/// Forward render with color map
-		BaseRenderer diffuse;
+		BaseShader diffuse;
 
 		/// Helper to copy image
-		BaseRenderer copy;
+		BaseShader copy;
 
 		/// Comination render for final image
-		BaseRenderer composite;
+		BaseShader composite;
 
 		/// Render post process blur
-		BaseRenderer blur;
+		BaseShader blur;
 
 		/// The bloom shader
-		BaseRenderer bloom;
+		BaseShader bloom;
 
 		/// Depth of field effect
-		BaseRenderer dof;
+		BaseShader dof;
 
 		/// FXAA effect
-		BaseRenderer fxaa;
+		BaseShader fxaa;
 
 		/// SSAO effect
-		BaseRenderer ssao;
+		BaseShader ssao;
 
 		/// <summary>
 		/// Load all the renderers needed for this profile
@@ -56,19 +56,16 @@ namespace Meteor.Rendering
 		{
 			base.Initialize();
 
-			// This render profile uses the RendererFactory to load shader passes
-			// that are available in the map of RenderShader types.
-
-			smallGBuffer = rendererFactory.Create("SmallGBufferShader", this, content);
-			lights = rendererFactory.Create("LightShader", this, content);
-			diffuse = rendererFactory.Create("DiffuseShader", this, content);
-			composite = rendererFactory.Create("CompositeShader", this, content);
-			blur = rendererFactory.Create("BlurShader", this, content);
-			copy = rendererFactory.Create("CopyShader", this, content);
-			ssao = rendererFactory.Create("SSAOShader", this, content);
-			dof = rendererFactory.Create("DepthOfFieldShader", this, content);
-			bloom = rendererFactory.Create("BloomShader", this, content);
-			fxaa = rendererFactory.Create("FXAAShader", this, content);
+			smallGBuffer = new SmallGBufferShader(this, content);
+			lights = new LightShader(this, content);
+			diffuse = new DiffuseShader(this, content);
+			composite = new CompositeShader(this, content);
+			blur = new BlurShader(this, content);
+			copy = new CopyShader(this, content);
+			ssao = new SSAOShader(this, content);
+			dof = new DepthOfFieldShader(this, content);
+			bloom = new BloomShader(this, content);
+			fxaa = new FXAAShader(this, content);
 		}
 
 		/// <summary>
@@ -93,7 +90,7 @@ namespace Meteor.Rendering
 
 			// Set the debug targets
 			debugRenderTargets.Add(diffuse.outputs[0]);
-			debugRenderTargets.Add(smallGBuffer.outputs[1]);
+			debugRenderTargets.Add(smallGBuffer.outputs[0]);
 			debugRenderTargets.Add(lights.outputs[0]);
 			debugRenderTargets.Add(lights.outputs[1]);
 		}

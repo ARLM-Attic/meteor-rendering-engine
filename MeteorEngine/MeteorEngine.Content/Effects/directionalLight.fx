@@ -1,5 +1,5 @@
 
-#define NUM_CASCADES 3
+#define NUM_CASCADES 4
 
 float4x4 View;
 float4x4 Projection;
@@ -71,7 +71,7 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
     return output;
 }
 
-float DepthBias = 0.002f;
+float DepthBias = 0.001f;
 
 // Linear filter with 4 samples
 // Source by XNA Info
@@ -114,12 +114,14 @@ float3 LinearFilter4Samples(sampler smp, float brightness, float2 texCoord, floa
 
 float4 DirectionalLightPS(VertexShaderOutput input, float4 position) : COLOR0
 {
+	// Get normal data
+
 	float4 normalData = tex2D(normalSampler, input.TexCoord);
 	float3 normal = mul((2.0f * normalData.xyz - 1.0f), inverseView);
 
 	// Get specular data
 
-	float specPower = 1;//normalData.a * 255;
+	float specPower = 3;//normalData.a * 255;
 	float specIntensity = normalData.a;
 
 	float3 lightDir = -normalize(lightDirection);
@@ -138,9 +140,9 @@ float4 DirectionalLightPS(VertexShaderOutput input, float4 position) : COLOR0
 	float3 diffuse = ndl * lightColor;
 
 	float specLight = specIntensity * 
-		pow(saturate(dot(directionToCamera, reflection)), specPower * 15);
+		pow(saturate(dot(directionToCamera, reflection)), specPower);
 
-	return float4(diffuse * lightIntensity, specLight);
+	return float4(diffuse * lightIntensity, specLight * lightIntensity);
 }
 
 float4 CalculateWorldPosition(float2 texCoord, float depthVal)
@@ -214,36 +216,10 @@ float4 PixelShaderShadowed(VertexShaderOutput input) : COLOR0
 	shadowdepth = tex2D(shadowMapSampler, shadowTexCoord).r;
 	shadow = LinearFilter4Samples(shadowMapSampler, shadowBrightness, shadowTexCoord, ourdepth);
 
-	float3 diffuse = 0.f;
-	float4 normalData = tex2D(normalSampler, input.TexCoord);
+	float4 lightOutput = DirectionalLightPS(input, position);
 
-	float3 normal = mul((2.0f * normalData.xyz - 1.0f), inverseView);
-	float3 lightDir = -normalize(lightDirection);
-
-	// Reflection data
-
-	//float selfShadow = saturate(dot(lightDir, normal));
-	float3 reflection = normalize(reflect(-lightDir, normal)); 
-	float3 directionToCamera = normalize(camPosition - position);
-
-	if (shadow.r + shadow.g + shadow.b > 0.01f)
-	{
-		// Compute the final specular factor
-		// Compute diffuse light
-	
-		float ndl = max(0, dot(normal, lightDir));
-		ndl = ambient + (ndl * (1 - ambient));
-		diffuse = ndl * lightColor;
-	}
-	// Get specular data
-
-	float specPower = 1;//normalData.a * 255;
-	float specIntensity = normalData.a;
-
-	float specLight = specIntensity * 
-		pow(saturate(dot(directionToCamera, reflection)), specPower * 15);
-
-	return float4(diffuse * shadow * lightIntensity, specLight * lightIntensity);
+	lightOutput.rgb *= shadow;
+	return lightOutput;
 }
 
 half4 PixelShift(VertexShaderOutput input) : COLOR0

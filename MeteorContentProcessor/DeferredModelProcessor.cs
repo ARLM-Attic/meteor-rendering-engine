@@ -209,7 +209,7 @@ namespace DeferredRenderingPipeline
 				VertexChannelNames.Weights(0)
             };
 
-		/*
+		
         /// <summary>
         /// As an optimization, ProcessVertexChannel is overriden to remove data which
         /// is not used by the vertex shader.
@@ -239,13 +239,19 @@ namespace DeferredRenderingPipeline
                 geometry.Vertices.Channels.Remove(vertexChannelName);
             }
 
+			// Remove texture channel for untextured meshes
+			if (!geometry.Vertices.Channels.Contains(VertexChannelNames.TextureCoordinate(0)))
+			{
+				geometry.Vertices.Channels.Remove(VertexChannelNames.TextureCoordinate(0));
+			}
+
 			// Remove vertex weights for unskinned meshes
 			if (!geometry.Vertices.Channels.Contains(VertexChannelNames.Weights()))
 			{
 				geometry.Vertices.Channels.Remove(VertexChannelNames.Weights());
 			}
         }
-		*/
+		
 
         protected override MaterialContent ConvertMaterial(MaterialContent material,
             ContentProcessorContext context)

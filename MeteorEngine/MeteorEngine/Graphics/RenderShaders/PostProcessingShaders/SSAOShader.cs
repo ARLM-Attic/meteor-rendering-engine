@@ -12,7 +12,7 @@ namespace Meteor.Rendering
 	/// A nice post-effect for deferred rendering
 	/// </summary>
 
-	public class SSAOShader : BaseRenderer
+	public class SSAOShader : BaseShader
 	{
 		// Basic parameters
 		public float radius = 0.25f;

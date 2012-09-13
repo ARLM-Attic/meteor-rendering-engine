@@ -7,7 +7,7 @@ using Meteor.Resources;
 
 namespace Meteor.Rendering
 {
-	class CopyShader : BaseRenderer
+	class CopyShader : BaseShader
 	{
 		/// For making render target copies
 		RenderTarget2D copyRT;
