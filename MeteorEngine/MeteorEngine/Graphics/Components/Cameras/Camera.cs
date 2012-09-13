@@ -96,7 +96,7 @@ namespace Meteor.Resources
 		public float nearSplitPlaneDistance;
 		public float farSplitPlaneDistance;
 
-		public Vector2 GetFrustumSplit(int split, int numSplits, float lambda = 0.0f)
+		public Vector2 GetFrustumSplit(int split, int numSplits, float lambda = 0.25f)
 		{
 			split = (split > numSplits) ? numSplits : split;
 

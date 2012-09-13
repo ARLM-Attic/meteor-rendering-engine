@@ -52,7 +52,7 @@ namespace Meteor.Rendering
 
 			// Load the shader effects
 			blurEffect = content.Load<Effect>("Effects\\blur");
-			blur = new GaussianBlur(backBufferWidth, backBufferHeight, 1f, blurEffect);
+			blur = new GaussianBlur(backBufferWidth, backBufferHeight, 2f, blurEffect);
 
 			// Set shader parameters
 			threshold = blurEffect.Parameters["threshold"];
@@ -68,9 +68,9 @@ namespace Meteor.Rendering
 			diffuseMap = blurEffect.Parameters["diffuseMap"];
 			blurMap = blurEffect.Parameters["blurMap"];
 
-			threshold.SetValue(0.55f);
-			bloomIntensity.SetValue(0.05f);
-			saturation.SetValue(1.1f);
+			threshold.SetValue(0.25f);
+			bloomIntensity.SetValue(0.85f);
+			saturation.SetValue(0.7f);
 			contrast.SetValue(1.05f);
 		}
 

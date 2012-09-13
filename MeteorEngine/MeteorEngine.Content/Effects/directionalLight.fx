@@ -1,11 +1,11 @@
 
-#define NUM_CASCADES 1
+#define NUM_CASCADES 3
 
 float4x4 View;
 float4x4 Projection;
+float4x4 lightProjection[NUM_CASCADES];
 float4x4 lightViewProj[NUM_CASCADES];
 float4x4 inverseView;
-float4x4 inverseProjection;
 float4x4 invertViewProj;
 
 float2 halfPixel;
@@ -85,6 +85,7 @@ float3 LinearFilter4Samples(sampler smp, float brightness, float2 texCoord, floa
 	float4x4 samples = (float4x4)0; 
 	float4 newSamples;
 
+	[unroll]
 	for (int i = 0; i < 4; i++)
 	{
 		samples[i].x = tex2D(smp, texCoord + float2(i%2,     i/2) * shadowMapPixelSize).r > ourdepth;
@@ -97,8 +98,8 @@ float3 LinearFilter4Samples(sampler smp, float brightness, float2 texCoord, floa
 		
 	// Determine the lerp amounts           
 	float2 lerps;
-	lerps.x = frac(texCoord.x * shadowMapSize * ceil(NUM_CASCADES % 4.f));
-	lerps.y = frac(texCoord.y * shadowMapSize * ceil(NUM_CASCADES / 4.f));
+	lerps.x = frac(texCoord.x * (shadowMapSize * 2));
+	lerps.y = frac(texCoord.y * (shadowMapSize * 2));
 
 	// lerp between the shadow values to calculate our light amount
 
@@ -181,14 +182,15 @@ float4 PixelShaderShadowed(VertexShaderOutput input) : COLOR0
 	// Get linear depth space from viewport distance
 	float camNear = 0.001f;
 	float camFar = 1.f;
-	float linearZ = -camNear / (depthVal - camFar);
+	float linearZ = (2 * camNear) / (camFar +  camNear - depthVal * (camFar - camNear));
 
 	// Shadow calculation
 	float3 shadow = 1.f - shadowBrightness;
 
-	// Get the light projection for the first available frustum split
-	
+	// Get the light projection for the first available frustum split	
 	float shadowIndex = 0;
+
+	[unroll]
 	for (int i = 0; i < NUM_CASCADES; i++)  
 		shadowIndex += (linearZ > cascadeSplits[i]);
 
@@ -198,8 +200,11 @@ float4 PixelShaderShadowed(VertexShaderOutput input) : COLOR0
 	// Find the position in the shadow map for this pixel
 	float2 shadowTexCoord = shadowMapPos.xy / shadowMapPos.w / 2.0f + float2(0.5, 0.5);
 
+	shadowTexCoord.x /= 2.f;
+	shadowTexCoord.x += (shadowIndex % 2) / 2.f;
 	shadowTexCoord.y = 1 - shadowTexCoord.y;
-	//shadowTexCoord.x /= float(NUM_CASCADES);
+	shadowTexCoord.y /= 2.f;
+	shadowTexCoord.y += floor(shadowIndex / 2) / 2.f;
 
 	float shadowdepth = 0;
 				
@@ -208,9 +213,6 @@ float4 PixelShaderShadowed(VertexShaderOutput input) : COLOR0
 
 	shadowdepth = tex2D(shadowMapSampler, shadowTexCoord).r;
 	shadow = LinearFilter4Samples(shadowMapSampler, shadowBrightness, shadowTexCoord, ourdepth);
-
-	//if (shadowIndex == 1)
-	//	shadow = 0.f;
 
 	float3 diffuse = 0.f;
 	float4 normalData = tex2D(normalSampler, input.TexCoord);

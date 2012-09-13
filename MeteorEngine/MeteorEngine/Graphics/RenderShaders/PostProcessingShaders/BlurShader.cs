@@ -27,7 +27,7 @@ namespace Meteor.Rendering
         public BlurShader(RenderProfile profile, ContentManager content)
             : base(profile, content) 
 		{
-			float blurStep = 1.6f;
+			float blurStep = 2.6f;
 
             finalRT = new RenderTarget2D[2];
 
