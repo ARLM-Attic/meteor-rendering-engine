@@ -22,7 +22,7 @@ namespace DeferredRenderingPipeline
             (string textureName, ExternalReference<TextureContent> texture,
             ContentProcessorContext context)
         {
-            if (textureName == DeferredModelProcessor.NormalMapKey)
+            if (textureName == MeteorModelProcessor.NormalMapKey)
             {
                 // put the normal map through the special NormalMapTextureProcessor,
                 // which will convert it to a signed format.

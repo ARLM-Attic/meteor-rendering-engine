@@ -94,7 +94,7 @@ float4 LightingFunction(VertexShaderOutput input, half2 texCoord) : COLOR0
 
 	// Get specular data
 
-	float specPower = 10;//normalData.a * 255;
+	float specPower = 12;//normalData.a * 255;
 	float specIntensity = normalData.a;
 
 	// Compute screen-space position
@@ -116,8 +116,6 @@ float4 LightingFunction(VertexShaderOutput input, half2 texCoord) : COLOR0
 
 	if (attenuation <= 0)
 		return 0;
-
-	attenuation = pow(attenuation, 0.7f);
 
 	lightDir = normalize(lightDir);
 

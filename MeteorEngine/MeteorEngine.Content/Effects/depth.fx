@@ -106,6 +106,7 @@ technique DefaultAnimated
     pass P0
     {
 		ZEnable = true;
+		CullMode = none;
         VertexShader = compile vs_3_0 DepthMapSkinnedAnimation();
         PixelShader = compile ps_3_0 DepthMapPS();
     }

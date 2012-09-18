@@ -35,18 +35,12 @@ namespace Meteor.Resources
 
 		public List<PointLight> VisiblePointLights
 		{
-			get
-			{
-				return visibleLights;
-			}
+			get { return visibleLights; }
 		}
 
 		public int totalLights
 		{
-			get
-			{
-				return visibleLights.Count;
-			}
+			get { return visibleLights.Count; }
 		}
 
 		public class OrderedMeshData
@@ -67,10 +61,7 @@ namespace Meteor.Resources
 
 		public InstancedModel Skybox
 		{
-			get
-			{
-				return skyboxModel;
-			}
+			get { return skyboxModel; }
 		}
 
 		/// Scene rendering stats
@@ -89,8 +80,6 @@ namespace Meteor.Resources
 			blendModels = new Dictionary<string, InstancedModel>();
 
 			orderedMeshes = new List<OrderedMeshData>();
-
-			//boxVertexBuffer = new DynamicVertexBuffer(graphicsDevice, typeof(VertexPositionColor), 2, BufferUsage.None);
 		}
 
 		/// <summary>
@@ -117,7 +106,7 @@ namespace Meteor.Resources
 		/// the same name key as the file for the model
 		/// </summary>
 
-		public InstancedModel AddModel(String modelPath, String directory)
+		public InstancedModel AddModel(String directory, String modelPath)
 		{
 			staticModels.Add(modelPath, new InstancedModel(modelPath, directory, content));
 			for (int i = 0; i < staticModels[modelPath].TotalMeshes; i++)
@@ -142,11 +131,6 @@ namespace Meteor.Resources
 		{
 			skinnedModels.Add(modelPath, new InstancedModel(modelPath, modelPath, content));
 			InstancedModel instancedModel = skinnedModels[modelPath];
-
-			for (int i = 0; i < skinnedModels[modelPath].TotalMeshes; i++)
-			{
-				//orderedMeshes.Add(new OrderedMeshData());
-			}
 
 			// Look up our custom skinning information.
 			SkinningData skinningData = instancedModel.model.Tag as SkinningData;
@@ -202,24 +186,24 @@ namespace Meteor.Resources
 			}
 		}
 
+		/// <summary>
+		/// Update skinned mesh animations
+		/// </summary>
+
 		public void Update(GameTime gameTime)
 		{
-			drawCalls = 0;
-
 			foreach (InstancedModel skinnedModel in skinnedModels.Values)
 			{
 				if (skinnedModel.animationPlayer != null)
 				{
-					//skinnedModel.boneMatrices = skinnedModel.animationPlayer.GetSkinTransforms();
 					skinnedModel.animationPlayer.Update(gameTime.ElapsedGameTime, true, Matrix.Identity);
-					/*
 					float currentAnimTime = (float)gameTime.TotalGameTime.TotalSeconds;
-					
-					skinnedModel.Rotate(0, MathHelper.ToDegrees(-currentAnimTime / 1.7f + MathHelper.Pi), 0).
+
+					skinnedModel.Rotate(0, MathHelper.ToDegrees(-currentAnimTime / 2.1f + MathHelper.Pi), 0).
 						Translate(new Vector3(
-						(float)Math.Cos(currentAnimTime / 1.7f) * 70 + 20, skinnedModel.position.Y,
-						(float)Math.Sin(currentAnimTime / 1.7f) * 70)).UpdateMatrix();
-					*/
+						(float)Math.Cos(currentAnimTime / 2.1f) * 50 + 80, skinnedModel.position.Y,
+						(float)Math.Sin(currentAnimTime / 2.1f) * 50 - 20));
+					
 				}
 				// Finished updating mesh
 			}

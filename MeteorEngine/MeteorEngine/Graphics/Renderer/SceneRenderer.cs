@@ -12,8 +12,6 @@ namespace Meteor.Rendering
 {
 	class MeshPrioritySort : IComparer<Scene.OrderedMeshData>
 	{
-		#region IComparer<Scene.OrderedMeshData> Members
-
 		public int Compare(Scene.OrderedMeshData rp1,
 			Scene.OrderedMeshData rp2)
 		{
@@ -22,8 +20,6 @@ namespace Meteor.Rendering
 
 			return returnValue;
 		}
-
-		#endregion
 	}
 
 	public class SceneRenderComponent
@@ -296,78 +292,21 @@ namespace Meteor.Rendering
 		}
 
 		/// <summary>
-		/// Draw all visible meshes for this model.
-		/// </summary>
-
-		private void DrawModel(InstancedModel instancedModel, Camera camera, string tech)
-		{
-			// Draw the model.
-			instancedModel.UpdateMatrix();
-			instancedModel.model.CopyAbsoluteBoneTransformsTo(instancedModel.boneMatrices);
-
-			foreach (KeyValuePair<int, ModelMesh> mesh in instancedModel.VisibleMeshes)
-			{				
-				foreach (ModelMeshPart meshPart in mesh.Value.MeshParts)
-				{
-					graphicsDevice.SetVertexBuffer(meshPart.VertexBuffer, meshPart.VertexOffset);
-					graphicsDevice.Indices = meshPart.IndexBuffer;
-
-					// Assign effect and curent technique
-					Effect effect = meshPart.Effect;
-					effect.CurrentTechnique = effect.Techniques[tech];
-
-					Matrix world = instancedModel.boneMatrices[mesh.Value.ParentBone.Index] * instancedModel.Transform;
-					Matrix IWorldView = Matrix.Invert(world * camera.View);
-					
-					if (instancedModel.animationPlayer != null)
-						effect.Parameters["bones"].SetValue(instancedModel.animationPlayer.GetSkinTransforms());
-
-					if (instancedModel.Textures[mesh.Key] == null)
-						effect.Parameters["Texture"].SetValue(blankTexture);
-
-					effect.Parameters["World"].SetValue(world);
-					effect.Parameters["ITWorldView"].SetValue(Matrix.Transpose(IWorldView));
-					effect.Parameters["View"].SetValue(camera.View);
-					effect.Parameters["Projection"].SetValue(camera.Projection);
-					
-					for (int i = 0; i < effect.CurrentTechnique.Passes.Count; i++)
-					{
-						effect.CurrentTechnique.Passes[i].Apply();
-
-						graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0,
-							meshPart.NumVertices, meshPart.StartIndex,
-							meshPart.PrimitiveCount);
-					}
-
-					totalPolys += meshPart.PrimitiveCount;
-				}
-			}
-			
-			// End model rendering
-		}
-
-		/// <summary>
 		/// Draw with a custom effect
 		/// </summary>
 
 		public void Draw(Scene scene, Effect effect, BlendState blendState,
 			RasterizerState rasterizerState)
 		{
-			/*
-			Viewport viewport = graphicsDevice.Viewport;
-			viewport.MinDepth = 0.0f;
-			viewport.MaxDepth = 0.99999f;
-			graphicsDevice.Viewport = viewport;
-			*/
 			graphicsDevice.DepthStencilState = DepthStencilState.Default; 
 			graphicsDevice.RasterizerState = rasterizerState;
 			graphicsDevice.BlendState = blendState;
 
 			foreach (InstancedModel instancedModel in scene.staticModels.Values)
-				DrawModel(instancedModel, effect);
+				DrawModel(instancedModel, effect, "Default");
 
 			foreach (InstancedModel skinnedModel in scene.skinnedModels.Values)
-				DrawModel(skinnedModel, effect);
+				DrawModel(skinnedModel, effect, "DefaultAnimated");
 
 			// Finished drawing visible meshes
 		}
@@ -392,16 +331,70 @@ namespace Meteor.Rendering
 		}
 
 		/// <summary>
+		/// Draw all visible meshes for this model.
+		/// </summary>
+
+		private void DrawModel(InstancedModel instancedModel, Camera camera, string tech)
+		{
+			// Draw the model.
+			instancedModel.UpdateMatrix();
+			instancedModel.model.CopyAbsoluteBoneTransformsTo(instancedModel.boneMatrices);
+
+			foreach (KeyValuePair<int, ModelMesh> mesh in instancedModel.VisibleMeshes)
+			{
+				foreach (ModelMeshPart meshPart in mesh.Value.MeshParts)
+				{
+					graphicsDevice.SetVertexBuffer(meshPart.VertexBuffer, meshPart.VertexOffset);
+					graphicsDevice.Indices = meshPart.IndexBuffer;
+
+					// Assign effect and curent technique
+					Effect effect = meshPart.Effect;
+					effect.CurrentTechnique = effect.Techniques[tech];
+
+					Matrix world = instancedModel.boneMatrices[mesh.Value.ParentBone.Index] * instancedModel.Transform;
+					Matrix IWorldView = Matrix.Invert(world * camera.View);
+
+					if (instancedModel.animationPlayer != null)
+						effect.Parameters["bones"].SetValue(instancedModel.animationPlayer.GetSkinTransforms());
+
+					if (instancedModel.Textures[mesh.Key] == null)
+						effect.Parameters["Texture"].SetValue(blankTexture);
+
+					effect.Parameters["World"].SetValue(world);
+					effect.Parameters["ITWorldView"].SetValue(Matrix.Transpose(IWorldView));
+					effect.Parameters["View"].SetValue(camera.View);
+					effect.Parameters["Projection"].SetValue(camera.Projection);
+
+					for (int i = 0; i < effect.CurrentTechnique.Passes.Count; i++)
+					{
+						effect.CurrentTechnique.Passes[i].Apply();
+
+						graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0,
+							meshPart.NumVertices, meshPart.StartIndex,
+							meshPart.PrimitiveCount);
+					}
+
+					totalPolys += meshPart.PrimitiveCount;
+				}
+			}
+
+			// End model rendering
+		}
+
+		/// <summary>
 		/// Draw instanced model with a custom effect
 		/// </summary>	
 
-		public void DrawModel(InstancedModel instancedModel, Effect effect)
-		{
-			//effect.CurrentTechnique = effect.Techniques[tech];
-			
+		public void DrawModel(InstancedModel instancedModel, Effect effect, String tech = "Default")
+		{			
 			// Draw the model.
 			Matrix mainTransform = instancedModel.Transform;
 			instancedModel.model.CopyAbsoluteBoneTransformsTo(instancedModel.boneMatrices);
+
+			if (instancedModel.animationPlayer != null)
+			{
+				effect.Parameters["bones"].SetValue(instancedModel.animationPlayer.GetSkinTransforms());
+			}			
 
 			foreach (KeyValuePair <int, ModelMesh> mesh in instancedModel.VisibleMeshes)
 			{
@@ -410,10 +403,8 @@ namespace Meteor.Rendering
 					graphicsDevice.SetVertexBuffer(meshPart.VertexBuffer, meshPart.VertexOffset);
 					graphicsDevice.Indices = meshPart.IndexBuffer;
 
-					if (instancedModel.animationPlayer != null)
-					{
-						effect.Parameters["bones"].SetValue(instancedModel.animationPlayer.GetSkinTransforms());
-					}
+					// Assign effect technique
+					effect.CurrentTechnique = effect.Techniques[tech];
 
 					Matrix world = instancedModel.boneMatrices[mesh.Value.ParentBone.Index] * mainTransform;
 					effect.Parameters["World"].SetValue(world);
@@ -433,48 +424,9 @@ namespace Meteor.Rendering
 		}
 
 		/// <summary>
-		/// Draw model mesh with a custom effect
-		/// </summary>	
-
-		public void DrawModelMesh(InstancedModel instancedModel, int index, Effect effect, string tech)
-		{
-			effect.CurrentTechnique = effect.Techniques[tech];
-
-			// Draw the model.
-			Matrix mainTransform = instancedModel.Transform;
-			instancedModel.model.CopyAbsoluteBoneTransformsTo(instancedModel.boneMatrices);
-
-			ModelMesh mesh = instancedModel.model.Meshes[index];
-
-			foreach (ModelMeshPart meshPart in mesh.MeshParts)
-			{
-				graphicsDevice.SetVertexBuffer(meshPart.VertexBuffer, meshPart.VertexOffset);
-				graphicsDevice.Indices = meshPart.IndexBuffer;
-
-				if (instancedModel.animationPlayer != null)
-				{
-					effect.Parameters["bones"].SetValue(instancedModel.animationPlayer.GetSkinTransforms());
-				}
-
-				Matrix world = instancedModel.boneMatrices[mesh.ParentBone.Index] * mainTransform;
-				effect.Parameters["World"].SetValue(world);
-
-				for (int i = 0; i < effect.CurrentTechnique.Passes.Count; i++)
-				{
-					effect.CurrentTechnique.Passes[i].Apply();
-
-					graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0,
-						meshPart.NumVertices, meshPart.StartIndex,
-						meshPart.PrimitiveCount);
-				}
-			}
-			// Finished drawing mesh parts
-		}
-
-		/// <summary>
 		/// Draw the scene's skybox
 		/// </summary>
-
+		
 		public void DrawSkybox(Scene scene, Camera camera)
 		{
 			graphicsDevice.DepthStencilState = DepthStencilState.DepthRead;
@@ -500,7 +452,7 @@ namespace Meteor.Rendering
 			scene.Skybox.Translate(camera.Position).UpdateMatrix();
 			DrawModel(scene.Skybox, camera, this.shaderTechnique);
 		}
-
+		
 		/// <summary>
 		/// Draw all visible bounding boxes
 		/// </summary>
@@ -548,10 +500,13 @@ namespace Meteor.Rendering
 				boxCorners[6] = new Vector3(box.Max.X, box.Min.Y, box.Min.Z);
 				boxCorners[7] = new Vector3(box.Min.X, box.Min.Y, box.Min.Z); // minimum
 
+				Color[] colors = { Color.Cyan, Color.White, Color.Magenta, Color.Blue,
+					Color.Green, Color.Yellow, Color.Red, Color.Black };
+
 				for (int i = boxCorners.Length; i-- > 0; )
 				{
 					boxCorners[i] = Vector3.Transform(boxCorners[i], model.Transform);
-					model.boxVertices[i] = new VertexPositionColor(boxCorners[i], Color.Cyan);
+					model.boxVertices[i] = new VertexPositionColor(boxCorners[i], colors[i]);
 				}
 
 				// Transform the box with the model's world matrix

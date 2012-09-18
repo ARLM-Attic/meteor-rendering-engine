@@ -84,7 +84,7 @@ namespace Meteor.Rendering
 			copy.SetInputs(fxaa.outputs);
 			dof.SetInputs(fxaa.outputs[0], copy.outputs[0], smallGBuffer.outputs[1]);
 			ssao.SetInputs(scene, camera, smallGBuffer.outputs);
-			bloom.SetInputs(dof.outputs);
+			bloom.SetInputs(fxaa.outputs);
 
 			(composite as CompositeShader).includeSSAO = 0;
 
@@ -111,10 +111,10 @@ namespace Meteor.Rendering
 			fxaa.Draw();
 
 			// Copy DLAA render output
-			copy.Draw();
-			blur.Draw();
+			//copy.Draw();
+			//blur.Draw();
 
-			dof.Draw();
+			//dof.Draw();
 			output = bloom.Draw()[0];
 		}
 	}

@@ -23,7 +23,7 @@ namespace DeferredRenderingPipeline
     /// up to be rendered with NormalMapping.fx.
     /// </summary>
     [ContentProcessor(DisplayName = "Meteor Engine Model Processor")]
-    public class DeferredModelProcessor : ModelProcessor
+    public class MeteorModelProcessor : ModelProcessor
     {
         // this constant determines where we will look for the normal map in the opaque
         // data dictionary.
@@ -51,6 +51,17 @@ namespace DeferredRenderingPipeline
         /// opaque data. We use the display name and description attributes to control
         /// how the property appears in the UI.
         /// </summary>
+		[DisplayName("Diffuse Map Texture")]
+		[Description("If set, this file will be used as the diffuse map on the model, " +
+		"overriding anything found in the opaque data.")]
+		[DefaultValue("")]
+		public string DiffuseMapTexture
+		{
+			get { return diffuseMapTexture; }
+			set { diffuseMapTexture = value; }
+		}
+		private string diffuseMapTexture;
+
         [DisplayName("Normal Map Texture")]
         [Description("If set, this file will be used as the normal map on the model, " +
         "overriding anything found in the opaque data.")]
@@ -89,6 +100,43 @@ namespace DeferredRenderingPipeline
             return base.Process(input, context);
         }
 
+		private string LookUpTexture(MeshContent mesh, string MapTexture, 
+			string MapKey, string defaultPath)
+		{
+			string pathToMap;
+
+			// if NormalMapTexture hasn't been set in the UI, we'll try to look up
+			// the normal map using the opaque data.
+			if (String.IsNullOrEmpty(MapTexture))
+			{
+				pathToMap = mesh.OpaqueData.GetValue<string>(MapKey, null);
+			}
+			// However, if the NormalMapTexture is set, we'll use that value for
+			// ever mesh in the scene.
+			else
+			{
+				pathToMap = MapTexture;
+			}
+
+			if (pathToMap == null)
+			{
+				//we search, in the same directory as the model, for a texture named 
+				//meshname_s.tga
+				pathToMap = Path.Combine(directory, mesh.Name + "_n.tga");
+				if (!File.Exists(pathToMap))
+				{
+					//if this fails also (that texture does not exist), 
+					//then we use a default texture, named null_normal.tga
+					pathToMap = defaultPath;
+				}
+
+				//throw new InvalidContentException("the normal map is missing!");
+			}
+			pathToMap = Path.Combine(directory, pathToMap);
+
+			return pathToMap;
+		}
+
         /// <summary>
         /// Looks into the OpaqueData property on the "mesh" object, and looks for a
         /// a string containing the path to the normal map. The normal map is added
@@ -99,64 +147,13 @@ namespace DeferredRenderingPipeline
             MeshContent mesh = node as MeshContent;
             if (mesh != null)
             {
-                string pathToNormalMap;
+				string pathToNormalMap = LookUpTexture(mesh, normalMapTexture, 
+					NormalMapKey, "../../null_normal.tga");
 
-                // if NormalMapTexture hasn't been set in the UI, we'll try to look up
-                // the normal map using the opaque data.
-                if (String.IsNullOrEmpty(NormalMapTexture))
-                {
-                    pathToNormalMap = mesh.OpaqueData.GetValue<string>(NormalMapKey, null);
-                }
-                // However, if the NormalMapTexture is set, we'll use that value for
-                // ever mesh in the scene.
-                else
-                {
-                    pathToNormalMap = NormalMapTexture;
-                }
+				string pathToSpecularMap = LookUpTexture(mesh, specularMapTexture,
+					SpecularMapKey, "../../null_specular.tga");
 
-                if (pathToNormalMap == null)
-                {
-                    //we search, in the same directory as the model, for a texture named 
-                    //meshname_s.tga
-                    pathToNormalMap = Path.Combine(directory, mesh.Name + "_n.tga");
-                    if (!File.Exists(pathToNormalMap))
-                    {
-                        //if this fails also (that texture does not exist), 
-                        //then we use a default texture, named null_normal.tga
-                        pathToNormalMap = "../../null_normal.tga";
-                    }
-
-                    //throw new InvalidContentException("the normal map is missing!");
-                }
-                pathToNormalMap = Path.Combine(directory, pathToNormalMap);
-
-                string pathToSpecularMap;
-
-                //If the SpecularMapTexture property is set, we use it
-                if (String.IsNullOrEmpty(SpecularMapTexture))
-                {
-                    //If SpecularMapTexture is not set, we look into the opaque data of the model, 
-                    //and search for a texture with the key equal to specularMapKey
-                    pathToSpecularMap = mesh.OpaqueData.GetValue<string>(SpecularMapKey, null);
-                }
-                else
-                {
-                    pathToSpecularMap = SpecularMapTexture;
-                }
-
-                if (pathToSpecularMap == null)
-                {
-                    //we search, in the same directory as the model, for a texture named 
-                    //meshname_s.tga
-                    pathToSpecularMap = Path.Combine(directory, mesh.Name + "_s.tga");
-                    if (!File.Exists(pathToSpecularMap))
-                    {
-                        //if this fails also (that texture does not exist), 
-                        //then we use a default texture, named null_specular.tga
-                        pathToSpecularMap = "../../null_specular.tga";
-                    }
-                }
-				pathToSpecularMap = Path.Combine(directory, pathToSpecularMap);
+				// Specular map stuff
 
                 foreach (GeometryContent geometry in mesh.Geometry)
                 {
@@ -183,8 +180,8 @@ namespace DeferredRenderingPipeline
                     }
                     else
 					{
-                        //geometry.Material.Textures.Add("SpecularMap",
-						//	new ExternalReference<TextureContent>(pathToSpecularMap));
+                        geometry.Material.Textures.Add(SpecularMapKey,
+							new ExternalReference<TextureContent>(pathToSpecularMap));
 					}
                 }
             }
@@ -251,7 +248,6 @@ namespace DeferredRenderingPipeline
 				geometry.Vertices.Channels.Remove(VertexChannelNames.Weights());
 			}
         }
-		
 
         protected override MaterialContent ConvertMaterial(MaterialContent material,
             ContentProcessorContext context)

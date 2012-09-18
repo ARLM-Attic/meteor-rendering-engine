@@ -13,7 +13,8 @@ namespace Meteor.Rendering
 		RenderTarget2D lightRT;
 
 		/// Shadow pass
-		RenderTarget2D[] depthRT;
+		RenderTarget2D depthRT;
+		Texture2D depthDummyRT;
 
 		/// Handles directional lights
 		Effect directionalLightEffect;
@@ -75,17 +76,15 @@ namespace Meteor.Rendering
 			lightRT = profile.AddRenderTarget(backBufferWidth, backBufferHeight,
 				SurfaceFormat.HdrBlendable, DepthFormat.None);
 
+			depthDummyRT = content.Load<Texture2D>("numbergrid");
+
 			// Light and combined effect targets
-			depthRT = new RenderTarget2D[3];
-			for (int i = 0; i < 3; i++)
-			{
-				depthRT[i] = profile.AddRenderTarget(shadowMapSize * 2, shadowMapSize * 2,
-					SurfaceFormat.Single, DepthFormat.Depth24);
-			}
+			depthRT = profile.AddRenderTarget(shadowMapSize * 2, shadowMapSize * 2,
+				SurfaceFormat.Single, DepthFormat.Depth24);
 
 			outputTargets = new RenderTarget2D[]
 			{
-				lightRT, depthRT[0], depthRT[0], depthRT[0]
+				lightRT, depthRT
 			};
 
 			lightCamera = new Camera();
@@ -203,7 +202,7 @@ namespace Meteor.Rendering
 					directionalLightEffect.Parameters["cascadeSplits"].SetValue(splitNearFar);
 					directionalLightEffect.Parameters["lightViewProj"].SetValue(lightViewProj);
 					directionalLightEffect.Parameters["lightProjection"].SetValue(lightProjection);
-					directionalLightEffect.Parameters["shadowMap"].SetValue(depthRT[j]);
+					directionalLightEffect.Parameters["shadowMap"].SetValue(depthRT);
 					j++;
 				}
 				else
@@ -238,7 +237,7 @@ namespace Meteor.Rendering
 					lightCamera.SetOrientation(new Vector2(yaw, pitch));
 					lightCamera.Update();
 
-					GraphicsDevice.SetRenderTarget(depthRT[lightID]);
+					GraphicsDevice.SetRenderTarget(depthRT);
 					GraphicsDevice.Clear(Color.White);
 
 					for (int cascade = 0; cascade < numCascades; cascade++)
@@ -281,7 +280,7 @@ namespace Meteor.Rendering
 		void CreateLightViewProjMatrix(Vector3 lightDirection, Camera lightCamera)
 		{
 			// Matrix with that will rotate in points the direction of the light
-			Matrix lightRotation = Matrix.CreateLookAt(Vector3.Zero, -lightDirection, Vector3.Up);
+			Matrix lightRotation = Matrix.CreateLookAt(Vector3.Zero, lightDirection, Vector3.Up);
 			camera.Frustum.GetCorners(camera);
 
 			// Transform the positions of the corners into the direction of the light
@@ -444,15 +443,18 @@ namespace Meteor.Rendering
 					);
 
 					GraphicsDevice.Indices = meshPart.IndexBuffer;
+					int totalPasses = (wireframe) ? 1 : 0;
 
-					EffectPass pass = pointLightEffect.CurrentTechnique.Passes[0];
+					for (int i = totalPasses; i < totalPasses + 1; i++)
+					{
+						EffectPass pass = pointLightEffect.CurrentTechnique.Passes[i];
 
-					pass.Apply();
-
-					GraphicsDevice.DrawInstancedPrimitives(
-						PrimitiveType.TriangleList, 0, 0,
-						meshPart.NumVertices, meshPart.StartIndex,
-						meshPart.PrimitiveCount, totalInstances);
+						pass.Apply();
+						GraphicsDevice.DrawInstancedPrimitives(
+							PrimitiveType.TriangleList, 0, 0,
+							meshPart.NumVertices, meshPart.StartIndex,
+							meshPart.PrimitiveCount, totalInstances);
+					}
 				}
 			}
 			// Finish rendering spheres

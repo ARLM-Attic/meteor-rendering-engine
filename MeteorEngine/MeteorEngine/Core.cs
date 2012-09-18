@@ -179,14 +179,14 @@ namespace Meteor
 			if (currentKeyboardState.IsKeyDown(Keys.Q) &&
 				lastKeyboardState.IsKeyUp(Keys.Q))
 			{
-				debugText = (!debugText) ? true : false;
+				debugText = !debugText;
 			}
 
 			// Toggle debug meshes
-			if (currentKeyboardState.IsKeyDown(Keys.Z) &&
-				lastKeyboardState.IsKeyUp(Keys.Z))
+			if (currentKeyboardState.IsKeyDown(Keys.V) &&
+				lastKeyboardState.IsKeyUp(Keys.V))
 			{
-				currentScene.debug = (currentScene.debug == true) ? false : true;
+				currentScene.debug = !currentScene.debug;
 			}
 
 
@@ -235,14 +235,10 @@ namespace Meteor
 			}
 
             if (rtIndex == 1)
-            {
                 DrawDebugData();
-            }
 
 			if (debugText == true)
-			{
 				DrawDebugText(renderStats.frameRate, (int)renderStats.totalFrames);
-			}
 
 			base.Draw(gameTime);
 			renderStats.Finish();

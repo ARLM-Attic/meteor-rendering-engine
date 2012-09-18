@@ -19,6 +19,7 @@ float lightIntensity;
 texture depthMap;
 texture normalMap;
 texture shadowMap;
+texture specularMap;
 
 float shadowBrightness;
 const float ambient;
@@ -27,10 +28,18 @@ const float2 shadowMapPixelSize;
 
 sampler normalSampler : register(s1) = sampler_state
 {
+	Texture = <normalMap>;
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Wrap;
 	AddressV = Wrap;
-	Texture = <normalMap>;
+};
+
+sampler specularSampler : register(s2) = sampler_state
+{
+    Texture = <specularMap>;
+	Filter = MIN_MAG_MIP_LINEAR;
+	AddressU = Wrap;
+	AddressV = Wrap;
 };
 
 sampler depthSampler : register(s4) = sampler_state
@@ -73,6 +82,13 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 
 float DepthBias = 0.001f;
 
+float2 poissonDisk[4] = {
+	float2( -0.94201624, -0.39906216 ),
+	float2( 0.94558609, -0.76890725 ),
+	float2( -0.094184101, -0.92938870 ),
+	float2( 0.34495938, 0.29387760 )
+};
+
 // Linear filter with 4 samples
 // Source by XNA Info
 // http://www.xnainfo.com/content.php?content=36
@@ -104,7 +120,7 @@ float3 LinearFilter4Samples(sampler smp, float brightness, float2 texCoord, floa
 	// lerp between the shadow values to calculate our light amount
 
 	//float shadow = lerp(lerp(samples[0].x, samples[0].y, lerps.x), 
-	//	lerp(samples[0].z, samples[0].w, lerps.x ), lerps.y) / 2.0f; 
+	//	lerp(samples[0].z, samples[0].w, lerps.x ), lerps.y); 
 
 	float shadow = lerp(lerp(newSamples.x, newSamples.y, lerps.x), 
 		lerp(newSamples.z, newSamples.w, lerps.x ), lerps.y); 	
@@ -121,8 +137,8 @@ float4 DirectionalLightPS(VertexShaderOutput input, float4 position) : COLOR0
 
 	// Get specular data
 
-	float specPower = 3;//normalData.a * 255;
-	float specIntensity = normalData.a;
+	float specPower = 12;//normalData.a * 255;
+	float3 specIntensity = normalData.a;
 
 	float3 lightDir = -normalize(lightDirection);
 
