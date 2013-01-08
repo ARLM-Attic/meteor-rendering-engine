@@ -113,6 +113,7 @@ float4 LightingFunction(VertexShaderOutput input, half2 texCoord) : COLOR0
 
 	float3 lightDir = input.lightPos.xyz - position;
 	float attenuation = saturate(1.0f - length(lightDir) / lightRadius);
+	attenuation = pow(attenuation, 0.8f);
 
 	if (attenuation <= 0)
 		return 0;

@@ -1,13 +1,7 @@
-//-----------------------------------------------------------------------------
-// ReconstructDepth.fx
-//
-// Jorge Adriano Luna 2011
-// http://jcoluna.wordpress.com
-//-----------------------------------------------------------------------------
 
 //x = radius, y = max screenspace radius
 
-#define sampleKernelSize 2
+#define sampleKernelSize 3
 
 float g_radius;
 float g_intensity;
@@ -108,7 +102,6 @@ float3 getPosition(in float2 uv)
 
 float3 getNormal(in float2 uv)
 {
-	//return tex2D(normalSampler, uv).xyz;
 	return normalize(tex2D(normalSampler, uv).xyz * 2.0f - 1.0f);
 }
 
@@ -117,21 +110,22 @@ float2 random_size = float2(64, 64);
 
 float2 getRandom(in float2 uv)
 {
-	return 0;
-	return normalize(tex2Dgrad(randomSampler, g_ScreenSize * uv / random_size, 0, 0).xy * 2.0f - 1.0f);
+	return normalize(tex2D(randomSampler, g_ScreenSize * uv / random_size).xy * 2.0f - 1.0f);
 }
 
 float doAmbientOcclusion(in float2 tcoord,in float2 uv, in float3 p, in float3 cnorm)
 {
-	half3 worldPos = getPosition(tcoord + uv) - p;
+	float3 worldPos = getPosition(tcoord + uv) - p;
 
-	const half3 vec = normalize(worldPos);
-	const half distance = length(worldPos) * g_scale;
-	return max(0.0, dot(cnorm, vec)) * (1.0 / (1.0 + distance));
+	const float3 vec = normalize(worldPos);
+	const float distance = length(worldPos) * g_scale;
+	return max(0.0, dot(cnorm, vec) - g_bias) * (1.0 / (1.0 + distance));
 }
   
 float4 PixelShaderFunction(VertexShaderOutput IN) : COLOR0
 {
+	//return float4(tex2D(randomSampler, IN.TexCoord).rgb, 1);
+
 	const float2 vec[4] = {
 		float2(1,0),
 		float2(-1,0),
@@ -153,7 +147,6 @@ float4 PixelShaderFunction(VertexShaderOutput IN) : COLOR0
 	float2 coord1, coord2;
 
 	// SSAO Calculation //
-	[unroll(sampleKernelSize)]
 	for (int j = 0; j < sampleKernelSize; ++j)
 	{
 		coord1 = reflect(vec[j % 4], rand) * rad;

@@ -31,15 +31,5 @@ namespace Meteor.Resources
 			castsShadows = false;
 			intensity = 1f;
         }
-
-		public Matrix LightView(Vector3 position)
-		{
-			return Matrix.CreateLookAt(position, position + Vector3.Normalize(direction), Vector3.Up);
-		}
-
-		public Matrix LightOrthographic(float size, float distance)
-		{
-			return Matrix.CreateOrthographic(size, size, distance / 1000f, distance);
-		}
     }
 }

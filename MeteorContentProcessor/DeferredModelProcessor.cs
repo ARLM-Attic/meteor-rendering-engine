@@ -22,7 +22,7 @@ namespace DeferredRenderingPipeline
     /// to a model. After going through this processor, the output model will be set
     /// up to be rendered with NormalMapping.fx.
     /// </summary>
-    [ContentProcessor(DisplayName = "Meteor Engine Model Processor")]
+    [ContentProcessor(DisplayName = "Meteor Model Processor")]
     public class MeteorModelProcessor : ModelProcessor
     {
         // this constant determines where we will look for the normal map in the opaque

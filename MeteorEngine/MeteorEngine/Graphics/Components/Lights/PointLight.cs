@@ -50,14 +50,5 @@ namespace Meteor.Resources
             instance.transform = sphereWorldMatrix;
 			instance.color = color.PackedValue;
         }
-
-        public void Update()
-        {
-            // Compute the light's world matrix
-            Matrix sphereWorldMatrix = Matrix.CreateScale(radius) *
-                Matrix.CreateTranslation(position);
-
-			instance.transform = sphereWorldMatrix;
-        }
     }
 }

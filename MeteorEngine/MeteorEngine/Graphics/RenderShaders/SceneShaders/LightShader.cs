@@ -14,7 +14,6 @@ namespace Meteor.Rendering
 
 		/// Shadow pass
 		RenderTarget2D depthRT;
-		Texture2D depthDummyRT;
 
 		/// Handles directional lights
 		Effect directionalLightEffect;
@@ -31,30 +30,32 @@ namespace Meteor.Rendering
 		/// Debug point lights
 		public bool wireframe = false;
 
-		/// Used for shadow mappings
+		/// Camera to represent viewpoint of light
 		Camera lightCamera;
-		const int shadowMapSize = 1600;
+
+		/// Texture dimensions for individual shadow cascade
+		const int shadowMapSize = 1024;
+
+		/// Total number of cascades for CSM
 		const int numCascades = 4;
 
-		public float shadowBrightness = 0.1f;
-		public float splitLambda = 0.5f;
+		/// Ambient light irradiance
+		Vector3 ambientTerm;
+
+		public float splitLambda = 0.4f;
 
 		Matrix[] lightViewProj;
 		Matrix[] lightProjection;
 
-		BlendState alphaBlendState = new BlendState()
+		BlendState additiveBlendState = new BlendState()
 		{
+			AlphaBlendFunction = BlendFunction.Add,
 			AlphaSourceBlend = Blend.One,
 			AlphaDestinationBlend = Blend.One,
 
+			ColorBlendFunction = BlendFunction.Add,
 			ColorSourceBlend = Blend.One,
 			ColorDestinationBlend = Blend.One
-		};
-
-		BlendState blend = new BlendState
-		{
-			ColorWriteChannels = ColorWriteChannels.Red,
-			ColorWriteChannels1 = ColorWriteChannels.Green
 		};
 
 		DepthStencilState cwDepthState = new DepthStencilState()
@@ -76,8 +77,6 @@ namespace Meteor.Rendering
 			lightRT = profile.AddRenderTarget(backBufferWidth, backBufferHeight,
 				SurfaceFormat.HdrBlendable, DepthFormat.None);
 
-			depthDummyRT = content.Load<Texture2D>("numbergrid");
-
 			// Light and combined effect targets
 			depthRT = profile.AddRenderTarget(shadowMapSize * 2, shadowMapSize * 2,
 				SurfaceFormat.Single, DepthFormat.Depth24);
@@ -88,6 +87,7 @@ namespace Meteor.Rendering
 			};
 
 			lightCamera = new Camera();
+			lightCamera.farPlaneDistance = 5000f;
 			lightCamera.Initialize(shadowMapSize, shadowMapSize);
 
 			lightViewProj = new Matrix[numCascades];
@@ -121,7 +121,7 @@ namespace Meteor.Rendering
 			{
 				DrawDirectionalLightShadows(scene, camera);
 
-				GraphicsDevice.BlendState = alphaBlendState;
+				GraphicsDevice.BlendState = additiveBlendState;
 				GraphicsDevice.SetRenderTarget(lightRT);
 				GraphicsDevice.Clear(Color.Transparent);
 				GraphicsDevice.DepthStencilState = DepthStencilState.None;
@@ -164,7 +164,9 @@ namespace Meteor.Rendering
 			RenderTarget2D[] targets)
 		{
 			SetCommonParameters(directionalLightEffect, camera, targets);
-			directionalLightEffect.Parameters["ambient"].SetValue(scene.ambientLight);
+
+			ambientTerm = scene.ambientLight;
+			directionalLightEffect.Parameters["ambientTerm"].SetValue(ambientTerm);
 			int j = 0;
 
 			foreach (DirectionLight light in scene.directionalLights)
@@ -184,7 +186,6 @@ namespace Meteor.Rendering
 					// Set the common parameters for all shadow maps
 					directionalLightEffect.Parameters["shadowMapPixelSize"].SetValue(shadowMapPixelSize);
 					directionalLightEffect.Parameters["shadowMapSize"].SetValue(shadowMapSize);
-					directionalLightEffect.Parameters["shadowBrightness"].SetValue(shadowBrightness);
 
 					// Calculate view projection matrices for shadow map views
 					float[] splitNearFar = new float[numCascades];
@@ -302,6 +303,37 @@ namespace Meteor.Rendering
 			}
 
 			BoundingBox lightBox = new BoundingBox(cornerMin, cornerMax);
+
+			bool fixShadowJittering = true;
+			if (fixShadowJittering)
+			{
+				// I borrowed this code from some forum that I don't remember anymore =/
+				// We snap the camera to 1 pixel increments so that moving the camera does not cause the shadows to jitter.
+				// This is a matter of integer dividing by the world space size of a texel
+				// The camera will snap along texel-sized increments
+
+				float diagonalLength = (camera.frustumCorners[0] - camera.frustumCorners[6]).Length();
+				diagonalLength += 2; //Without this, the shadow map isn't big enough in the world.
+				float worldsUnitsPerTexel = diagonalLength / (float)shadowMapSize;
+
+				Vector3 vBorderOffset = (new Vector3(diagonalLength, diagonalLength, diagonalLength) -
+										 (lightBox.Max - lightBox.Min)) * 0.5f;
+				lightBox.Max += vBorderOffset;
+				lightBox.Min -= vBorderOffset;
+
+				lightBox.Min /= worldsUnitsPerTexel;
+				lightBox.Min.X = (float)Math.Floor(lightBox.Min.X);
+				lightBox.Min.Y = (float)Math.Floor(lightBox.Min.Y);
+				lightBox.Min.Z = (float)Math.Floor(lightBox.Min.Z);
+				lightBox.Min *= worldsUnitsPerTexel;
+
+				lightBox.Max /= worldsUnitsPerTexel;
+				lightBox.Max.X = (float)Math.Floor(lightBox.Max.X);
+				lightBox.Max.Y = (float)Math.Floor(lightBox.Max.Y);
+				lightBox.Max.Z = (float)Math.Floor(lightBox.Max.Z);
+				lightBox.Max *= worldsUnitsPerTexel;
+			}
+
 			Vector3 boxSize = lightBox.Max - lightBox.Min;
 			Vector3 halfBoxSize = boxSize * 0.5f;
 
@@ -318,9 +350,9 @@ namespace Meteor.Rendering
 
 			// Create the projection matrix for the light
 			// The projection is orthographic since we are using a directional light
-			float projectionScale = 1.5f;
-			boxSize *= projectionScale;
-			lightCamera.Projection = Matrix.CreateOrthographic(boxSize.X, boxSize.Y, -boxSize.Z, boxSize.Z);
+			float nearScale = 1.5f;
+			lightCamera.Projection = 
+				Matrix.CreateOrthographic(boxSize.X, boxSize.Y, -boxSize.Z * nearScale, boxSize.Z);
 		}
 
 		/// Vertex buffer to hold the instance data

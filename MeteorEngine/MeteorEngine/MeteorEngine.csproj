@@ -118,7 +118,7 @@
     <Compile Include="Graphics\RenderShaders\PostProcessingShaders\SSAOShader.cs" />
     <Compile Include="Graphics\RenderShaders\PostProcessingShaders\DepthOfFieldShader.cs" />
     <Compile Include="Graphics\RenderShaders\PostProcessingShaders\FXAAShader.cs" />
-    <Compile Include="Graphics\RenderShaders\SceneShaders\CombinationShader.cs" />
+    <Compile Include="Graphics\RenderShaders\SceneShaders\CompositeShader.cs" />
     <Compile Include="Graphics\RenderShaders\SceneShaders\DiffuseShader.cs" />
     <Compile Include="Graphics\RenderShaders\SceneShaders\GBufferShader.cs" />
     <Compile Include="Graphics\RenderShaders\SceneShaders\LightShader.cs" />

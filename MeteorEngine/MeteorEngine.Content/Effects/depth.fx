@@ -51,7 +51,7 @@ VertexShaderOutput DepthMapVS(VertexShaderInput input)
 	return output;
 }
 
-#define MaxBones 58
+#define MaxBones 60
 float4x4 bones[MaxBones];
 
 VertexShaderOutput DepthMapSkinnedAnimation(VertexShaderInput input)

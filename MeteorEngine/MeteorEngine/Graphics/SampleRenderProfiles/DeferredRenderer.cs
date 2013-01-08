@@ -87,7 +87,7 @@ namespace Meteor.Rendering
 			dof.SetInputs(fxaa.outputs[0], copy.outputs[0], gBuffer.outputs[1]);
 			bloom.SetInputs(composite.outputs);
 
-			composite.includeSSAO = 0;
+			composite.includeSSAO = false;
 
 			// Set the debug targets
 			debugRenderTargets.Add(gBuffer.outputs[2]);
@@ -103,15 +103,7 @@ namespace Meteor.Rendering
 			lights.Draw();
 
 			// Composite drawing
-			//composite.Draw();
-
-			// Post effects
-			//fxaa.Draw();
-			//copy.Draw();
-			//blur.Draw();
-
-			//dof.Draw();
-			output = composite.Draw()[0];//bloom.Draw()[0];
+			output = composite.Draw()[0];
 		}
 	}
 }

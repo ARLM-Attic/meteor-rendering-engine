@@ -42,7 +42,9 @@ namespace Meteor.Rendering
 
 		MeshPrioritySort meshPrioritySort;
 
+		/// Containers for temp data, to avoid calling the GC
 		Vector3[] boxCorners;
+		Matrix[] tempBones;
 
 	    public SceneRenderComponent(GraphicsDevice device, ContentManager content)
         {
@@ -65,6 +67,7 @@ namespace Meteor.Rendering
 			basicEffect.VertexColorEnabled = true;
 
 			boxCorners = new Vector3[8];
+			tempBones = new Matrix[60];
 		}
 
 		/// <summary>
@@ -134,7 +137,7 @@ namespace Meteor.Rendering
 
 		public void CullAllModels(Scene scene)
 		{
-			scene.visibleMeshes = 0;
+			//scene.visibleMeshes = 0;
 			scene.culledMeshes = 0;
 
 			// Pre-cull mesh parts
@@ -278,7 +281,7 @@ namespace Meteor.Rendering
 			viewport.MinDepth = 0.0f;
 			viewport.MaxDepth = 0.99999f;
 			graphicsDevice.Viewport = viewport;
-			graphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;
+			graphicsDevice.RasterizerState = RasterizerState.CullNone;//CounterClockwise;
 
 			totalPolys = 0;
 
@@ -354,14 +357,19 @@ namespace Meteor.Rendering
 					Matrix world = instancedModel.boneMatrices[mesh.Value.ParentBone.Index] * instancedModel.Transform;
 					Matrix IWorldView = Matrix.Invert(world * camera.View);
 
+					// A bit hacky way to limit number of mesh bones. Will fix soon
 					if (instancedModel.animationPlayer != null)
-						effect.Parameters["bones"].SetValue(instancedModel.animationPlayer.GetSkinTransforms());
+					{
+						Matrix[] bones = instancedModel.animationPlayer.GetSkinTransforms();
+						int maxBones = (bones.Count() > 60) ? 60 : bones.Count();
+						Array.Copy(bones, tempBones, maxBones);
+						effect.Parameters["bones"].SetValue(tempBones);
+					}
 
 					if (instancedModel.Textures[mesh.Key] == null)
 						effect.Parameters["Texture"].SetValue(blankTexture);
 
 					effect.Parameters["World"].SetValue(world);
-					effect.Parameters["ITWorldView"].SetValue(Matrix.Transpose(IWorldView));
 					effect.Parameters["View"].SetValue(camera.View);
 					effect.Parameters["Projection"].SetValue(camera.Projection);
 
@@ -391,9 +399,13 @@ namespace Meteor.Rendering
 			Matrix mainTransform = instancedModel.Transform;
 			instancedModel.model.CopyAbsoluteBoneTransformsTo(instancedModel.boneMatrices);
 
+			// A bit hacky. Will fix soon
 			if (instancedModel.animationPlayer != null)
 			{
-				effect.Parameters["bones"].SetValue(instancedModel.animationPlayer.GetSkinTransforms());
+				Matrix[] bones = instancedModel.animationPlayer.GetSkinTransforms();
+				int maxBones = (bones.Count() > 60) ? 60 : bones.Count();
+				Array.Copy(bones, tempBones, maxBones);
+				effect.Parameters["bones"].SetValue(tempBones);
 			}			
 
 			foreach (KeyValuePair <int, ModelMesh> mesh in instancedModel.VisibleMeshes)
@@ -489,7 +501,7 @@ namespace Meteor.Rendering
 			int meshIndex = 0;
 
 			foreach (BoundingBox box in model.BoundingBoxes)
-			{
+			{				
 				// Assign the box corners
 				boxCorners[0] = new Vector3(box.Min.X, box.Max.Y, box.Max.Z);
 				boxCorners[1] = new Vector3(box.Max.X, box.Max.Y, box.Max.Z); // maximum
@@ -499,16 +511,17 @@ namespace Meteor.Rendering
 				boxCorners[5] = new Vector3(box.Max.X, box.Max.Y, box.Min.Z);
 				boxCorners[6] = new Vector3(box.Max.X, box.Min.Y, box.Min.Z);
 				boxCorners[7] = new Vector3(box.Min.X, box.Min.Y, box.Min.Z); // minimum
-
-				Color[] colors = { Color.Cyan, Color.White, Color.Magenta, Color.Blue,
-					Color.Green, Color.Yellow, Color.Red, Color.Black };
+				
+				//Color[] colors = { Color.Cyan, Color.White, Color.Magenta, Color.Blue,
+				//	Color.Green, Color.Yellow, Color.Red, Color.Black };
 
 				for (int i = boxCorners.Length; i-- > 0; )
 				{
 					boxCorners[i] = Vector3.Transform(boxCorners[i], model.Transform);
-					model.boxVertices[i] = new VertexPositionColor(boxCorners[i], colors[i]);
+					model.boxVertices[i].Position = boxCorners[i];
+					model.boxVertices[i].Color = Color.Cyan;
 				}
-
+				
 				// Transform the box with the model's world matrix
 				model.tempBoxes[meshIndex].Min = Vector3.Transform(box.Min, model.Transform);
 				model.tempBoxes[meshIndex].Max = Vector3.Transform(box.Max, model.Transform);
@@ -526,6 +539,7 @@ namespace Meteor.Rendering
 							InstancedModel.bBoxIndices, 0, 12);
 					}
 				}
+				
 				meshIndex++;
 			}
 			// End box rendering

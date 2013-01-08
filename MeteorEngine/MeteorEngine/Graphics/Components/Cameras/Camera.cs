@@ -91,8 +91,8 @@ namespace Meteor.Resources
 			get { return (float)viewAspect.X / (float)viewAspect.Y; }
 		}
 
-        public float nearPlaneDistance = 2f;
-        public float farPlaneDistance = 2000.0f;
+        public float nearPlaneDistance = 4f;
+        public float farPlaneDistance = 5000.0f;
 		public float nearSplitPlaneDistance;
 		public float farSplitPlaneDistance;
 
@@ -121,7 +121,7 @@ namespace Meteor.Resources
 			if (split > 0)
 				nearSplitPlaneDistance *= 0.95f;
 
-			return new Vector2(nearSplitPlaneDistance, farSplitPlaneDistance);
+			return new Vector2(nearPlaneDistance * (split + 1), farSplitPlaneDistance);
 		}
 
         public Camera()
@@ -147,8 +147,7 @@ namespace Meteor.Resources
 		}
 
         /// <summary>
-        /// Allows the game component to perform any initialization it needs to before starting
-        /// to run.  This is where it can query for any required services and load content.
+        /// Sets up the camera with a default viewport and world matrix
         /// </summary>
         public void Initialize(float width, float height)
         {
@@ -221,14 +220,17 @@ namespace Meteor.Resources
 	{
 		public static Vector3[] GetCorners(this BoundingFrustum frustum, Camera camera)
 		{
+			// Replace nearSplitPlaneDistance with nearPlaneDistance for
+			// traditional cascaded shadow maps
+
 			// Calculate the near and far plane centers
 			Vector3 nearPlaneCenter = camera.Position +
-				Vector3.Normalize(camera.WorldMatrix.Forward) * camera.nearSplitPlaneDistance;
+				Vector3.Normalize(camera.WorldMatrix.Forward) * camera.nearPlaneDistance;
 			Vector3 farPlaneCenter = camera.Position +
 				Vector3.Normalize(camera.WorldMatrix.Forward) * camera.farSplitPlaneDistance;
 
 			// Get the vertical and horizontal extent locations from the center
-			float nearExtentDistance = (float)Math.Tan(camera.ViewAngle / 2f) * camera.nearSplitPlaneDistance;
+			float nearExtentDistance = (float)Math.Tan(camera.ViewAngle / 2f) * camera.nearPlaneDistance;
 			Vector3 nearExtentY = nearExtentDistance * camera.WorldMatrix.Up;
 			Vector3 nearExtentX = nearExtentDistance * camera.AspectRatio * camera.WorldMatrix.Left;
 

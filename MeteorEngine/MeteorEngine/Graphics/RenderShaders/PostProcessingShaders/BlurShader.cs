@@ -32,10 +32,10 @@ namespace Meteor.Rendering
             finalRT = new RenderTarget2D[2];
 
             // Light and combined effect targets
-			finalRT[0] = profile.AddRenderTarget(backBufferWidth / 2,
-				backBufferHeight / 2, SurfaceFormat.Color, DepthFormat.None);
-			finalRT[1] = profile.AddRenderTarget(backBufferWidth / 2,
-				backBufferHeight / 2, SurfaceFormat.Color, DepthFormat.None);
+			finalRT[0] = profile.AddRenderTarget(backBufferWidth / 1,
+				backBufferHeight / 1, SurfaceFormat.Color, DepthFormat.None);
+			finalRT[1] = profile.AddRenderTarget(backBufferWidth / 1,
+				backBufferHeight / 1, SurfaceFormat.Color, DepthFormat.None);
 
             // Load the shader effects
             blurEffect = content.Load<Effect>("Effects\\blur");

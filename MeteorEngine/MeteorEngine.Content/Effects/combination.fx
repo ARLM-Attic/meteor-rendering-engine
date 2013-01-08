@@ -4,7 +4,7 @@ float4x4 View;
 float4x4 Projection;
 
 float2 halfPixel;
-float ambient;
+float3 ambientTerm;
 float flicker;
 float includeSSAO;
 
@@ -94,6 +94,9 @@ float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 	float4 diffuse = tex2D(diffuseSampler, input.TexCoord);
 	float4 light = tex2D(lightSampler, input.TexCoord);
 
+	// Gamma encoding
+	diffuse.rgb *= diffuse.rgb;
+
 	// This ensures that the specular highlight is of the right color
 	float3 specular = light.rgb * light.a;
 
@@ -101,16 +104,14 @@ float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 	if (includeSSAO >= 1)
 		ssao = tex2D(ssaoSampler, input.TexCoord);
 
-	light *= ssao;
-	float amb = ambient;
+	light *= ssao;	
 
-	float3 finalColor = (float3)0;
-	finalColor = light.rgb * diffuse * (1.f + amb) * pow(abs(ssao), 0.7) + specular;
+	float3 finalColor = light.rgb * diffuse * pow(abs(ssao), 0.7) + specular;
 
 	// Gamma correct inverse
-	finalColor = pow(finalColor, 1 / 2.f);
+	finalColor = pow(finalColor, 1 / 2.2f);
 
-	return float4(finalColor * (0.95f + flicker * 0.05f), 1);
+	return float4(finalColor * (0.95f + flicker * 0.05f) + ambientTerm, 1);
 }
 
 const float horizontalStep = 1.0 / 1280.0f;

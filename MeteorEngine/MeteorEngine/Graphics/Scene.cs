@@ -31,7 +31,7 @@ namespace Meteor.Resources
 		public List<PointLight> visibleLights = new List<PointLight>();
 
 		/// Ambient lighting
-		public float ambientLight = 0.0f;
+		public Vector3 ambientLight = Vector3.Zero;
 
 		public List<PointLight> VisiblePointLights
 		{
@@ -127,7 +127,7 @@ namespace Meteor.Resources
 		/// the same name key as the file for the model
 		/// </summary>
 
-		public InstancedModel AddSkinnedModel(String modelPath)
+		public InstancedModel AddSkinnedModel(String modelPath, String take = "Take 001")
 		{
 			skinnedModels.Add(modelPath, new InstancedModel(modelPath, modelPath, content));
 			InstancedModel instancedModel = skinnedModels[modelPath];
@@ -142,7 +142,7 @@ namespace Meteor.Resources
 			// Create an animation player, and start decoding an animation clip.
 			instancedModel.animationPlayer = new AnimationPlayer(skinningData);
 
-			AnimationClip clip = skinningData.AnimationClips["Take 001"];
+			AnimationClip clip = skinningData.AnimationClips[take];
 			instancedModel.animationPlayer.StartClip(clip);
 
 			return instancedModel;
@@ -196,14 +196,8 @@ namespace Meteor.Resources
 			{
 				if (skinnedModel.animationPlayer != null)
 				{
-					skinnedModel.animationPlayer.Update(gameTime.ElapsedGameTime, true, Matrix.Identity);
-					float currentAnimTime = (float)gameTime.TotalGameTime.TotalSeconds;
-
-					skinnedModel.Rotate(0, MathHelper.ToDegrees(-currentAnimTime / 2.1f + MathHelper.Pi), 0).
-						Translate(new Vector3(
-						(float)Math.Cos(currentAnimTime / 2.1f) * 50 + 80, skinnedModel.position.Y,
-						(float)Math.Sin(currentAnimTime / 2.1f) * 50 - 20));
-					
+					skinnedModel.animationPlayer.playSpeed = 1f;
+					skinnedModel.animationPlayer.Update(gameTime.ElapsedGameTime, true, Matrix.Identity);					
 				}
 				// Finished updating mesh
 			}

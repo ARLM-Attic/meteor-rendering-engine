@@ -8,15 +8,14 @@ using Meteor.Resources;
 namespace Meteor.Rendering
 {
 	/// <summary>
-	/// Screen-space antialiasing
-	/// A nice post-effect for deferred rendering
+	/// Screen-space ambient occlusion
 	/// </summary>
 
 	public class SSAOShader : BaseShader
 	{
 		// Basic parameters
-		public float radius = 0.25f;
-		public float intensity = 0.7f;
+		public float radius = 4.25f;
+		public float intensity = 1.2f;
 		public float scale = 1f;
 		public float bias = 0.0001f;
 		public bool applyBlur = false;
@@ -67,7 +66,7 @@ namespace Meteor.Rendering
 			ssaoEffect.Parameters["g_scale"].SetValue(scale);
 			ssaoEffect.Parameters["g_bias"].SetValue(bias);
 
-			ssaoEffect.Parameters["RandomMap"].SetValue(randomMap);
+			//ssaoEffect.Parameters["RandomMap"].SetValue(randomMap);
 
 			// Initialize blur
 			blur = new GaussianBlur(backBufferWidth, backBufferHeight, 3f, blurEffect);
@@ -96,6 +95,7 @@ namespace Meteor.Rendering
 
 			ssaoEffect.Parameters["NormalBuffer"].SetValue(inputTargets[0]);
 			ssaoEffect.Parameters["DepthBuffer"].SetValue(inputTargets[1]);
+			ssaoEffect.Parameters["RandomMap"].SetValue(randomMap);
 
 			ssaoEffect.CurrentTechnique.Passes[0].Apply();
 			quadRenderer.Render(Vector2.One * -1, Vector2.One);
