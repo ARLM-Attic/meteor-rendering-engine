@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -13,7 +12,7 @@ namespace Meteor.Resources
 		/// Model representing the object
 		public Model model;
 
-		/// Model's main normal texture
+		/// Model's main normalZ texture
 		public List<Texture2D> modelTextures;
 
 		public List<Texture2D> Textures

@@ -14,7 +14,7 @@ namespace Meteor.Rendering
 	public class SSAOShader : BaseShader
 	{
 		// Basic parameters
-		public float radius = 4.25f;
+		public float radius = 2.25f;
 		public float intensity = 1.2f;
 		public float scale = 1f;
 		public float bias = 0.0001f;

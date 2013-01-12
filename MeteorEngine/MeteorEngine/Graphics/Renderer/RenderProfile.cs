@@ -104,10 +104,10 @@ namespace Meteor.Rendering
 		/// </summary> 
 
 		public RenderTarget2D AddRenderTarget(int width, int height,
-			SurfaceFormat surfaceFormat, DepthFormat depthFormat)
+			SurfaceFormat surfaceFormat, DepthFormat depthFormat, int samples = 1)
 		{
 			return AddRenderTarget(width, height, surfaceFormat, depthFormat,
-				RenderTargetUsage.DiscardContents);
+				RenderTargetUsage.DiscardContents, samples);
 		}
 
 		/// <summary>
@@ -115,10 +115,10 @@ namespace Meteor.Rendering
 		/// </summary> 
 
 		public RenderTarget2D AddRenderTarget(int width, int height, SurfaceFormat surfaceFormat,
-			DepthFormat depthFormat, RenderTargetUsage usage)
+			DepthFormat depthFormat, RenderTargetUsage usage, int samples = 1)
 		{
 			renderTaskTargets.Add(new RenderTarget2D(
-				graphicsDevice, width, height, false, surfaceFormat, depthFormat, 1, usage));
+				graphicsDevice, width, height, false, surfaceFormat, depthFormat, samples, usage));
 
 			return renderTaskTargets.Last();
 		}

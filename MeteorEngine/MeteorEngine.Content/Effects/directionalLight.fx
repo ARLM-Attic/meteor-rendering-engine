@@ -116,13 +116,13 @@ float3 LinearFilter4Samples(sampler smp, float3 ambient, float2 texCoord, float 
 
 	// lerp between the shadow values to calculate our light amount
 
-	float shadow = lerp(lerp(samples[0].x, samples[0].y, lerps.x), 
-		lerp(samples[0].z, samples[0].w, lerps.x ), lerps.y); 
+	//float shadow = lerp(lerp(samples[0].x, samples[0].y, lerps.x), 
+	//	lerp(samples[0].z, samples[0].w, lerps.x ), lerps.y); 
 
-	//float shadow = lerp(lerp(newSamples.x, newSamples.y, lerps.x), 
-	//	lerp(newSamples.z, newSamples.w, lerps.x ), lerps.y); 	
+	float shadow = lerp(lerp(newSamples.x, newSamples.y, lerps.x), 
+		lerp(newSamples.z, newSamples.w, lerps.x ), lerps.y); 	
 
-	return shadow + ambientTerm;
+	return shadow + ambientTerm * 3;
 }
 
 float4 DirectionalLightPS(VertexShaderOutput input, float4 position) : COLOR0
@@ -174,6 +174,24 @@ float4 CalculateWorldPosition(float2 texCoord, float depthVal)
 	return position;
 }
 
+float3 FindShadow(float4 shadowMapPos, float shadowIndex)
+{
+	// Find the position in the shadow map for this pixel
+	float2 shadowTexCoord = shadowMapPos.xy / shadowMapPos.w / 2.0f + float2(0.5, 0.5);
+
+	shadowTexCoord.x /= 2.f;
+	shadowTexCoord.x += (shadowIndex % 2) / 2.f;
+	shadowTexCoord.y = 1 - shadowTexCoord.y;
+	shadowTexCoord.y /= 2.f;
+	shadowTexCoord.y += floor(shadowIndex / 2) / 2.f;
+
+	// Calculate the current pixel depth
+	float ourdepth = (shadowMapPos.z / shadowMapPos.w) - DepthBias;  
+
+	// Shadow calculation
+	return LinearFilter4Samples(shadowMapSampler, ambientTerm, shadowTexCoord, ourdepth);
+}
+
 float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 {
 	float depthVal = tex2D(depthSampler, input.TexCoord).r;
@@ -188,8 +206,8 @@ float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 float4 PixelShaderShadowed(VertexShaderOutput input) : COLOR0
 {	
 	float depthVal = tex2D(depthSampler, input.TexCoord).r;
-	clip (depthVal > 0.99999f);
-	//	return float4(0.5, 0.5, 0.5, 0.15);
+	if (depthVal > 0.99999f)
+		return float4(1, 1, 1, 0.2);
 
 	// Convert position to world space
 	float4 position = CalculateWorldPosition(input.TexCoord, depthVal);
@@ -199,9 +217,6 @@ float4 PixelShaderShadowed(VertexShaderOutput input) : COLOR0
 	float camFar = 1.f;
 	float linearZ = (2 * camNear) / (camFar +  camNear - depthVal * (camFar - camNear));
 
-	// Shadow calculation
-	float3 shadow = 1.f - ambientTerm;
-
 	// Get the light projection for the first available frustum split	
 	float shadowIndex = 0;
 
@@ -209,28 +224,28 @@ float4 PixelShaderShadowed(VertexShaderOutput input) : COLOR0
 	for (int i = 0; i < NUM_CASCADES; i++)  
 		shadowIndex += (linearZ > cascadeSplits[i]);
 
-	//shadowIndex = 1;
-
 	// Get shadow map position projected in light view
 	float4 shadowMapPos = mul(position, lightViewProj[shadowIndex]);
 
 	// Find the position in the shadow map for this pixel
-	float2 shadowTexCoord = shadowMapPos.xy / shadowMapPos.w / 2.0f + float2(0.5, 0.5);
+	float3 shadow = FindShadow(shadowMapPos, shadowIndex);
 
-	shadowTexCoord.x /= 2.f;
-	shadowTexCoord.x += (shadowIndex % 2) / 2.f;
-	shadowTexCoord.y = 1 - shadowTexCoord.y;
-	shadowTexCoord.y /= 2.f;
-	shadowTexCoord.y += floor(shadowIndex / 2) / 2.f;
+	// Calculates minimum cascade distance to start blending in shadow
+	// from the next cascade for a smoother transition. This reduces the
+	// 'pop' or seam visible where the cascades are split.
+	float minDistance = cascadeSplits[shadowIndex] * 0.8f;
+	
+	if (linearZ > minDistance)
+	{
+		// Get second shadow map position projected in light view
+		float4 shadowMapPos2 = mul(position, lightViewProj[shadowIndex + 1]);
+		float relDistance = (linearZ - minDistance) / (cascadeSplits[shadowIndex] - minDistance);
 
-	float shadowdepth = 0;
-				
-	// Calculate the current pixel depth
-	float ourdepth = (shadowMapPos.z / shadowMapPos.w) - DepthBias;  
-
-	shadowdepth = tex2D(shadowMapSampler, shadowTexCoord).r;
-	shadow = LinearFilter4Samples(shadowMapSampler, ambientTerm, shadowTexCoord, ourdepth);
-
+		// Get shadow value from next cascade and blend the results
+		float3 shadow2 = FindShadow(shadowMapPos2, shadowIndex + 1);
+		shadow = lerp(shadow, shadow2, relDistance);
+	}
+	
 	float4 lightOutput = DirectionalLightPS(input, position);
 
 	lightOutput.rgb *= shadow;

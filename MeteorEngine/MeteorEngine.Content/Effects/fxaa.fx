@@ -5,8 +5,6 @@ float4x4 Projection;
 const float2 halfPixel;
 texture Texture;
 
-// TODO: add effect parameters here.
-
 sampler texSampler = sampler_state
 {
 	Filter = MIN_MAG_MIP_LINEAR;

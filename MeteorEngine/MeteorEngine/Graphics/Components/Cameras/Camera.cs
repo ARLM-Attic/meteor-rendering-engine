@@ -92,7 +92,7 @@ namespace Meteor.Resources
 		}
 
         public float nearPlaneDistance = 4f;
-        public float farPlaneDistance = 5000.0f;
+        public float farPlaneDistance = 4000.0f;
 		public float nearSplitPlaneDistance;
 		public float farSplitPlaneDistance;
 
@@ -154,7 +154,7 @@ namespace Meteor.Resources
             // Add your initialization code here
 			viewAspect.X = (int)width;
 			viewAspect.Y = (int)height;
-			viewAngle = MathHelper.PiOver4;
+			viewAngle = MathHelper.PiOver4 * 4f / 3f;
 
 			cameraFrustum = new BoundingFrustum(Matrix.Identity);
 			frustumCorners = new Vector3[8];

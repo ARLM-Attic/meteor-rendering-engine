@@ -142,7 +142,8 @@ namespace Meteor.Rendering
 			quadRenderer.Render(Vector2.One * -1, Vector2.One);
 
 			sceneRenderer.CullLights(scene, camera);
-			sceneRenderer.CullModelMeshes(scene, camera);
+			sceneRenderer.IgnoreCulling(scene, camera);
+			//sceneRenderer.CullModelMeshes(scene, camera);
 
 			// Render the scene
 			sceneRenderer.UseTechnique("SmallGBuffer");

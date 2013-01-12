@@ -34,7 +34,7 @@ namespace Meteor.Rendering
 		Camera lightCamera;
 
 		/// Texture dimensions for individual shadow cascade
-		const int shadowMapSize = 1024;
+		const int shadowMapSize = 1536;
 
 		/// Total number of cascades for CSM
 		const int numCascades = 4;
@@ -42,7 +42,7 @@ namespace Meteor.Rendering
 		/// Ambient light irradiance
 		Vector3 ambientTerm;
 
-		public float splitLambda = 0.4f;
+		public float splitLambda = 0.55f;
 
 		Matrix[] lightViewProj;
 		Matrix[] lightProjection;
@@ -126,11 +126,13 @@ namespace Meteor.Rendering
 				GraphicsDevice.Clear(Color.Transparent);
 				GraphicsDevice.DepthStencilState = DepthStencilState.None;
 
-				if (scene.totalLights > 0)
-					DrawPointLights(scene, camera, inputTargets);
-
 				// Make some lights
 				DrawDirectionalLights(scene, camera, inputTargets);
+
+				GraphicsDevice.BlendState = BlendState.AlphaBlend;
+
+				if (scene.totalLights > 0)
+					DrawPointLights(scene, camera, inputTargets);
 			}
 
 			renderStopWatch.Stop();
@@ -313,7 +315,7 @@ namespace Meteor.Rendering
 				// The camera will snap along texel-sized increments
 
 				float diagonalLength = (camera.frustumCorners[0] - camera.frustumCorners[6]).Length();
-				diagonalLength += 2; //Without this, the shadow map isn't big enough in the world.
+				//diagonalLength += 2; //Without this, the shadow map isn't big enough in the world.
 				float worldsUnitsPerTexel = diagonalLength / (float)shadowMapSize;
 
 				Vector3 vBorderOffset = (new Vector3(diagonalLength, diagonalLength, diagonalLength) -
@@ -352,7 +354,7 @@ namespace Meteor.Rendering
 			// The projection is orthographic since we are using a directional light
 			float nearScale = 1.5f;
 			lightCamera.Projection = 
-				Matrix.CreateOrthographic(boxSize.X, boxSize.Y, -boxSize.Z * nearScale, boxSize.Z);
+				Matrix.CreateOrthographic(boxSize.X, boxSize.Y, -boxSize.Z * nearScale, boxSize.Z / 2f);
 		}
 
 		/// Vertex buffer to hold the instance data

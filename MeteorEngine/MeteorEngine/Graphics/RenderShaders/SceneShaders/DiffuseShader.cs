@@ -19,7 +19,7 @@ namespace Meteor.Rendering
 
             // Diffuse render target
 			diffuseRT = profile.AddRenderTarget(backBufferWidth,
-                backBufferHeight, SurfaceFormat.Rgba64, DepthFormat.Depth24);
+                backBufferHeight, SurfaceFormat.Rgba1010102, DepthFormat.Depth24, 4);
 
 			outputTargets = new RenderTarget2D[] 
 			{
@@ -43,7 +43,8 @@ namespace Meteor.Rendering
 			GraphicsDevice.SamplerStates[0] = SamplerState.LinearWrap;
 
 			sceneRenderer.CullLights(scene, camera);
-			sceneRenderer.CullModelMeshes(scene, camera);
+			sceneRenderer.IgnoreCulling(scene, camera);
+			//sceneRenderer.CullModelMeshes(scene, camera);
 			
             // Forward render the scene
 			sceneRenderer.UseTechnique("DiffuseRender");

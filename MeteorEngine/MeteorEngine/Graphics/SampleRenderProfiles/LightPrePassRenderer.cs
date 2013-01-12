@@ -84,7 +84,7 @@ namespace Meteor.Rendering
 			blur.SetInputs(composite.outputs);
 			copy.SetInputs(composite.outputs);
 			dof.SetInputs(composite.outputs[0], copy.outputs[0], smallGBuffer.outputs[1]);
-			bloom.SetInputs(composite.outputs);
+			bloom.SetInputs(dof.outputs);
 
 			(composite as CompositeShader).includeSSAO = false;
 
@@ -105,16 +105,14 @@ namespace Meteor.Rendering
 			lights.Draw();
 
 			// Combine with lighting
-			composite.Draw();
+			//composite.Draw();
 
 			// Post effects
-			//fxaa.Draw();
-
 			//copy.Draw();
 			//blur.Draw();
-
+			
 			//dof.Draw();
-			output = bloom.Draw()[0];
+			output = composite.Draw()[0];
 		}
 	}
 }

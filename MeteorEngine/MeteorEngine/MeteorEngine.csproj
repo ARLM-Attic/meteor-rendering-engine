@@ -101,6 +101,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Graphics\Components\Drawables\InstancedModel.cs" />
+    <Compile Include="Graphics\Components\Drawables\TerrainMap.cs" />
     <Compile Include="Graphics\Components\Lights\DirectionalLight.cs" />
     <Compile Include="Graphics\Components\Lights\PointLight.cs" />
     <Compile Include="Graphics\Components\MeteorComponent.cs" />

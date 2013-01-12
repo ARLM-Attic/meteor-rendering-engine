@@ -64,10 +64,33 @@ namespace Meteor
         KeyboardState currentKeyboardState = new KeyboardState();
         KeyboardState lastKeyboardState = new KeyboardState();
 
+		/// <summary>
+		/// Constructor without a default scene
+		/// </summary>
+
+		public Core(IServiceProvider services)
+			: base(services)
+		{
+			content = new ContentManager(services, "MeteorEngine.Content");
+			renderStats = new RenderStats();
+
+			currentRenderProfile = null;
+			renderProfiles = new List<RenderProfile>();
+			debugString = new StringBuilder(64, 64);
+
+			// Setup rendering components
+			cameras = new List<Camera>();
+			scenes = new List<Scene>();
+		}
+
+		/// <summary>
+		/// Constructor with a default scene
+		/// </summary>
+
         public Core(IServiceProvider services, Scene scene)
             : base(services)
         {
-            this.currentScene = scene;
+            currentScene = scene;
 			content = new ContentManager(services, "MeteorEngine.Content"); 
 			renderStats = new RenderStats();
 
@@ -215,7 +238,7 @@ namespace Meteor
         {
 			RenderTarget2D output = null;
 
-            // Draw to the GBuffer
+            // Draw the final image
 			if (currentRenderProfile != null)
 			{				
 				currentRenderProfile.Draw(gameTime);
@@ -224,7 +247,7 @@ namespace Meteor
 				graphicsDevice.SetRenderTarget(null);
 				graphicsDevice.Clear(Color.CornflowerBlue);
 				
-				spriteBatch.Begin(0, BlendState.Opaque, SamplerState.PointClamp,
+				spriteBatch.Begin(0, BlendState.Opaque, SamplerState.LinearClamp,
 					DepthStencilState.None, RasterizerState.CullCounterClockwise);
 				spriteBatch.Draw(output, new Rectangle(0, 0,
 					(int)targetWidth, (int)targetHeight), Color.White);
