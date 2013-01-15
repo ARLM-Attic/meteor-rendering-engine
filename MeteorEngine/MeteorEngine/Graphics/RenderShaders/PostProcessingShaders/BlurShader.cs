@@ -24,10 +24,10 @@ namespace Meteor.Rendering
         Effect blurEffect;
 		GaussianBlur blur;
 
-        public BlurShader(RenderProfile profile, ContentManager content)
+		public BlurShader(RenderProfile profile, ResourceContentManager content)
             : base(profile, content) 
 		{
-			float blurStep = 2.1f;
+			float blurStep = 2f;
 
             finalRT = new RenderTarget2D[2];
 
@@ -38,7 +38,7 @@ namespace Meteor.Rendering
 				backBufferHeight / 1, SurfaceFormat.Color, DepthFormat.None);
 
             // Load the shader effects
-            blurEffect = content.Load<Effect>("Effects\\blur");
+            blurEffect = content.Load<Effect>("blur");
 
 			blur = new GaussianBlur(backBufferWidth, backBufferHeight, blurStep, blurEffect);
 			blurEffect.Parameters["halfPixel"].SetValue(halfPixel);

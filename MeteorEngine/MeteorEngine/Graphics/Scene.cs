@@ -108,13 +108,19 @@ namespace Meteor.Resources
 
 		public InstancedModel AddModel(String directory, String modelPath)
 		{
-			staticModels.Add(modelPath, new InstancedModel(modelPath, directory, content));
-			for (int i = 0; i < staticModels[modelPath].TotalMeshes; i++)
+			string key = modelPath;
+			if (staticModels.ContainsKey(modelPath))
+			{
+				key = modelPath + "_1";
+			}
+
+			staticModels.Add(key, new InstancedModel(modelPath, directory, content));
+			for (int i = 0; i < staticModels[key].TotalMeshes; i++)
 			{
 				orderedMeshes.Add(new OrderedMeshData());
 			}
 
-			return staticModels[modelPath];
+			return staticModels[key];
 		}
 
 		public InstancedModel AddModel(String modelPath)

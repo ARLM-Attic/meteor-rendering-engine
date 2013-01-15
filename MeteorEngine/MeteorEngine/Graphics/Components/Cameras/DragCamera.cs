@@ -17,7 +17,7 @@ namespace Meteor.Resources
 		/// Too much smoothing will cause a disorienting feel.
 		/// </summary>
 		/// 
-		float smoothing = 3.5f;
+		float smoothing = 1.5f;
 
 		float moveSpeed = 0.25f;
 

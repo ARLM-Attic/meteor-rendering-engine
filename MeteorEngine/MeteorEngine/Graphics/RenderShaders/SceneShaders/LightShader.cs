@@ -70,7 +70,7 @@ namespace Meteor.Rendering
 			DepthBufferFunction = CompareFunction.GreaterEqual
 		};
 
-		public LightShader(RenderProfile profile, ContentManager content)
+		public LightShader(RenderProfile profile, ResourceContentManager content)
 			: base(profile, content)
 		{
 			// Lighting render target
@@ -94,18 +94,18 @@ namespace Meteor.Rendering
 			lightProjection = new Matrix[numCascades];
 
 			// Load the shader effects
-			directionalLightEffect = content.Load<Effect>("Effects\\directionalLight");
-			pointLightEffect = content.Load<Effect>("Effects\\pointLight");
+			directionalLightEffect = content.Load<Effect>("directionalLight");
+			pointLightEffect = content.Load<Effect>("pointLight");
 
 			// Load shadow mapping shader effects
-			depthEffect = content.Load<Effect>("Effects\\depth");
+			depthEffect = content.Load<Effect>("depth");
 
 			// Set constant parameters
 			directionalLightEffect.Parameters["halfPixel"].SetValue(halfPixel);
 			pointLightEffect.Parameters["halfPixel"].SetValue(halfPixel);
 
 			// Load the point light model
-			sphereModel = content.Load<Model>("Models\\ball");
+			sphereModel = content.Load<Model>("ball");
 		}
 
 		/// <summary>

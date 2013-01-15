@@ -15,8 +15,9 @@ namespace Meteor.Rendering
 		/// List to keep all renderers in order
 		protected Dictionary<string, BaseShader> renderTasks;
 
-		/// Reference to the ContentManager to load assets
+		/// Reference to the ContentManagers to load assets
 		protected ContentManager content;
+		protected ResourceContentManager resxContent;
 
 		/// Track all possible starting points for this profile
 		/// (Currently not yet implemented)
@@ -55,7 +56,7 @@ namespace Meteor.Rendering
 			}
 		}
 
-		public RenderProfile(IServiceProvider service, ContentManager content)
+		public RenderProfile(IServiceProvider service, ResourceContentManager content)
 			: base(service)
 		{
 			// Build a map of available RenderShaders
@@ -63,11 +64,12 @@ namespace Meteor.Rendering
 			startingPoints = new Dictionary<string, BaseShader>();
 			iter = startingPoints.GetEnumerator();
 
+			// Create the render target pools
 			debugRenderTargets = new List<RenderTarget2D>();
 			renderTaskTargets = new List<RenderTarget2D>();
 
 			this.Disposed += new EventHandler<EventArgs>(DisposeRenderers);
-			this.content = content;
+			this.resxContent = content;
 		}
 
 		/// <summary>

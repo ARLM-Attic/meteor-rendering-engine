@@ -18,7 +18,7 @@ namespace Meteor.Rendering
 		/// Load the GBuffer content
 		/// </summary> 
 
-		public GBufferShader(RenderProfile profile, ContentManager content)
+		public GBufferShader(RenderProfile profile, ResourceContentManager content)
 			: base(profile, content)
 		{
 			// Diffuse/albedo render target
@@ -97,7 +97,7 @@ namespace Meteor.Rendering
 		/// Load the GBuffer content
 		/// </summary> 
 
-		public SmallGBufferShader(RenderProfile profile, ContentManager content)
+		public SmallGBufferShader(RenderProfile profile, ResourceContentManager content)
 			: base(profile, content)
 		{
 			// Normal render targets
@@ -115,7 +115,7 @@ namespace Meteor.Rendering
 			outputTargets[1] = depthRT;
 
 			// Load the shader effects
-			clearBufferEffect = content.Load<Effect>("Effects\\clearGBuffer");
+			clearBufferEffect = content.Load<Effect>("clearGBuffer");
 		}
 
 		/// <summary>

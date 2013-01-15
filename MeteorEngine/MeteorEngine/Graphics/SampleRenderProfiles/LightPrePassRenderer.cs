@@ -45,8 +45,8 @@ namespace Meteor.Rendering
 		/// Load all the renderers needed for this profile
 		/// </summary>
 
-		public LightPrePassRenderer(IServiceProvider service, ContentManager content)
-			: base(service, content) { Initialize(); }
+		public LightPrePassRenderer(IServiceProvider service, 
+			ResourceContentManager content) : base(service, content) { Initialize(); }
 
 		/// <summary>
 		/// Load all the renderers needed for this profile
@@ -56,16 +56,16 @@ namespace Meteor.Rendering
 		{
 			base.Initialize();
 
-			smallGBuffer = new SmallGBufferShader(this, content);
-			lights = new LightShader(this, content);
-			diffuse = new DiffuseShader(this, content);
-			composite = new CompositeShader(this, content);
-			blur = new BlurShader(this, content);
-			copy = new CopyShader(this, content);
-			ssao = new SSAOShader(this, content);
-			dof = new DepthOfFieldShader(this, content);
-			bloom = new BloomShader(this, content);
-			fxaa = new FXAAShader(this, content);
+			smallGBuffer = new SmallGBufferShader(this, resxContent);
+			lights = new LightShader(this, resxContent);
+			diffuse = new DiffuseShader(this, resxContent);
+			composite = new CompositeShader(this, resxContent);
+			blur = new BlurShader(this, resxContent);
+			copy = new CopyShader(this, resxContent);
+			ssao = new SSAOShader(this, resxContent);
+			dof = new DepthOfFieldShader(this, resxContent);
+			bloom = new BloomShader(this, resxContent);
+			fxaa = new FXAAShader(this, resxContent);
 		}
 
 		/// <summary>
@@ -105,14 +105,14 @@ namespace Meteor.Rendering
 			lights.Draw();
 
 			// Combine with lighting
-			//composite.Draw();
+			composite.Draw();
 
 			// Post effects
-			//copy.Draw();
-			//blur.Draw();
+			copy.Draw();
+			blur.Draw();
 			
-			//dof.Draw();
-			output = composite.Draw()[0];
+			dof.Draw();
+			output = bloom.Draw()[0];
 		}
 	}
 }

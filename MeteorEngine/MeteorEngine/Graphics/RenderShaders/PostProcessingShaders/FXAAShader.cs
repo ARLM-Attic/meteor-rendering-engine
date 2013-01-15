@@ -19,7 +19,7 @@ namespace Meteor.Rendering
 		/// Combines lights with diffuse color
 		Effect fxaaEffect;
 
-		public FXAAShader(RenderProfile profile, ContentManager content)
+		public FXAAShader(RenderProfile profile, ResourceContentManager content)
 			: base(profile, content) 
 		{
 			// Light and combined effect targets
@@ -32,7 +32,7 @@ namespace Meteor.Rendering
 			};
 
 			// Load the shader effects
-			fxaaEffect = content.Load<Effect>("Effects\\fxaa");
+			fxaaEffect = content.Load<Effect>("fxaa");
 		}
 
 		/// <summary>

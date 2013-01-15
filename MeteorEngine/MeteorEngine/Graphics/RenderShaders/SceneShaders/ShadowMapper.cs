@@ -36,7 +36,7 @@ namespace Meteor.Rendering
 		/// Default shadow map dimensions (square)
 		protected int textureSize;
 
-		protected ShadowMapper(RenderProfile profile, ContentManager content)
+		protected ShadowMapper(RenderProfile profile, ResourceContentManager content)
 			: base(profile, content)
 		{
 		}

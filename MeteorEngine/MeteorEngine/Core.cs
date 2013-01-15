@@ -24,8 +24,16 @@ namespace Meteor
         Scene currentScene;
 
 		/// Render profiles used for rendering
-		List <RenderProfile> renderProfiles; 
+		List <RenderProfile> renderProfiles;
+
+		/// <summary>
+		/// Property for current renderer in use
+		/// </summary>
 		RenderProfile currentRenderProfile;
+		public RenderProfile Renderer
+		{
+			get { return currentRenderProfile; }
+		}
 
 		/// Utility classes
 		RenderStats renderStats;
@@ -34,7 +42,7 @@ namespace Meteor
 
         /// Parameters to set render options
         int rtIndex = 0;
-		bool debugText = true;
+		bool debugText = false;
 
         public enum RtView
         {
@@ -50,7 +58,12 @@ namespace Meteor
         /// Useful for all DrawableComponents
         SpriteFont font;
         SpriteBatch spriteBatch;
+
+		/// <summary>
+		/// Content loaders (by file or by resource)
+		/// </summary>
         ContentManager content;
+		ResourceContentManager resxContent;
 
 		Texture2D nullTexture;
 
@@ -72,6 +85,7 @@ namespace Meteor
 			: base(services)
 		{
 			content = new ContentManager(services, "MeteorEngine.Content");
+			resxContent = new ResourceContentManager(services, MeteorEngine.Resource1.ResourceManager);
 			renderStats = new RenderStats();
 
 			currentRenderProfile = null;
@@ -90,8 +104,8 @@ namespace Meteor
         public Core(IServiceProvider services, Scene scene)
             : base(services)
         {
-            currentScene = scene;
 			content = new ContentManager(services, "MeteorEngine.Content"); 
+			resxContent = new ResourceContentManager(services, MeteorEngine.Resource1.ResourceManager);
 			renderStats = new RenderStats();
 
 			currentRenderProfile = null;
@@ -101,6 +115,9 @@ namespace Meteor
             // Setup rendering components
 			cameras = new List<Camera>();
 			scenes = new List<Scene>();
+
+			// Add a default scene
+			AddScene(scene);
         }
 
 		public override void Initialize()
@@ -132,10 +149,9 @@ namespace Meteor
 
 		public void AddRenderProfile(Type renderProfileType)
 		{
-			RenderProfile profile = 
-				(RenderProfile)Activator.CreateInstance(renderProfileType, ServiceContainer, content);
-
-			//RenderProfile profile = new DeferredRenderer(ServiceContainer, content);
+			/// Instantiate a render profile with the resource content manager
+			RenderProfile profile =
+				(RenderProfile)Activator.CreateInstance(renderProfileType, ServiceContainer, resxContent);
 
 			renderProfiles.Add(profile);
 			currentRenderProfile = renderProfiles[renderProfiles.Count - 1];
@@ -169,7 +185,7 @@ namespace Meteor
         protected override void LoadContent()
         {
             // Load debug font
-            font = content.Load<SpriteFont>("Fonts/defaultFont");
+            font = resxContent.Load<SpriteFont>("defaultFont");
 
             // Miscellaneous stuff
             spriteBatch = new SpriteBatch(graphicsDevice);
@@ -178,10 +194,10 @@ namespace Meteor
 			targetHeight = graphicsDevice.Viewport.Height;
 
 			// Load up all available render profiles
-			sceneRenderer = new SceneRenderComponent(graphicsDevice, content);
+			sceneRenderer = new SceneRenderComponent(graphicsDevice, resxContent);
 			quadRenderer = new QuadRenderComponent(graphicsDevice);
 
-			nullTexture = content.Load<Texture2D>("null_color");
+			nullTexture = resxContent.Load<Texture2D>("null_color");
         }
 
         public override void Update(GameTime gameTime)
@@ -212,6 +228,12 @@ namespace Meteor
 				currentScene.debug = !currentScene.debug;
 			}
 
+			// If resources are null, skip updating
+			if (currentCamera == null && currentScene == null)
+			{
+				base.Update(gameTime);			
+				return;
+			}
 
 			if (currentCamera is FreeCamera)
 			{

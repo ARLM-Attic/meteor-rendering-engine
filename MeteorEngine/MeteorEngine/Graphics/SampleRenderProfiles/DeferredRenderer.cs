@@ -46,8 +46,8 @@ namespace Meteor.Rendering
 		/// Load all the renderers needed for this profile
 		/// </summary>
 
-		public DeferredRenderer(IServiceProvider service, ContentManager content)
-			: base(service, content) { Initialize(); }
+		public DeferredRenderer(IServiceProvider service, 
+			ResourceContentManager content) : base(service, content) { Initialize(); }
 
 		/// <summary>
 		/// Load all the renderers needed for this profile
@@ -57,16 +57,16 @@ namespace Meteor.Rendering
 		{
 			base.Initialize();
 
-			gBuffer = new GBufferShader(this, content);
-			lights = new LightShader(this, content);
-			diffuse = new DiffuseShader(this, content);
-			composite = new CompositeShader(this, content);
-			dof = new DepthOfFieldShader(this, content);
-			blur = new BlurShader(this, content);
-			copy = new CopyShader(this, content);
-			bloom = new BloomShader(this, content);
-			fxaa = new FXAAShader(this, content);
-			ssao = new SSAOShader(this, content);
+			gBuffer = new GBufferShader(this, resxContent);
+			lights = new LightShader(this, resxContent);
+			diffuse = new DiffuseShader(this, resxContent);
+			composite = new CompositeShader(this, resxContent);
+			dof = new DepthOfFieldShader(this, resxContent);
+			blur = new BlurShader(this, resxContent);
+			copy = new CopyShader(this, resxContent);
+			bloom = new BloomShader(this, resxContent);
+			fxaa = new FXAAShader(this, resxContent);
+			ssao = new SSAOShader(this, resxContent);
 		}
 
 		/// <summary>

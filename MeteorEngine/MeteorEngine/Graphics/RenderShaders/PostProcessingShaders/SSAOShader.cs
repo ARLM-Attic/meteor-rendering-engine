@@ -35,7 +35,7 @@ namespace Meteor.Rendering
 		/// Implementation for blur
 		GaussianBlur blur;
 
-		public SSAOShader(RenderProfile profile, ContentManager content)	
+		public SSAOShader(RenderProfile profile, ResourceContentManager content)	
 			: base(profile, content) 
 		{
 			// Light and combined effect targets
@@ -55,10 +55,10 @@ namespace Meteor.Rendering
 			randomMap = content.Load<Texture2D>("random");
 
 			// Load the shader effects
-			ssaoEffect = content.Load<Effect>("Effects\\ssao");
+			ssaoEffect = content.Load<Effect>("ssao");
 			ssaoEffect.Parameters["halfPixel"].SetValue(halfPixel);
 
-            blurEffect = content.Load<Effect>("Effects\\blur");
+            blurEffect = content.Load<Effect>("blur");
 			blurEffect.Parameters["halfPixel"].SetValue(halfPixel);
 
 			ssaoEffect.Parameters["g_radius"].SetValue(radius);

@@ -46,7 +46,7 @@ namespace Meteor.Rendering
 		Vector3[] boxCorners;
 		Matrix[] tempBones;
 
-	    public SceneRenderComponent(GraphicsDevice device, ContentManager content)
+	    public SceneRenderComponent(GraphicsDevice device, ResourceContentManager content)
         {
 			this.graphicsDevice = device; 
 			this.content = content;

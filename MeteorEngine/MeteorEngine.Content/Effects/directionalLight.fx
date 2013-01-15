@@ -207,7 +207,7 @@ float4 PixelShaderShadowed(VertexShaderOutput input) : COLOR0
 {	
 	float depthVal = tex2D(depthSampler, input.TexCoord).r;
 	if (depthVal > 0.99999f)
-		return float4(1, 1, 1, 0.2);
+		return float4(1, 1, 1, 0.15);
 
 	// Convert position to world space
 	float4 position = CalculateWorldPosition(input.TexCoord, depthVal);

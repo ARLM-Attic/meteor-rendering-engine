@@ -26,17 +26,14 @@ namespace Meteor.Rendering
 
 		public override RenderTarget2D[] outputs
 		{
-			get
-			{
-				return finalRT;
-			}
+			get { return finalRT; }
 		}
 
 		/// Effect for blurring and blooming
 		Effect blurEffect;
 		GaussianBlur blur;
 
-		public BloomShader(RenderProfile profile, ContentManager content)
+		public BloomShader(RenderProfile profile, ResourceContentManager content)
 			: base(profile, content)
 		{
 			finalRT = new RenderTarget2D[3];
@@ -51,8 +48,8 @@ namespace Meteor.Rendering
 				backBufferHeight / 2, SurfaceFormat.Rgba1010102, DepthFormat.None);
 
 			// Load the shader effects
-			blurEffect = content.Load<Effect>("Effects\\blur");
-			blur = new GaussianBlur(backBufferWidth, backBufferHeight, 11f, blurEffect);
+			blurEffect = content.Load<Effect>("blur");
+			blur = new GaussianBlur(backBufferWidth, backBufferHeight, 0.5f, blurEffect);
 
 			// Set shader parameters
 			threshold = blurEffect.Parameters["threshold"];
@@ -68,8 +65,8 @@ namespace Meteor.Rendering
 			diffuseMap = blurEffect.Parameters["diffuseMap"];
 			blurMap = blurEffect.Parameters["blurMap"];
 
-			threshold.SetValue(0.25f);
-			bloomIntensity.SetValue(0.85f);
+			threshold.SetValue(0.65f);
+			bloomIntensity.SetValue(1.0f);
 			saturation.SetValue(1.25f);
 			contrast.SetValue(1.05f);
 		}

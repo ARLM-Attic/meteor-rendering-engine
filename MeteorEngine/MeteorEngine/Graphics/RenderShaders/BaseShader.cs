@@ -22,6 +22,7 @@ namespace Meteor.Rendering
 
 		// Useful for all DrawableComponents
 		protected ContentManager content;
+		protected ResourceContentManager resxContent;
 
 		public bool hasSceneInput;
 		protected Stopwatch renderStopWatch;
@@ -72,10 +73,10 @@ namespace Meteor.Rendering
 		/// own set of Scenes and render targets for inputs and outputs.
 		/// </summary> 
 
-		public BaseShader(RenderProfile profile, ContentManager content)
+		public BaseShader(RenderProfile profile, ResourceContentManager content)
 		{
 			hasSceneInput = true;
-			this.content = content;
+			this.resxContent = content;
 
 			GraphicsDevice = profile.graphicsDevice;
 

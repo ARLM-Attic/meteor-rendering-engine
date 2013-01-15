@@ -22,7 +22,7 @@ namespace Meteor.Rendering
 		/// Range of focus
 		public float focalRange = 0.1f;
 
-        public DepthOfFieldShader(RenderProfile profile, ContentManager content)
+		public DepthOfFieldShader(RenderProfile profile, ResourceContentManager content)
             : base(profile, content)
         {
             // Light and combined effect targets
@@ -36,7 +36,7 @@ namespace Meteor.Rendering
 			};
 
             // Load the shader effects
-            blurEffect = content.Load<Effect>("Effects\\blur");
+            blurEffect = content.Load<Effect>("blur");
         }
 
         /// <summary>

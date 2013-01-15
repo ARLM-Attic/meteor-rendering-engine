@@ -26,7 +26,7 @@ namespace Meteor.Rendering
 
 		Effect gBufferEffect;
 
-		public CopyShader(RenderProfile profile, ContentManager content)
+		public CopyShader(RenderProfile profile, ResourceContentManager content)
 			: base(profile, content)
 		{
 			hasSceneInput = true;
@@ -34,7 +34,7 @@ namespace Meteor.Rendering
 			copyRT = profile.AddRenderTarget(backBufferWidth,
 				backBufferHeight, SurfaceFormat.Rgba1010102, DepthFormat.Depth24);
 
-			gBufferEffect = content.Load<Effect>("Effects\\renderGBuffer");
+			gBufferEffect = content.Load<Effect>("renderGBuffer");
 		}
 
 		/// <summary>

@@ -12,7 +12,7 @@ namespace Meteor.Rendering
         /// Color and specular intensity
         RenderTarget2D diffuseRT;
 
-        public DiffuseShader(RenderProfile profile, ContentManager content)
+        public DiffuseShader(RenderProfile profile, ResourceContentManager content)
             : base(profile, content) 
 		{
 			hasSceneInput = true;

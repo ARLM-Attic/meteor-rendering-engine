@@ -69,7 +69,6 @@ uniform extern half sampleWeights[SAMPLE_COUNT];
 // The Y luminance transformation used follows that used by TIFF and JPEG (Rec 601-1)
 
 const float3 luminanceFilter = { 0.2989, 0.5866, 0.1145 };
-const float sharp = 0.75f;
 const float stepDownsizeFactor;
 const float threshold;
 const float bloomFactor;
