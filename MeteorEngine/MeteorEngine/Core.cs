@@ -1,14 +1,13 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Text;
-using System.Globalization;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Content;
 using Meteor.Resources;
 using Meteor.Rendering;
+using MeteorEngine;
 
 namespace Meteor
 {
@@ -85,7 +84,7 @@ namespace Meteor
 			: base(services)
 		{
 			content = new ContentManager(services, "MeteorEngine.Content");
-			resxContent = new ResourceContentManager(services, MeteorEngine.Resource1.ResourceManager);
+			resxContent = new ResourceContentManager(services, MeteorContentResource.ResourceManager);
 			renderStats = new RenderStats();
 
 			currentRenderProfile = null;
@@ -104,8 +103,8 @@ namespace Meteor
         public Core(IServiceProvider services, Scene scene)
             : base(services)
         {
-			content = new ContentManager(services, "MeteorEngine.Content"); 
-			resxContent = new ResourceContentManager(services, MeteorEngine.Resource1.ResourceManager);
+			content = new ContentManager(services, "MeteorEngine.Content");
+			resxContent = new ResourceContentManager(services, MeteorContentResource.ResourceManager);
 			renderStats = new RenderStats();
 
 			currentRenderProfile = null;
@@ -327,7 +326,7 @@ namespace Meteor
 			spriteBatch.Begin();		
 			spriteBatch.Draw(nullTexture, new Rectangle(0, 0, 240, font.LineSpacing * 7 + 4), 
 				new Color(0, 0, 0, 120));
-
+			
 			spriteBatch.DrawString(font, debugString.Append("FPS: ").Concat(frameRate),
 				new Vector2(4, height), Color.LawnGreen);
 			debugString.Clear();
