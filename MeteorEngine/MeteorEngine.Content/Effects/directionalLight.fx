@@ -174,9 +174,13 @@ float4 CalculateWorldPosition(float2 texCoord, float depthVal)
 	return position;
 }
 
-float3 FindShadow(float4 shadowMapPos, float shadowIndex)
+float3 FindShadow(float4 shadowMapPos, float shadowIndex, float3 normal)
 {
-	// Find the position in the shadow map for this pixel
+	// In progress: calculate the bias based on the angle of the surface relative to the light
+	//float3 lightDir = -normalize(lightDirection);
+	//float bias = lerp(0.0002, 0.2, dot(lightDir, normal));
+
+	// Project the shadow map and find the position in it for this pixel
 	float2 shadowTexCoord = shadowMapPos.xy / shadowMapPos.w / 2.0f + float2(0.5, 0.5);
 
 	shadowTexCoord.x /= 2.f;
@@ -206,11 +210,15 @@ float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 float4 PixelShaderShadowed(VertexShaderOutput input) : COLOR0
 {	
 	float depthVal = tex2D(depthSampler, input.TexCoord).r;
+
 	if (depthVal > 0.99999f)
-		return float4(1, 1, 1, 0.15);
+		return float4(1, 1, 1, 0);
 
 	// Convert position to world space
 	float4 position = CalculateWorldPosition(input.TexCoord, depthVal);
+
+	// Calculate light color
+	float4 lightOutput = DirectionalLightPS(input, position);
 
 	// Get linear depth space from viewport distance
 	float camNear = 0.001f;
@@ -224,11 +232,15 @@ float4 PixelShaderShadowed(VertexShaderOutput input) : COLOR0
 	for (int i = 0; i < NUM_CASCADES; i++)  
 		shadowIndex += (linearZ > cascadeSplits[i]);
 
+	// Get normal data for bias adjustment
+	float4 normalData = tex2D(normalSampler, input.TexCoord);
+	float3 normal = mul((2.0f * normalData.xyz - 1.0f), inverseView);
+
 	// Get shadow map position projected in light view
 	float4 shadowMapPos = mul(position, lightViewProj[shadowIndex]);
 
 	// Find the position in the shadow map for this pixel
-	float3 shadow = FindShadow(shadowMapPos, shadowIndex);
+	float3 shadow = FindShadow(shadowMapPos, shadowIndex, normal);
 
 	// Calculates minimum cascade distance to start blending in shadow
 	// from the next cascade for a smoother transition. This reduces the
@@ -242,11 +254,9 @@ float4 PixelShaderShadowed(VertexShaderOutput input) : COLOR0
 		float relDistance = (linearZ - minDistance) / (cascadeSplits[shadowIndex] - minDistance);
 
 		// Get shadow value from next cascade and blend the results
-		float3 shadow2 = FindShadow(shadowMapPos2, shadowIndex + 1);
+		float3 shadow2 = FindShadow(shadowMapPos2, shadowIndex + 1, normal);
 		shadow = lerp(shadow, shadow2, relDistance);
 	}
-	
-	float4 lightOutput = DirectionalLightPS(input, position);
 
 	lightOutput.rgb *= shadow;
 	return lightOutput;

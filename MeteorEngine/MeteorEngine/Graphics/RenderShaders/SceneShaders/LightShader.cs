@@ -121,15 +121,15 @@ namespace Meteor.Rendering
 			{
 				DrawDirectionalLightShadows(scene, camera);
 
-				GraphicsDevice.BlendState = additiveBlendState;
-				GraphicsDevice.SetRenderTarget(lightRT);
-				GraphicsDevice.Clear(Color.Transparent);
-				GraphicsDevice.DepthStencilState = DepthStencilState.None;
+				graphicsDevice.BlendState = additiveBlendState;
+				graphicsDevice.SetRenderTarget(lightRT);
+				graphicsDevice.Clear(Color.Transparent);
+				graphicsDevice.DepthStencilState = DepthStencilState.None;
 
 				// Make some lights
 				DrawDirectionalLights(scene, camera, inputTargets);
 
-				GraphicsDevice.BlendState = BlendState.AlphaBlend;
+				graphicsDevice.BlendState = BlendState.AlphaBlend;
 
 				if (scene.totalLights > 0)
 					DrawPointLights(scene, camera, inputTargets);
@@ -240,24 +240,24 @@ namespace Meteor.Rendering
 					lightCamera.SetOrientation(new Vector2(yaw, pitch));
 					lightCamera.Update();
 
-					GraphicsDevice.SetRenderTarget(depthRT);
-					GraphicsDevice.Clear(Color.White);
+					graphicsDevice.SetRenderTarget(depthRT);
+					graphicsDevice.Clear(Color.White);
 
 					for (int cascade = 0; cascade < numCascades; cascade++)
 					{
-						GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+						graphicsDevice.DepthStencilState = DepthStencilState.Default;
 
 						// Set camera's near and far view distance
 						camera.GetFrustumSplit(cascade, numCascades, splitLambda);
 
 						// Adjust viewport settings to draw to the correct portion
 						// of the render target
-						Viewport viewport = GraphicsDevice.Viewport;
+						Viewport viewport = graphicsDevice.Viewport;
 						viewport.Width = shadowMapSize;
 						viewport.Height = shadowMapSize;
 						viewport.X = shadowMapSize * (cascade % 2);
 						viewport.Y = shadowMapSize * (cascade / 2);
-						GraphicsDevice.Viewport = viewport;
+						graphicsDevice.Viewport = viewport;
 
 						// Update view matrices
 						CreateLightViewProjMatrix(light.direction, lightCamera);
@@ -429,13 +429,13 @@ namespace Meteor.Rendering
 			// Set the culling mode based on the camera's position relative to the light
 
 			// Draw the inner lights culling clockwise triangles
-			GraphicsDevice.RasterizerState = RasterizerState.CullClockwise;
-			GraphicsDevice.DepthStencilState = cwDepthState;
+			graphicsDevice.RasterizerState = RasterizerState.CullClockwise;
+			graphicsDevice.DepthStencilState = cwDepthState;
 			DrawLightGroup(innerLights);
 
 			// Flip the culling mode for the outer lights, also resetting it to default
-			GraphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;
-			GraphicsDevice.DepthStencilState = ccwDepthState;
+			graphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;
+			graphicsDevice.DepthStencilState = ccwDepthState;
 			DrawLightGroup(outerLights);
 		}
 
@@ -457,7 +457,7 @@ namespace Meteor.Rendering
 					instanceVertexBuffer.Dispose();
 
 				instanceVertexBuffer = new DynamicVertexBuffer(
-					GraphicsDevice, instanceVertexDeclaration, totalInstances, BufferUsage.WriteOnly);
+					graphicsDevice, instanceVertexDeclaration, totalInstances, BufferUsage.WriteOnly);
 			}
 
 			// Transfer the latest instance transform matrices into the instanceVertexBuffer
@@ -471,12 +471,12 @@ namespace Meteor.Rendering
 				foreach (ModelMeshPart meshPart in mesh.MeshParts)
 				{
 					// Tell the GPU to read from both the model vertex buffer plus our instanceVertexBuffer
-					GraphicsDevice.SetVertexBuffers(
+					graphicsDevice.SetVertexBuffers(
 						new VertexBufferBinding(meshPart.VertexBuffer, meshPart.VertexOffset, 0),
 						new VertexBufferBinding(instanceVertexBuffer, 0, 1)
 					);
 
-					GraphicsDevice.Indices = meshPart.IndexBuffer;
+					graphicsDevice.Indices = meshPart.IndexBuffer;
 					int totalPasses = (wireframe) ? 1 : 0;
 
 					for (int i = totalPasses; i < totalPasses + 1; i++)
@@ -484,7 +484,7 @@ namespace Meteor.Rendering
 						EffectPass pass = pointLightEffect.CurrentTechnique.Passes[i];
 
 						pass.Apply();
-						GraphicsDevice.DrawInstancedPrimitives(
+						graphicsDevice.DrawInstancedPrimitives(
 							PrimitiveType.TriangleList, 0, 0,
 							meshPart.NumVertices, meshPart.StartIndex,
 							meshPart.PrimitiveCount, totalInstances);

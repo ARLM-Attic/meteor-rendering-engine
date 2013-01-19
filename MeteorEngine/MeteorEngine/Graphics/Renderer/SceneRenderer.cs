@@ -4,9 +4,7 @@ using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
-using Meteor.Rendering;
 using Meteor.Resources;
-using SkinnedModel;
 
 namespace Meteor.Rendering
 {
@@ -334,7 +332,25 @@ namespace Meteor.Rendering
 		}
 
 		/// <summary>
-		/// Draw all visible meshes for this model.
+		/// Vertex declaration for mesh instancing, storing a 4x4 world transformation matrix
+		/// </summary>
+
+		VertexDeclaration instanceVertexDec = new VertexDeclaration
+		(
+			new VertexElement(0, VertexElementFormat.Vector4, VertexElementUsage.TextureCoordinate, 0),
+			new VertexElement(16, VertexElementFormat.Vector4, VertexElementUsage.TextureCoordinate, 1),
+			new VertexElement(32, VertexElementFormat.Vector4, VertexElementUsage.TextureCoordinate, 2),
+			new VertexElement(48, VertexElementFormat.Vector4, VertexElementUsage.TextureCoordinate, 3)
+		);
+
+		/// Stores all the vertex declaration data for this instance
+		public struct InstanceData
+		{
+			public Matrix transform;
+		}
+
+		/// <summary>
+		/// Draw all visible meshes for this model with its default effect.
 		/// </summary>
 
 		private void DrawModel(InstancedModel instancedModel, Camera camera, string tech)
@@ -343,11 +359,36 @@ namespace Meteor.Rendering
 			instancedModel.UpdateMatrix();
 			instancedModel.model.CopyAbsoluteBoneTransformsTo(instancedModel.boneMatrices);
 
+			/// Vertex buffer to store the instancing information
+
+			int totalInstances = 20;
+
+			InstanceData[] instances = new InstanceData[totalInstances];
+			Random rnd = new Random();
+			for (int i = 0; i < totalInstances; i++)
+			{
+				instances[i].transform =
+					Matrix.CreateScale(2) *
+					Matrix.CreateFromYawPitchRoll(
+						(float)i / 200f * MathHelper.TwoPi, 
+						(float)i / 200f * MathHelper.TwoPi, 
+						(float)i / 200f * MathHelper.TwoPi) *
+					Matrix.CreateTranslation(new Vector3(i, i % 10, i % 100));
+			}
+			VertexBuffer instanceVB = new VertexBuffer(graphicsDevice, instanceVertexDec, totalInstances, BufferUsage.WriteOnly);
+			instanceVB.SetData(instances);
+
+			// Initialize and set the instance vertex buffer
+			//DynamicVertexBuffer instanceVB = new DynamicVertexBuffer(
+			//	graphicsDevice, instanceVertexDec, totalInstances, BufferUsage.WriteOnly);
+
+			// Transfer the latest instance transform matrices into the instanceVertexBuffer
+			//instanceVB.SetData(instanceData, 0, totalInstances, SetDataOptions.Discard);
+
 			foreach (KeyValuePair<int, ModelMesh> mesh in instancedModel.VisibleMeshes)
 			{
 				foreach (ModelMeshPart meshPart in mesh.Value.MeshParts)
 				{
-					graphicsDevice.SetVertexBuffer(meshPart.VertexBuffer, meshPart.VertexOffset);
 					graphicsDevice.Indices = meshPart.IndexBuffer;
 
 					// Assign effect and curent technique
@@ -355,7 +396,6 @@ namespace Meteor.Rendering
 					effect.CurrentTechnique = effect.Techniques[tech];
 
 					Matrix world = instancedModel.boneMatrices[mesh.Value.ParentBone.Index] * instancedModel.Transform;
-					Matrix IWorldView = Matrix.Invert(world * camera.View);
 
 					// A bit hacky way to limit number of mesh bones. Will fix soon
 					if (instancedModel.animationPlayer != null)
@@ -377,9 +417,20 @@ namespace Meteor.Rendering
 					{
 						effect.CurrentTechnique.Passes[i].Apply();
 
-						graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0,
+						// Bind both mesh vertex buffer and per-instance matrix data
+						graphicsDevice.SetVertexBuffers(
+							new VertexBufferBinding(meshPart.VertexBuffer, meshPart.VertexOffset, 0),
+							new VertexBufferBinding(instanceVB, 0, 1)
+						);
+
+						graphicsDevice.DrawInstancedPrimitives(
+							PrimitiveType.TriangleList, 0, 0,
 							meshPart.NumVertices, meshPart.StartIndex,
-							meshPart.PrimitiveCount);
+							meshPart.PrimitiveCount, totalInstances);
+
+						//graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0,
+						//	meshPart.NumVertices, meshPart.StartIndex,
+						//	meshPart.PrimitiveCount);
 					}
 
 					totalPolys += meshPart.PrimitiveCount;
@@ -404,6 +455,8 @@ namespace Meteor.Rendering
 			{
 				Matrix[] bones = instancedModel.animationPlayer.GetSkinTransforms();
 				int maxBones = (bones.Count() > 60) ? 60 : bones.Count();
+
+				// Not very efficient to do, need a way to avoid copying arrays
 				Array.Copy(bones, tempBones, maxBones);
 				effect.Parameters["bones"].SetValue(tempBones);
 			}			

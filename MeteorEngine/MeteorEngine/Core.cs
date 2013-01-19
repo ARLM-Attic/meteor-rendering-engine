@@ -132,6 +132,11 @@ namespace Meteor
 			return currentScene;
 		}
 
+		public void RemoveScenes()
+		{
+			scenes.Clear();
+		}
+
 		public Camera AddCamera(Camera camera)
 		{
 			cameras.Add(camera);
@@ -266,9 +271,9 @@ namespace Meteor
 				output = currentRenderProfile.Output;
 
 				graphicsDevice.SetRenderTarget(null);
-				graphicsDevice.Clear(Color.CornflowerBlue);
+				//graphicsDevice.Clear(Color.Transparent);
 				
-				spriteBatch.Begin(0, BlendState.Opaque, SamplerState.LinearClamp,
+				spriteBatch.Begin(0, BlendState.AlphaBlend, SamplerState.LinearClamp,
 					DepthStencilState.None, RasterizerState.CullCounterClockwise);
 				spriteBatch.Draw(output, new Rectangle(0, 0,
 					(int)targetWidth, (int)targetHeight), Color.White);

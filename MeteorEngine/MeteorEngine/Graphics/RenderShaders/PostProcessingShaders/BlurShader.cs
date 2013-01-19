@@ -63,8 +63,8 @@ namespace Meteor.Rendering
 
             for (int i = 0; i < 2; i++)
             {
-                GraphicsDevice.SetRenderTarget(finalRT[1 - i % 2]);
-                GraphicsDevice.Clear(Color.Transparent);
+                graphicsDevice.SetRenderTarget(finalRT[1 - i % 2]);
+                graphicsDevice.Clear(Color.Transparent);
 
 				blurEffect.Parameters["diffuseMap"].SetValue(finalRT[i % 2]);
 

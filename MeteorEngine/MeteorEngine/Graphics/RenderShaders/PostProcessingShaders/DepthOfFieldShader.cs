@@ -48,8 +48,8 @@ namespace Meteor.Rendering
             blurEffect.CurrentTechnique = blurEffect.Techniques["DepthOfField"];
 
             // Depth of field blur effect
-			GraphicsDevice.SetRenderTarget(dofRT);
-			GraphicsDevice.Clear(Color.Transparent);
+			graphicsDevice.SetRenderTarget(dofRT);
+			graphicsDevice.Clear(Color.Transparent);
 
             blurEffect.Parameters["halfPixel"].SetValue(halfPixel);
 			blurEffect.Parameters["focalDistance"].SetValue(focalDistance);
@@ -74,8 +74,8 @@ namespace Meteor.Rendering
 			blurEffect.CurrentTechnique = blurEffect.Techniques["ImprovedDOF"];
 
 			// Depth of field blur effect
-			GraphicsDevice.SetRenderTarget(blurFactorRT);
-			GraphicsDevice.Clear(Color.Black);
+			graphicsDevice.SetRenderTarget(blurFactorRT);
+			graphicsDevice.Clear(Color.Black);
 
 			blurEffect.Parameters["halfPixel"].SetValue(halfPixel);
 

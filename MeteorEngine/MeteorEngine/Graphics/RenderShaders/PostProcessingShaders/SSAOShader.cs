@@ -83,9 +83,9 @@ namespace Meteor.Rendering
 
 			ssaoEffect.CurrentTechnique = ssaoEffect.Techniques[0];
 
-			GraphicsDevice.BlendState = BlendState.Opaque;
-			GraphicsDevice.SetRenderTarget(finalRT[0]);
-			GraphicsDevice.Clear(Color.White);
+			graphicsDevice.BlendState = BlendState.Opaque;
+			graphicsDevice.SetRenderTarget(finalRT[0]);
+			graphicsDevice.Clear(Color.White);
 
 			// SSAO effect
 			ssaoEffect.Parameters["View"].SetValue(camera.View);
@@ -108,8 +108,8 @@ namespace Meteor.Rendering
 				// blur effect
 				for (int i = 0; i < 2; i++)
 				{
-					GraphicsDevice.SetRenderTarget(finalRT[1 - i % 2]);
-					GraphicsDevice.Clear(Color.Transparent);
+					graphicsDevice.SetRenderTarget(finalRT[1 - i % 2]);
+					graphicsDevice.Clear(Color.Transparent);
 
 					blurEffect.Parameters["diffuseMap"].SetValue(finalRT[i % 2]);
 

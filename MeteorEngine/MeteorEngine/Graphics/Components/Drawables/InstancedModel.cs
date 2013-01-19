@@ -12,7 +12,7 @@ namespace Meteor.Resources
 		/// Model representing the object
 		public Model model;
 
-		/// Model's main normalZ texture
+		/// Model's main dffuse texture
 		public List<Texture2D> modelTextures;
 
 		public List<Texture2D> Textures
@@ -82,13 +82,20 @@ namespace Meteor.Resources
 			0, 4, 1, 5, 2, 6, 3, 7
 		};
 
+		/// <summary>
+		/// Vertex declaration for mesh instancing, storing a 4x4 world transformation matrix
+		/// </summary>
+
+		public static VertexDeclaration instanceVertexDec = new VertexDeclaration
+		(
+			new VertexElement(0, VertexElementFormat.Vector4, VertexElementUsage.TextureCoordinate, 0),
+			new VertexElement(16, VertexElementFormat.Vector4, VertexElementUsage.TextureCoordinate, 1),
+			new VertexElement(32, VertexElementFormat.Vector4, VertexElementUsage.TextureCoordinate, 2),
+			new VertexElement(48, VertexElementFormat.Vector4, VertexElementUsage.TextureCoordinate, 3)
+		);
+
+		/// Vertex structure for the colored bounding boxes
 		public VertexPositionColor[] boxVertices;
-
-		/// The instances this model has
-		List<EntityInstance> instances;
-
-		/// Holds references to instances updateable for the camera
-		List<EntityInstance> visibleInstances;
 
 		/// Number of visible instances for current frame
 		int totalVisible;
@@ -98,12 +105,8 @@ namespace Meteor.Resources
 			get { return totalVisible; }
 		}
 
-		/// Total instances
-		int initialInstanceCount;
-
 		/// Animator to link with a skinned mesh
 		public AnimationPlayer animationPlayer;
-
 		public Matrix[] boneMatrices;
 
 		/// Model's contentManager
@@ -144,6 +147,7 @@ namespace Meteor.Resources
 			tempBoxes = new BoundingBox[model.Meshes.Count];
 			boxVertices = new VertexPositionColor[BoundingBox.CornerCount];
 
+			// Set up positions
 			meshPos = new Vector3[model.Meshes.Count];
 			screenPos = new Vector2[model.Meshes.Count];
 			tempBoxPos = new Vector3[model.Meshes.Count];
@@ -151,6 +155,7 @@ namespace Meteor.Resources
 			boneMatrices = new Matrix[model.Bones.Count];
 			model.CopyAbsoluteBoneTransformsTo(boneMatrices);
 
+			// Set up matrix and instancing data
 			position = Vector3.Zero;
 			rotation = Vector3.Zero;
 			modelMatrix = Matrix.Identity;
@@ -169,14 +174,6 @@ namespace Meteor.Resources
 				}
 				totalMeshes++;
 			}
-
-			// Default number of instances
-			initialInstanceCount = 1;
-			visibleInstances = new List<EntityInstance>();
-
-			// Initialize the list of instances
-			instances = new List<EntityInstance>();
-			instances.Add(new EntityInstance());
 		}
 
 		/// <summary>
@@ -218,17 +215,6 @@ namespace Meteor.Resources
 			// Create the bounding box
 			BoundingBox box = new BoundingBox(meshMin, meshMax);
 			return box;
-		}
-
-		/// <summary>
-		/// Helper to add mesh instances
-		/// Called: As needed
-		/// <summary>
-
-		public void AddInstance(Matrix transform)
-		{
-			initialInstanceCount++;
-			instances.Add(new EntityInstance(transform));
 		}
 
 		/// <summary>

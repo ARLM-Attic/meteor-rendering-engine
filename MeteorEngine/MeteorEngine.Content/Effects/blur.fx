@@ -165,7 +165,7 @@ float4 SetThreshold(VertexShaderOutput input) : COLOR0
 	float3 desaturated = lerp(blurScene, greyLevel, threshold);
 
 	float normalizationFactor = 1 / (1 - threshold);
-	return float4((desaturated - threshold) * normalizationFactor, 1);
+	return float4((desaturated - threshold) * normalizationFactor, 0);
 }
 
 // Helper for modifying the saturation of a color.

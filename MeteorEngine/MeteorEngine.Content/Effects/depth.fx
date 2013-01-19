@@ -95,7 +95,7 @@ technique Default
     pass P0
     {
 		ZEnable = true;
-		CullMode = none;
+		CullMode = CCW;
         VertexShader = compile vs_3_0 DepthMapVS();
         PixelShader = compile ps_3_0 DepthMapPS();
     }
@@ -106,7 +106,7 @@ technique DefaultAnimated
     pass P0
     {
 		ZEnable = true;
-		CullMode = none;
+		CullMode = CCW;
         VertexShader = compile vs_3_0 DepthMapSkinnedAnimation();
         PixelShader = compile ps_3_0 DepthMapPS();
     }

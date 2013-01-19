@@ -3,11 +3,6 @@ float4x4 World;
 float4x4 View;
 float4x4 Projection;
 float4x4 TextureMatrix;
-float4x4 ITWorldView;
-
-float4x4 LightView;
-float4x4 LightProjection;
-float FarClip;
 
 texture Texture;
 texture NormalMap;
@@ -54,10 +49,24 @@ struct VertexShaderOutput
     float3x3 TangentToWorld	: TEXCOORD2;
 };
 
-VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
+struct InstanceInput
+{
+	float4 vWorld1 : TEXCOORD1;
+	float4 vWorld2 : TEXCOORD2;
+	float4 vWorld3 : TEXCOORD3;
+	float4 vWorld4 : TEXCOORD4;
+};
+
+VertexShaderOutput VertexShaderFunction(VertexShaderInput input, InstanceInput instance)
 {
     VertexShaderOutput output;
 
+	// First transform by the instance matrix
+	float4x4 WorldInstance = 
+		float4x4(instance.vWorld1, instance.vWorld2, instance.vWorld3, instance.vWorld4);
+	input.Position = mul(input.Position, WorldInstance);
+
+	// Translate along World View Projetion matrices
     float4 worldPosition = mul(input.Position, World);
     float4 viewPosition = mul(worldPosition, View);
     output.Position = mul(viewPosition, Projection);
@@ -308,6 +317,7 @@ technique DiffuseRender
     pass Pass1
     {
 		AlphablendEnable = false;
+		CullMode = CCW;
         VertexShader = compile vs_2_0 VertexShaderFunction();
         PixelShader = compile ps_2_0 PixelShaderDiffuseRender();
     }
@@ -318,6 +328,7 @@ technique DiffuseRenderAnimated
     pass Pass1
     {
 		AlphablendEnable = false;
+		CullMode = CCW;
         VertexShader = compile vs_2_0 VertexShaderSkinnedAnimation();
         PixelShader = compile ps_2_0 PixelShaderDiffuseRender();
     }

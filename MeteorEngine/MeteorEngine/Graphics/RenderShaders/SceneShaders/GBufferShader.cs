@@ -47,14 +47,14 @@ namespace Meteor.Rendering
 			renderStopWatch.Restart();
 
 			// Set the G-Buffer
-			GraphicsDevice.BlendState = BlendState.Opaque;
-			GraphicsDevice.SetRenderTargets(bindingTargets);
-			GraphicsDevice.DepthStencilState = DepthStencilState.Default;
-			GraphicsDevice.Clear(Color.Transparent);
+			graphicsDevice.BlendState = BlendState.Opaque;
+			graphicsDevice.SetRenderTargets(bindingTargets);
+			graphicsDevice.DepthStencilState = DepthStencilState.Default;
+			graphicsDevice.Clear(Color.Transparent);
 
 			// Reset the sampler states after SpriteBatch
-			GraphicsDevice.SamplerStates[0] = SamplerState.PointWrap;
-			GraphicsDevice.SamplerStates[1] = SamplerState.PointWrap;
+			graphicsDevice.SamplerStates[0] = SamplerState.PointWrap;
+			graphicsDevice.SamplerStates[1] = SamplerState.PointWrap;
 
 			// Clear the G-Buffer
 			clearBufferEffect.CurrentTechnique = clearBufferEffect.Techniques["Clear"];
@@ -70,7 +70,7 @@ namespace Meteor.Rendering
 
 			// Render the skybox
 			// Update the sampler state
-			GraphicsDevice.SamplerStates[0] = SamplerState.LinearClamp;
+			graphicsDevice.SamplerStates[0] = SamplerState.LinearClamp;
 			sceneRenderer.UseTechnique("Skybox");
 			sceneRenderer.DrawSkybox(scene, camera);
 
@@ -128,13 +128,13 @@ namespace Meteor.Rendering
 			renderStopWatch.Restart();
 
 			// Set the small GBuffer
-			GraphicsDevice.BlendState = BlendState.Opaque;
-			GraphicsDevice.SetRenderTargets(bindingTargets);
-			GraphicsDevice.Clear(Color.Transparent);
+			graphicsDevice.BlendState = BlendState.Opaque;
+			graphicsDevice.SetRenderTargets(bindingTargets);
+			graphicsDevice.Clear(Color.Transparent);
 
-			GraphicsDevice.DepthStencilState = DepthStencilState.Default;
-			GraphicsDevice.SamplerStates[0] = SamplerState.LinearWrap;
-			GraphicsDevice.SamplerStates[1] = SamplerState.LinearWrap;
+			graphicsDevice.DepthStencilState = DepthStencilState.Default;
+			graphicsDevice.SamplerStates[0] = SamplerState.LinearWrap;
+			graphicsDevice.SamplerStates[1] = SamplerState.LinearWrap;
 
 			// Clear the small GBuffer
 			clearBufferEffect.CurrentTechnique = clearBufferEffect.Techniques["ClearSmall"];

@@ -46,9 +46,9 @@ namespace Meteor.Rendering
 
 			fxaaEffect.CurrentTechnique = fxaaEffect.Techniques[0];
 
-			GraphicsDevice.BlendState = BlendState.AlphaBlend;
-			GraphicsDevice.SetRenderTarget(finalRT);
-			GraphicsDevice.Clear(Color.Transparent);
+			graphicsDevice.BlendState = BlendState.AlphaBlend;
+			graphicsDevice.SetRenderTarget(finalRT);
+			graphicsDevice.Clear(Color.Transparent);
 
 			// FXAA effect
 			fxaaEffect.Parameters["halfPixel"].SetValue(halfPixel);

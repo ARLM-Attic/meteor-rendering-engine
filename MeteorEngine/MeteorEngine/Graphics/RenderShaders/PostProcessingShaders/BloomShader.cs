@@ -87,8 +87,8 @@ namespace Meteor.Rendering
 			totalPasses = blurEffect.CurrentTechnique.Passes.Count;
 
 			// Prepare 1st pass
-			GraphicsDevice.SetRenderTarget(finalRT[2]);
-			GraphicsDevice.Clear(Color.Transparent);
+			graphicsDevice.SetRenderTarget(finalRT[2]);
+			graphicsDevice.Clear(Color.Transparent);
 
 			diffuseMap.SetValue(finalRT[1]);
 			blurEffect.Parameters["blurMap"].SetValue(inputTargets[0]);
@@ -97,8 +97,8 @@ namespace Meteor.Rendering
 			quadRenderer.Render(Vector2.One * -1, Vector2.One);
 
 			// Prepare 2nd pass
-			GraphicsDevice.SetRenderTarget(finalRT[1]);
-			GraphicsDevice.Clear(Color.Transparent);
+			graphicsDevice.SetRenderTarget(finalRT[1]);
+			graphicsDevice.Clear(Color.Transparent);
 
 			diffuseMap.SetValue(finalRT[2]);
 			sampleWeights.SetValue(blur.sampleWeightsH);
@@ -108,8 +108,8 @@ namespace Meteor.Rendering
 			quadRenderer.Render(Vector2.One * -1, Vector2.One);
 
 			// Prepare 3rd pass
-			GraphicsDevice.SetRenderTarget(finalRT[2]);
-			GraphicsDevice.Clear(Color.Transparent);
+			graphicsDevice.SetRenderTarget(finalRT[2]);
+			graphicsDevice.Clear(Color.Transparent);
 
 			diffuseMap.SetValue(finalRT[1]);
 			sampleWeights.SetValue(blur.sampleWeightsV);
@@ -119,8 +119,8 @@ namespace Meteor.Rendering
 			quadRenderer.Render(Vector2.One * -1, Vector2.One);
 
 			// Prepare 4th pass
-			GraphicsDevice.SetRenderTarget(finalRT[0]);
-			GraphicsDevice.Clear(Color.Transparent);
+			graphicsDevice.SetRenderTarget(finalRT[0]);
+			graphicsDevice.Clear(Color.Transparent);
 
 			diffuseMap.SetValue(inputTargets[0]);
 			blurMap.SetValue(finalRT[2]);

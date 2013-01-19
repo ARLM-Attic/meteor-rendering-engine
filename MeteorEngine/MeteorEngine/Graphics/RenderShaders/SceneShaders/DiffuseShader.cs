@@ -19,7 +19,7 @@ namespace Meteor.Rendering
 
             // Diffuse render target
 			diffuseRT = profile.AddRenderTarget(backBufferWidth,
-                backBufferHeight, SurfaceFormat.Rgba1010102, DepthFormat.Depth24, 4);
+                backBufferHeight, SurfaceFormat.Rgba1010102, DepthFormat.Depth24);
 
 			outputTargets = new RenderTarget2D[] 
 			{
@@ -34,13 +34,13 @@ namespace Meteor.Rendering
         public override RenderTarget2D[] Draw()
         {
             // Prepare the forward rendering
-            GraphicsDevice.SetRenderTarget(diffuseRT);
-			GraphicsDevice.Clear(Color.Transparent);
-			GraphicsDevice.DepthStencilState = DepthStencilState.Default;
-			GraphicsDevice.BlendState = BlendState.Opaque;
+            graphicsDevice.SetRenderTarget(diffuseRT);
+			graphicsDevice.Clear(Color.Transparent);
+			graphicsDevice.DepthStencilState = DepthStencilState.Default;
+			graphicsDevice.BlendState = BlendState.Opaque;
 			
 			// Sampler states for the diffuse map
-			GraphicsDevice.SamplerStates[0] = SamplerState.LinearWrap;
+			graphicsDevice.SamplerStates[0] = SamplerState.LinearWrap;
 
 			sceneRenderer.CullLights(scene, camera);
 			sceneRenderer.IgnoreCulling(scene, camera);
@@ -51,7 +51,7 @@ namespace Meteor.Rendering
 			sceneRenderer.Draw(scene, camera);
 			
 			// Render the skybox and update sampler state
-			GraphicsDevice.SamplerStates[0] = SamplerState.LinearClamp;
+			graphicsDevice.SamplerStates[0] = SamplerState.LinearClamp;
 			sceneRenderer.UseTechnique("Skybox");
 			sceneRenderer.DrawSkybox(scene, camera);
 			

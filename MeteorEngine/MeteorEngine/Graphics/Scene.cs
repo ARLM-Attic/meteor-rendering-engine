@@ -1,12 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
-using Meteor.Rendering;
-using Meteor.Resources;
 using SkinnedModel;
 
 namespace Meteor.Resources
@@ -51,10 +48,6 @@ namespace Meteor.Resources
 		};
 
 		public List<OrderedMeshData> orderedMeshes;
-
-		/// Vertex buffer to hold the instance data
-		public DynamicVertexBuffer boxVertexBuffer;
-		public VertexPositionColor[] boxPrimitiveList;
 
 		/// Skybox mesh
 		InstancedModel skyboxModel;

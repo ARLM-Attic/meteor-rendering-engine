@@ -44,9 +44,9 @@ namespace Meteor.Rendering
 		public override RenderTarget2D[] Draw()
 		{
 			// Prepare the rendering
-			GraphicsDevice.SetRenderTarget(copyRT);
-			GraphicsDevice.Clear(Color.Black);
-			GraphicsDevice.BlendState = BlendState.Opaque;
+			graphicsDevice.SetRenderTarget(copyRT);
+			graphicsDevice.Clear(Color.Black);
+			graphicsDevice.BlendState = BlendState.Opaque;
 
 			// Copy to a new render target
 			gBufferEffect.CurrentTechnique = gBufferEffect.Techniques["PassThrough"];

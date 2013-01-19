@@ -106,12 +106,12 @@ float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 
 	light *= ssao;	
 
-	float3 finalColor = light.rgb * diffuse + specular;
+	float4 finalColor = float4(light.rgb * diffuse + specular, diffuse.a);
 
 	// Gamma correct inverse
-	finalColor = pow(finalColor, 1 / 2.2f);
+	finalColor.rgb = pow(finalColor.rgb, 1 / 2.2f);
 
-	return float4(finalColor * (0.95f + flicker * 0.05f), 1);
+	return finalColor;
 }
 
 const float horizontalStep = 1.0 / 1280.0f;

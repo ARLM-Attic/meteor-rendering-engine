@@ -31,7 +31,7 @@ namespace Meteor.Rendering
 		public Dictionary<string, RenderInput> renderInputs;
 
 		// Graphics device for rendering
-		protected GraphicsDevice GraphicsDevice;
+		protected GraphicsDevice graphicsDevice;
 
 		// Scene to use for rendering
 		protected Scene scene;
@@ -78,14 +78,14 @@ namespace Meteor.Rendering
 			hasSceneInput = true;
 			this.resxContent = content;
 
-			GraphicsDevice = profile.graphicsDevice;
+			graphicsDevice = profile.graphicsDevice;
 
 			renderStopWatch = new Stopwatch();
 			renderInputs = new Dictionary<string, RenderInput>();
 
 			// Setup rendering components
-			quadRenderer = new QuadRenderComponent(GraphicsDevice);
-			sceneRenderer = new SceneRenderComponent(GraphicsDevice, content);
+			quadRenderer = new QuadRenderComponent(graphicsDevice);
+			sceneRenderer = new SceneRenderComponent(graphicsDevice, content);
 			LoadContent();
 		}
 
@@ -96,7 +96,7 @@ namespace Meteor.Rendering
 
 		private void LoadContent()
 		{
-			PresentationParameters pp = GraphicsDevice.PresentationParameters;
+			PresentationParameters pp = graphicsDevice.PresentationParameters;
 
 			//get the sizes of the backbuffer, in order to have matching render targets   
 			backBufferWidth = (int)(pp.BackBufferWidth);

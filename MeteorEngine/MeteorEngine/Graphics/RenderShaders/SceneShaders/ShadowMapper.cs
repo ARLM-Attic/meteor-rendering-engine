@@ -48,9 +48,9 @@ namespace Meteor.Rendering
 			depthRT[0].Dispose();
 			depthRT[1].Dispose();
 
-			depthRT[0] = new RenderTarget2D(GraphicsDevice, textureSize, textureSize,
+			depthRT[0] = new RenderTarget2D(graphicsDevice, textureSize, textureSize,
 				true, SurfaceFormat.Rg32, DepthFormat.Depth24);
-			depthRT[1] = new RenderTarget2D(GraphicsDevice, textureSize, textureSize,
+			depthRT[1] = new RenderTarget2D(graphicsDevice, textureSize, textureSize,
 				true, SurfaceFormat.Rg32, DepthFormat.Depth24);
 
 			blur = new GaussianBlur(textureSize, textureSize, 1, blurEffect);
@@ -63,9 +63,9 @@ namespace Meteor.Rendering
 			depthRT[0].Dispose();
 			depthRT[1].Dispose();
 
-			depthRT[0] = new RenderTarget2D(GraphicsDevice, textureSize, textureSize,
+			depthRT[0] = new RenderTarget2D(graphicsDevice, textureSize, textureSize,
 				true, SurfaceFormat.Rg32, DepthFormat.Depth24);
-			depthRT[1] = new RenderTarget2D(GraphicsDevice, textureSize, textureSize,
+			depthRT[1] = new RenderTarget2D(graphicsDevice, textureSize, textureSize,
 				true, SurfaceFormat.Rg32, DepthFormat.Depth24);
 
 			blur = new GaussianBlur(textureSize, textureSize, 1, blurEffect);
