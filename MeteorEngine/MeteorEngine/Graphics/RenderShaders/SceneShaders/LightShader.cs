@@ -470,7 +470,7 @@ namespace Meteor.Rendering
 			{
 				foreach (ModelMeshPart meshPart in mesh.MeshParts)
 				{
-					// Tell the GPU to read from both the model vertex buffer plus our instanceVertexBuffer
+					// Tell the GPU to read from both the model vertex buffer plus the instanceVertexBuffer
 					graphicsDevice.SetVertexBuffers(
 						new VertexBufferBinding(meshPart.VertexBuffer, meshPart.VertexOffset, 0),
 						new VertexBufferBinding(instanceVertexBuffer, 0, 1)
@@ -500,9 +500,9 @@ namespace Meteor.Rendering
 
 		protected new void DisposeResources()
 		{
-			//if (instanceVertexBuffer != null)
-			//	instanceVertexBuffer.Dispose();
-			//sphereModel.Meshes.GetEnumerator().Dispose();
+			if (instanceVertexBuffer != null)
+				instanceVertexBuffer.Dispose();
+			sphereModel.Meshes.GetEnumerator().Dispose();
 
 			base.DisposeResources();
 		}

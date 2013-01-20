@@ -14,41 +14,9 @@ namespace Meteor.Resources
 
 		/// Model's main dffuse texture
 		public List<Texture2D> modelTextures;
-
 		public List<Texture2D> Textures
 		{
-			get
-			{
-				return modelTextures;
-			}
-		}
-
-		/// Transformation matrix for the model
-		Matrix modelMatrix;
-
-		/// Translation vector
-		public Vector3 position;
-
-		/// Scaling vector
-		public Vector3 scaling;
-
-		/// Rotation and quaternion components
-		public Vector3 rotation;
-		public Quaternion quaternion;
-
-		/// Number of meshes for this model
-		int totalMeshes;
-
-		public int TotalMeshes
-		{
-			get { return totalMeshes; }
-		}
-
-		/// List of visible meshes for this model
-		Dictionary<int, ModelMesh> visibleMeshes;
-		public Dictionary<int, ModelMesh> VisibleMeshes
-		{
-			get { return visibleMeshes; }
+			get { return modelTextures; }
 		}
 
 		/// List to keep bounding boxes for all model meshes
@@ -59,7 +27,6 @@ namespace Meteor.Resources
 		}
 
 		public BoundingBox[] tempBoxes;
-		public Vector3[] tempBoxPos;
 
 		/// List to keep position of meshes
 		Vector3[] meshPos;
@@ -68,14 +35,24 @@ namespace Meteor.Resources
 			get { return meshPos; }
 		}
 
-		/// List to keep screen space locations of meshes
+		/// Array to keep screen space locations of each mesh
 		Vector2[] screenPos;
 		public Vector2[] ScreenPos
 		{
 			get { return screenPos; }
 		}
 
-		// Initialize an array of indices of type short.
+		/// Array for the instancing groups of each mesh
+		List<EntityInstance>[] meshInstanceGroups;
+		public List<EntityInstance>[] MeshInstanceGroups
+		{
+			get { return meshInstanceGroups; }
+		}
+
+		/// Dynamic vertex buffer to store instancing data
+		public DynamicVertexBuffer[] instanceVB;
+
+		/// Initialize an array of bounding box indices
 		public static readonly short[] bBoxIndices = {
 			0, 1, 1, 2, 2, 3, 3, 0,
 			4, 5, 5, 6, 6, 7, 7, 4,
@@ -97,20 +74,9 @@ namespace Meteor.Resources
 		/// Vertex structure for the colored bounding boxes
 		public VertexPositionColor[] boxVertices;
 
-		/// Number of visible instances for current frame
-		int totalVisible;
-
-		public int TotalVisible
-		{
-			get { return totalVisible; }
-		}
-
 		/// Animator to link with a skinned mesh
 		public AnimationPlayer animationPlayer;
 		public Matrix[] boneMatrices;
-
-		/// Model's contentManager
-		ContentManager content;
 
 		/// <summary>
 		/// Load a model from the ContentManager from a file
@@ -118,31 +84,16 @@ namespace Meteor.Resources
 		/// <param name="modelName">Model's file name</param>
 		/// <param name="content">The program's ContentManger</param>
 
-		public InstancedModel(string modelName, string directory, ContentManager content)
+		public InstancedModel(Model newModel, GraphicsDevice graphicsDevice)
 		{
-			this.content = content;
-
-			try
-			{
-				String path = "Models\\" + directory + "\\" + modelName;
-				model = content.Load<Model>(path);
-			}
-			catch (Exception e)
-			{
-				String message = e.Message;
-				String path = "Models\\" + modelName;
-				model = content.Load<Model>(path);
-			}
-
-			totalMeshes = 0;
-			totalVisible = 0;
-			scaling = Vector3.One;
+			model = newModel;
 			animationPlayer = null;
 
 			// Set up model data
 			modelTextures = new List<Texture2D>();
-			visibleMeshes = new Dictionary<int, ModelMesh>(model.Meshes.Count);
+			meshInstanceGroups = new List<EntityInstance>[model.Meshes.Count];
 
+			// Bounding box data
 			boundingBoxes = new BoundingBox[model.Meshes.Count];
 			tempBoxes = new BoundingBox[model.Meshes.Count];
 			boxVertices = new VertexPositionColor[BoundingBox.CornerCount];
@@ -150,29 +101,30 @@ namespace Meteor.Resources
 			// Set up positions
 			meshPos = new Vector3[model.Meshes.Count];
 			screenPos = new Vector2[model.Meshes.Count];
-			tempBoxPos = new Vector3[model.Meshes.Count];
 
+			// Add matrices and instancing vertex buffer
+			instanceVB = new DynamicVertexBuffer[model.Meshes.Count];
 			boneMatrices = new Matrix[model.Bones.Count];
 			model.CopyAbsoluteBoneTransformsTo(boneMatrices);
 
-			// Set up matrix and instancing data
-			position = Vector3.Zero;
-			rotation = Vector3.Zero;
-			modelMatrix = Matrix.Identity;
-			quaternion = Quaternion.Identity;
-
 			// Extract textures and create bounding boxes
 
-			foreach (ModelMesh mesh in model.Meshes)
+			for (int i = 0; i < model.Meshes.Count; i++)
 			{
-				Matrix meshTransform = boneMatrices[mesh.ParentBone.Index];
-				boundingBoxes[totalMeshes] = BuildBoundingBox(mesh, meshTransform);
+				// Build bounding boxes
+				Matrix meshTransform = boneMatrices[model.Meshes[i].ParentBone.Index];
+				boundingBoxes[i] = BuildBoundingBox(model.Meshes[i], meshTransform);
 
-				foreach (ModelMeshPart part in mesh.MeshParts)
-				{
-					modelTextures.Add(part.Effect.Parameters["Texture"].GetValueTexture2D());
-				}
-				totalMeshes++;
+				// Add instance data
+				meshInstanceGroups[i] = new List<EntityInstance>();
+				meshInstanceGroups[i].Add(new EntityInstance());
+
+				// Add dynamic vertex buffers
+				instanceVB[i] = CreateInstanceVB(graphicsDevice, meshInstanceGroups[i]);
+
+				// Add mesh textures
+				foreach (ModelMeshPart meshPart in model.Meshes[i].MeshParts)
+					modelTextures.Add(meshPart.Effect.Parameters["Texture"].GetValueTexture2D());
 			}
 		}
 
@@ -218,18 +170,87 @@ namespace Meteor.Resources
 		}
 
 		/// <summary>
+		/// Create an instance vertex buffer from instancing data
+		/// </summary>
+		
+		public DynamicVertexBuffer CreateInstanceVB(
+			GraphicsDevice graphicsDevice, List<EntityInstance> meshInstances)
+		{
+			int totalInstances = meshInstances.Count;
+			EntityInstance.InstanceData[] instances = new EntityInstance.InstanceData[totalInstances];
+
+			// Copy transform data to InstanceData structure
+			for (int i = 0; i < totalInstances; i++)
+				instances[i].transform = meshInstances[i].Transform;
+
+			// Initialize vertex buffer
+			DynamicVertexBuffer instanceVB = new DynamicVertexBuffer(
+				graphicsDevice, instanceVertexDec, totalInstances, BufferUsage.WriteOnly);
+			instanceVB.SetData(instances);
+
+			return instanceVB;
+		}
+
+		/// <summary>
+		/// Update the instancing vertex buffer
+		/// </summary>
+
+		private DynamicVertexBuffer UpdateInstanceVB(
+			DynamicVertexBuffer instanceVB, List<EntityInstance> meshInstances)
+		{
+			int totalInstances = meshInstances.Count;
+			EntityInstance.InstanceData[] instances = new EntityInstance.InstanceData[totalInstances];
+
+			// Copy transform data to InstanceData structure
+			for (int i = 0; i < totalInstances; i++)
+				instances[i].transform = meshInstances[i].Transform;
+
+			// Update vertex buffer
+			instanceVB.SetData(instances);
+
+			return instanceVB;
+		}
+
+		/// <summary>
+		/// Add a new instance of this model.
+		/// Returns the object, useful for adding transformations to this instance.
+		/// </summary>
+
+		public InstancedModel NewInstance(Matrix transform)
+		{
+			foreach(List<EntityInstance> instances in meshInstanceGroups)
+				instances.Add(new EntityInstance(transform));
+
+			return this;
+		}
+
+		/// <summary>
 		/// Helpers to translate model and chain to another method
 		/// </summary>
 
 		public InstancedModel Translate(float x, float y, float z)
 		{
-			position = new Vector3(x, y, z);
+			int i = 0;
+			foreach(List<EntityInstance> instances in meshInstanceGroups)
+			{
+				instances[instances.Count - 1].position = new Vector3(x, y, z);
+				instances[instances.Count - 1].UpdateMatrix();
+				UpdateInstanceVB(instanceVB[i++], instances);
+			}
+
 			return this;
 		}
 
 		public InstancedModel Translate(Vector3 translate)
 		{
-			position = translate;
+			int i = 0;
+			foreach (List<EntityInstance> instances in meshInstanceGroups)
+			{
+				instances[instances.Count - 1].position = translate;
+				instances[instances.Count - 1].UpdateMatrix();
+				UpdateInstanceVB(instanceVB[i++], instances);
+			}
+
 			return this;
 		}
 
@@ -239,19 +260,20 @@ namespace Meteor.Resources
 
 		public InstancedModel Scale(float x, float y, float z)
 		{
-			scaling = new Vector3(x, y, z);
 			return this;
 		}
 
 		public InstancedModel Scale(float scale)
 		{
-			scaling = new Vector3(scale);
-			return this;
-		}
+			int i = 0;
+			foreach (List<EntityInstance> instances in meshInstanceGroups)
+			{
+				instances[instances.Count - 1].scaling = new Vector3(scale);
+				instances[instances.Count - 1].UpdateMatrix();
+				UpdateInstanceVB(instanceVB[i++], instances);
+			}
 
-		public Matrix Transform
-		{
-			get { return modelMatrix; }
+			return this;
 		}
 
 		/// <summary>
@@ -264,33 +286,17 @@ namespace Meteor.Resources
 			y = MathHelper.ToRadians(y);
 			z = MathHelper.ToRadians(z);
 
-			rotation = new Vector3(x, y, z);
-			quaternion = Quaternion.CreateFromYawPitchRoll(x, y, z);
-			return this;
-		}
-
-		/// <summary>
-		/// Update model's world matrix based on scale, rotation, and translation
-		/// </summary>
-
-		public Matrix UpdateMatrix()
-		{
-			modelMatrix = Matrix.CreateScale(scaling) *
-				Matrix.CreateFromYawPitchRoll(rotation.Y, rotation.X, rotation.Z) *
-				Matrix.CreateTranslation(position);
-
-			// Recalculate the screen space position of this mesh
-			for (int i = 0; i < totalMeshes; i++)
+			int i = 0;
+			foreach (List<EntityInstance> instances in meshInstanceGroups)
 			{
-				tempBoxes[i] = boundingBoxes[i];
-				tempBoxes[i].Min = Vector3.Transform(boundingBoxes[i].Min, Transform);
-				tempBoxes[i].Max = Vector3.Transform(boundingBoxes[i].Max, Transform);
-
-				// Calculate center of this mesh
-				MeshPos[i] = (tempBoxes[i].Max + tempBoxes[i].Min) / 2f;
+				instances[instances.Count - 1].rotation = new Vector3(x, y, z);
+				instances[instances.Count - 1].UpdateMatrix();
+				UpdateInstanceVB(instanceVB[i++], instances);
 			}
 
-			return modelMatrix;
+			//rotation = new Vector3(x, y, z);
+			//quaternion = Quaternion.CreateFromYawPitchRoll(x, y, z);
+			return this;
 		}
 	}
 }

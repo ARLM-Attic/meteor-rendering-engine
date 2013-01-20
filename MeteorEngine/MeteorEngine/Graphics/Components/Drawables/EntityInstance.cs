@@ -12,10 +12,12 @@ namespace Meteor.Resources
 	/// 
 	public class EntityInstance
 	{
-		#region Fields
-
 		/// Mesh instance matrix
 		Matrix transform;
+		public Matrix Transform
+		{
+			get { return transform; }
+		}
 
 		/// Scaling component of the instance
 		Vector3 scale;
@@ -27,8 +29,9 @@ namespace Meteor.Resources
 		public struct InstanceData
 		{
 			public Matrix transform;
-			public uint color;
+			//public uint color;
 		}
+		public InstanceData instanceData;
 
 		/// Check whether this instance is closer or farther than another instance
 		public int CompareTo(object other)
@@ -37,29 +40,22 @@ namespace Meteor.Resources
 			return -(distance.CompareTo(otherInstance.distance));
 		}
 
-		public InstanceData instanceData;
-
 		/// Color associated with this instance
 		public int color;
 
 		/// World position of this instance
 		public Vector3 position;
 
+		/// Rotation of this instance
+		public Vector3 rotation;
+
+		/// Scale of this instance
+		public Vector3 scaling;
+
 		/// Distance to a world position
 		public float distance = 0f;
 
-		/// Gets the instance's transform matrix
-		public Matrix Transform
-		{
-			get
-			{
-				return transform;
-			}
-		}
-
 		static Random random = new Random(256);
-
-		#endregion
 
 		/// Constructor sets identity matrix as default
 		public EntityInstance()
@@ -72,7 +68,7 @@ namespace Meteor.Resources
 
 			scale = new Vector3(1, 1, 1);
 			largestScale = 1f;
-			instanceData.color = 0xffffffff; //(255 << 24) + r + g + b;
+			//instanceData.color = 0xffffffff; //(255 << 24) + r + g + b;
 		}
 
 		/// New instance with an Entity and transform matrix
@@ -84,18 +80,20 @@ namespace Meteor.Resources
 			int g = random.Next() << 8;
 			int b = random.Next();
 
-			instanceData.color = 0xffffffff; // (255 << 24) + r + g + b;
+			//instanceData.color = 0xffffffff; // (255 << 24) + r + g + b;
 		}
 
 		/// <summary>
-		/// Automatically updates the position of the instance with an 
-		/// optional pre-defined movement pattern
+		/// Update instance's world matrix based on scale, rotation, and translation
 		/// </summary>
-		public void Update(GameTime gameTime)
-		{
-			//float time = (float)gameTime.TotalGameTime.TotalSeconds;
 
-			position = Transform.Translation;
+		public Matrix UpdateMatrix()
+		{
+			transform = Matrix.CreateScale(scaling) *
+				Matrix.CreateFromYawPitchRoll(rotation.Y, rotation.X, rotation.Z) *
+				Matrix.CreateTranslation(position);
+
+			return transform;
 		}
 
 		/// <summary>

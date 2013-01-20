@@ -122,7 +122,7 @@ float3 LinearFilter4Samples(sampler smp, float3 ambient, float2 texCoord, float 
 	float shadow = lerp(lerp(newSamples.x, newSamples.y, lerps.x), 
 		lerp(newSamples.z, newSamples.w, lerps.x ), lerps.y); 	
 
-	return shadow + ambientTerm * 3;
+	return shadow + ambientTerm;
 }
 
 float4 DirectionalLightPS(VertexShaderOutput input, float4 position) : COLOR0

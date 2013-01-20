@@ -41,7 +41,7 @@ namespace Meteor
 
         /// Parameters to set render options
         int rtIndex = 0;
-		bool debugText = false;
+		bool debugText = true;
 
         public enum RtView
         {
@@ -373,7 +373,10 @@ namespace Meteor
 				new Vector2(4, font.LineSpacing * 6 + height), Color.White);
 			debugString.Clear();
 
-			/*
+			spriteBatch.End(); /*
+			spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp, 
+				DepthStencilState.None, RasterizerState.CullNone);
+			
 			foreach (InstancedModel instancedModel in currentScene.staticModels.Values)
 			{
 				for (int i = 0; i < instancedModel.ScreenPos.Length; i++)
@@ -407,10 +410,9 @@ namespace Meteor
 						debugString.Clear();		
 					}
 				}
-			}
-			*/
+			}		
 
-            spriteBatch.End();
+            spriteBatch.End(); */
         }
     }
 }

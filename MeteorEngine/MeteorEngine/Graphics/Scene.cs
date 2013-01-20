@@ -13,6 +13,9 @@ namespace Meteor.Resources
 		/// For loading scene content
 		ContentManager content;
 
+		/// Used mainly in vertex buffer creation
+		GraphicsDevice graphicsDevice;
+
 		/// List of models in the scene
 		public Dictionary<String, InstancedModel> staticModels;
 		public Dictionary<String, InstancedModel> skinnedModels;
@@ -64,9 +67,10 @@ namespace Meteor.Resources
 		public int culledMeshes = 0;
 		public int drawCalls = 0;
 
-		public Scene(ContentManager content)
+		public Scene(ContentManager content, GraphicsDevice graphicsDevice)
 		{
 			this.content = content;
+			this.graphicsDevice = graphicsDevice;
 
 			staticModels = new Dictionary<string, InstancedModel>();
 			skinnedModels = new Dictionary<string, InstancedModel>();
@@ -95,6 +99,33 @@ namespace Meteor.Resources
 		}
 
 		/// <summary>
+		/// Attempt to find the location of the model to be loaded.
+		/// </summary>
+		private Model FindModel(String directory, String modelPath)
+		{
+			Model model = null;
+
+			try
+			{
+				String path = "Models\\" + directory + "\\" + modelPath;
+				model = content.Load<Model>(path);
+			}
+			catch (Exception e)
+			{
+				String message = e.Message;
+				String path = "Models\\" + modelPath;
+				model = content.Load<Model>(path);
+			}
+
+			return model;
+		}
+
+		public Model FindModel(String modelPath)
+		{
+			return FindModel(modelPath, modelPath);
+		}
+
+		/// <summary>
 		/// Helper to add a new model to the scene with 
 		/// the same name key as the file for the model
 		/// </summary>
@@ -107,8 +138,8 @@ namespace Meteor.Resources
 				key = modelPath + "_1";
 			}
 
-			staticModels.Add(key, new InstancedModel(modelPath, directory, content));
-			for (int i = 0; i < staticModels[key].TotalMeshes; i++)
+			staticModels.Add(key, new InstancedModel(FindModel(directory, modelPath), graphicsDevice));
+			for (int i = 0; i < staticModels[key].model.Meshes.Count; i++)
 			{
 				orderedMeshes.Add(new OrderedMeshData());
 			}
@@ -128,7 +159,7 @@ namespace Meteor.Resources
 
 		public InstancedModel AddSkinnedModel(String modelPath, String take = "Take 001")
 		{
-			skinnedModels.Add(modelPath, new InstancedModel(modelPath, modelPath, content));
+			skinnedModels.Add(modelPath, new InstancedModel(FindModel(modelPath), graphicsDevice));
 			InstancedModel instancedModel = skinnedModels[modelPath];
 
 			// Look up our custom skinning information.
@@ -153,7 +184,7 @@ namespace Meteor.Resources
 
 		public InstancedModel AddSkybox(String modelPath)
 		{
-			skyboxModel = new InstancedModel(modelPath, modelPath, content);
+			skyboxModel = new InstancedModel(FindModel(modelPath), graphicsDevice);
 			return skyboxModel;
 		}
 
@@ -163,7 +194,7 @@ namespace Meteor.Resources
 
 		public InstancedModel AddBlendModel(String modelPath)
 		{
-			blendModels.Add(modelPath, new InstancedModel(modelPath, modelPath, content));
+			blendModels.Add(modelPath, new InstancedModel(FindModel(modelPath), graphicsDevice));
 			InstancedModel instancedModel = blendModels[modelPath];
 
 			return blendModels[modelPath];

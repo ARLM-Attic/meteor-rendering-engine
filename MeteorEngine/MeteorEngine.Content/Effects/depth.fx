@@ -34,13 +34,23 @@ struct VertexShaderOutput
 	float depth : TEXCOORD2;
 };
 
+struct InstanceInput
+{
+	float4 vWorld1 : TEXCOORD1;
+	float4 vWorld2 : TEXCOORD2;
+	float4 vWorld3 : TEXCOORD3;
+	float4 vWorld4 : TEXCOORD4;
+};
+
 //--- VertexShader ---
 
-VertexShaderOutput DepthMapVS(VertexShaderInput input)
+VertexShaderOutput DepthMapVS(VertexShaderInput input, InstanceInput instance)
 {
 	VertexShaderOutput output;
+	float4x4 WorldInstance = 
+		float4x4(instance.vWorld1, instance.vWorld2, instance.vWorld3, instance.vWorld4);
 
-	float4 position = input.Position;
+	float4 position = mul(input.Position, WorldInstance);
 	
 	output.position = mul(position, mul(World, LightViewProj));
 	output.depth = output.position.z;
