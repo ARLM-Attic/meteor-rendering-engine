@@ -44,7 +44,6 @@ namespace Meteor.Rendering
 
 			sceneRenderer.CullLights(scene, camera);
 			sceneRenderer.IgnoreCulling(scene, camera);
-			//sceneRenderer.CullModelMeshes(scene, camera);
 			
             // Forward render the scene
 			sceneRenderer.UseTechnique("DiffuseRender");

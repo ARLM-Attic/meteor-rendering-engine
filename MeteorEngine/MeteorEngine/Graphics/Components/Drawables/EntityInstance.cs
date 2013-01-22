@@ -19,9 +19,6 @@ namespace Meteor.Resources
 			get { return transform; }
 		}
 
-		/// Scaling component of the instance
-		Vector3 scale;
-
 		/// The largest factor to scale by
 		public float largestScale;
 
@@ -47,7 +44,7 @@ namespace Meteor.Resources
 		public Vector3 position;
 
 		/// Rotation of this instance
-		public Vector3 rotation;
+		public Quaternion rotation;
 
 		/// Scale of this instance
 		public Vector3 scaling;
@@ -66,7 +63,7 @@ namespace Meteor.Resources
 			int g = random.Next() << 16;
 			int b = random.Next() << 8;
 
-			scale = new Vector3(1, 1, 1);
+			scaling = new Vector3(1, 1, 1);
 			largestScale = 1f;
 			//instanceData.color = 0xffffffff; //(255 << 24) + r + g + b;
 		}
@@ -75,6 +72,7 @@ namespace Meteor.Resources
 		public EntityInstance(Matrix instanceTransform)
 		{
 			transform = instanceTransform;
+			transform.Decompose(out this.scaling, out this.rotation, out this.position);
 
 			int r = random.Next() << 16;
 			int g = random.Next() << 8;
@@ -90,7 +88,7 @@ namespace Meteor.Resources
 		public Matrix UpdateMatrix()
 		{
 			transform = Matrix.CreateScale(scaling) *
-				Matrix.CreateFromYawPitchRoll(rotation.Y, rotation.X, rotation.Z) *
+				Matrix.CreateFromQuaternion(rotation) *
 				Matrix.CreateTranslation(position);
 
 			return transform;

@@ -546,7 +546,7 @@ namespace Meteor.Rendering
 		private void DrawBoundingBoxes(InstancedModel model, Camera camera)
 		{
 			int meshIndex = 0;
-			/*
+			
 			foreach (BoundingBox box in model.BoundingBoxes)
 			{				
 				// Assign the box corners
@@ -560,36 +560,41 @@ namespace Meteor.Rendering
 				boxCorners[7] = new Vector3(box.Min.X, box.Min.Y, box.Min.Z); // minimum
 				
 				//Color[] colors = { Color.Cyan, Color.White, Color.Magenta, Color.Blue,
-				//	Color.Green, Color.Yellow, Color.Red, Color.Black };
+				//	Color.Green, Color.Yellow, Color.Red, Color.Black };XZ
 
-				for (int i = boxCorners.Length; i-- > 0; )
+				foreach (EntityInstance modelInstance in model.MeshInstanceGroups[meshIndex])
 				{
-					boxCorners[i] = Vector3.Transform(boxCorners[i], model.Transform);
-					model.boxVertices[i].Position = boxCorners[i];
-					model.boxVertices[i].Color = Color.Cyan;
-				}
-				
-				// Transform the box with the model's world matrix
-				model.tempBoxes[meshIndex].Min = Vector3.Transform(box.Min, model.Transform);
-				model.tempBoxes[meshIndex].Max = Vector3.Transform(box.Max, model.Transform);
+					Matrix modelTransform = modelInstance.Transform;
 
-				// Add to mesh to visible list if it's contained in the frustum
-				if (camera.Frustum.Contains(model.tempBoxes[meshIndex]) != ContainmentType.Disjoint)
-				{
-					basicEffect.World = Matrix.Identity;
-
-					for (int i = 0; i < basicEffect.CurrentTechnique.Passes.Count; i++)
+					for (int i = boxCorners.Length; i-- > 0; )
 					{
-						basicEffect.CurrentTechnique.Passes[i].Apply();
-						graphicsDevice.DrawUserIndexedPrimitives<VertexPositionColor>(
-							PrimitiveType.LineList, model.boxVertices, 0, 8,
-							InstancedModel.bBoxIndices, 0, 12);
+						model.boxVertices[i].Position = Vector3.Transform(boxCorners[i], modelTransform);
+						model.boxVertices[i].Color = Color.Cyan;
+					}
+
+					// Transform the temporary bounding boxes with the model instance's world matrix
+					// TODO: Update these boxes only when intances are updated
+
+					model.tempBoxes[meshIndex] = box;
+					model.tempBoxes[meshIndex].Min = box.Min + modelInstance.position;//Vector3.Transform(box.Min, modelTransform);
+					model.tempBoxes[meshIndex].Max = box.Max + modelInstance.position;//Vector3.Transform(box.Max, modelTransform);
+
+					// Render the bounding box for this instance
+					//if (camera.Frustum.Contains(model.tempBoxes[meshIndex]) != ContainmentType.Disjoint)
+					{
+						for (int i = 0; i < basicEffect.CurrentTechnique.Passes.Count; i++)
+						{
+							basicEffect.CurrentTechnique.Passes[i].Apply();
+							graphicsDevice.DrawUserIndexedPrimitives<VertexPositionColor>(
+								PrimitiveType.LineList, model.boxVertices, 0, 8,
+								InstancedModel.bBoxIndices, 0, 12);
+						}
 					}
 				}
 				
 				meshIndex++;
 			}
-			*/
+			
 			// End box rendering
 		}
 	}

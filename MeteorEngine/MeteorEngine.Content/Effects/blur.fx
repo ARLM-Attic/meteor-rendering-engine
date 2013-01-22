@@ -119,8 +119,8 @@ float4 DepthOfFieldFull(VertexShaderOutput input) : COLOR0
 	half fSceneZ = (-near * dFar) / (depthVal - dFar);
 	float blurFactor = saturate(abs(fSceneZ - focalDistance) / focalRange);
 
-	sharpScene.a = 1;
-	blurScene.a = 1;
+	//sharpScene.a = 1;
+	//blurScene.a = 1;
 
 	return lerp (blurScene, sharpScene, blurFactor);
 }

@@ -289,13 +289,10 @@ namespace Meteor.Resources
 			int i = 0;
 			foreach (List<EntityInstance> instances in meshInstanceGroups)
 			{
-				instances[instances.Count - 1].rotation = new Vector3(x, y, z);
+				instances[instances.Count - 1].rotation = Quaternion.CreateFromYawPitchRoll(y, x, z);
 				instances[instances.Count - 1].UpdateMatrix();
 				UpdateInstanceVB(instanceVB[i++], instances);
 			}
-
-			//rotation = new Vector3(x, y, z);
-			//quaternion = Quaternion.CreateFromYawPitchRoll(x, y, z);
 			return this;
 		}
 	}

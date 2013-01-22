@@ -79,7 +79,7 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
     return output;
 }
 
-float DepthBias = 0.002f;
+float DepthBias = 0.001f;
 
 float2 poissonDisk[4] = {
 	float2( -0.94201624, -0.39906216 ),

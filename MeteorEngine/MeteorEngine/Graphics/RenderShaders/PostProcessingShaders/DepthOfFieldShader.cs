@@ -75,7 +75,7 @@ namespace Meteor.Rendering
 
 			// Depth of field blur effect
 			graphicsDevice.SetRenderTarget(blurFactorRT);
-			graphicsDevice.Clear(Color.Black);
+			graphicsDevice.Clear(Color.Transparent);
 
 			blurEffect.Parameters["halfPixel"].SetValue(halfPixel);
 

@@ -26,7 +26,6 @@ namespace Meteor.Resources
 		public FreeCamera()
 		{
 			position.Y = 4f;
-			// TODO: Construct any child components here
 		}
 
 		public FreeCamera(Vector3 pos, Vector2 orientation)

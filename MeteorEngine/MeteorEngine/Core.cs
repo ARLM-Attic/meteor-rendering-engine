@@ -271,7 +271,7 @@ namespace Meteor
 				output = currentRenderProfile.Output;
 
 				graphicsDevice.SetRenderTarget(null);
-				//graphicsDevice.Clear(Color.Transparent);
+				graphicsDevice.Clear(Color.Transparent);
 				
 				spriteBatch.Begin(0, BlendState.AlphaBlend, SamplerState.LinearClamp,
 					DepthStencilState.None, RasterizerState.CullCounterClockwise);
@@ -360,9 +360,13 @@ namespace Meteor
 				new Vector2(4, font.LineSpacing * 3 + height), Color.White);
 			debugString.Clear();
 
-			//spriteBatch.DrawString(font, debugString.Append("(P) ").Append(rendering),
-			//	new Vector2(4, font.LineSpacing * 4 + height), color);
-			//debugString.Clear();
+			debugString.Concat(currentCamera.Position.X).Append(", ");
+			debugString.Concat(currentCamera.Position.Y).Append(", ");
+			debugString.Concat(currentCamera.Position.Z).Append(" ");
+
+			spriteBatch.DrawString(font, debugString,
+				new Vector2(4, font.LineSpacing * 4 + height), Color.White);
+			debugString.Clear();
 
 			spriteBatch.DrawString(font, debugString.Append("Visible meshes: ").Concat(currentScene.visibleMeshes),
 				new Vector2(4, font.LineSpacing * 5 + height), Color.White);

@@ -45,7 +45,7 @@ namespace Meteor.Rendering
 		{
 			// Prepare the rendering
 			graphicsDevice.SetRenderTarget(copyRT);
-			graphicsDevice.Clear(Color.Black);
+			graphicsDevice.Clear(Color.Transparent);
 			graphicsDevice.BlendState = BlendState.Opaque;
 
 			// Copy to a new render target

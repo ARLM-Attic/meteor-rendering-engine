@@ -29,7 +29,6 @@ namespace Meteor.Resources
 		public DragCamera()
 		{
 			position.Y = 4f;
-			// TODO: Construct any child components here
 		}
 
 		public DragCamera(Vector3 pos, Vector2 orientation)

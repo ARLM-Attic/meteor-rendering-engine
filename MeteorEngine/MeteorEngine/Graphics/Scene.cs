@@ -120,7 +120,7 @@ namespace Meteor.Resources
 			return model;
 		}
 
-		public Model FindModel(String modelPath)
+		private Model FindModel(String modelPath)
 		{
 			return FindModel(modelPath, modelPath);
 		}
@@ -130,15 +130,11 @@ namespace Meteor.Resources
 		/// the same name key as the file for the model
 		/// </summary>
 
-		public InstancedModel AddModel(String directory, String modelPath)
+		private InstancedModel AddModel(String directory, String modelPath)
 		{
 			string key = modelPath;
-			if (staticModels.ContainsKey(modelPath))
-			{
-				key = modelPath + "_1";
-			}
-
 			staticModels.Add(key, new InstancedModel(FindModel(directory, modelPath), graphicsDevice));
+
 			for (int i = 0; i < staticModels[key].model.Meshes.Count; i++)
 			{
 				orderedMeshes.Add(new OrderedMeshData());
@@ -147,7 +143,7 @@ namespace Meteor.Resources
 			return staticModels[key];
 		}
 
-		public InstancedModel AddModel(String modelPath)
+		private InstancedModel AddModel(String modelPath)
 		{
 			return AddModel(modelPath, modelPath);
 		}
@@ -192,7 +188,7 @@ namespace Meteor.Resources
 		/// Helper to add a skybox which will be added to a special Skybox list
 		/// </summary>
 
-		public InstancedModel AddBlendModel(String modelPath)
+		private InstancedModel AddBlendModel(String modelPath)
 		{
 			blendModels.Add(modelPath, new InstancedModel(FindModel(modelPath), graphicsDevice));
 			InstancedModel instancedModel = blendModels[modelPath];
@@ -206,14 +202,8 @@ namespace Meteor.Resources
 		/// 
 		public InstancedModel Model(String modelKey)
 		{
-			if (staticModels.ContainsKey(modelKey))
-			{
-				return staticModels[modelKey];
-			}
-			else
-			{
-				return skinnedModels[modelKey];
-			}
+			return (staticModels.ContainsKey(modelKey)) ?
+				staticModels[modelKey] : AddModel(modelKey);
 		}
 
 		/// <summary>
