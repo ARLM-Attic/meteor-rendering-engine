@@ -34,10 +34,14 @@ namespace Meteor.Rendering
 		Camera lightCamera;
 
 		/// Texture dimensions for individual shadow cascade
-		const int shadowMapSize = 2048;
+		const int shadowMapSize = 1536;
 
 		/// Total number of cascades for CSM
-		const int numCascades = 4;
+		const int numCascades = 3;
+
+		/// Arrangement of depth maps in atlas
+		const int mapsPerRow = 2;
+		const int mapsPerCol = 2;
 
 		/// Ambient light irradiance
 		Vector3 ambientTerm;
@@ -78,7 +82,7 @@ namespace Meteor.Rendering
 				SurfaceFormat.HdrBlendable, DepthFormat.None);
 
 			// Light and combined effect targets
-			depthRT = profile.AddRenderTarget(shadowMapSize * 2, shadowMapSize * 2,
+			depthRT = profile.AddRenderTarget(shadowMapSize * mapsPerRow, shadowMapSize * mapsPerCol,
 				SurfaceFormat.Single, DepthFormat.Depth24);
 
 			outputTargets = new RenderTarget2D[]
@@ -87,7 +91,7 @@ namespace Meteor.Rendering
 			};
 
 			lightCamera = new Camera();
-			lightCamera.farPlaneDistance = 5000f;
+			lightCamera.farPlaneDistance = 2000f;
 			lightCamera.Initialize(shadowMapSize, shadowMapSize);
 
 			lightViewProj = new Matrix[numCascades];
@@ -183,7 +187,7 @@ namespace Meteor.Rendering
 
 					// Project the shadow maps onto the scene
 					Vector2 shadowMapPixelSize = new Vector2(
-						1f / ((float)shadowMapSize * 2), 1f / ((float)shadowMapSize * 2));
+						1f / ((float)shadowMapSize * mapsPerRow), 1f / ((float)shadowMapSize * mapsPerCol));
 
 					// Set the common parameters for all shadow maps
 					directionalLightEffect.Parameters["shadowMapPixelSize"].SetValue(shadowMapPixelSize);
@@ -255,8 +259,8 @@ namespace Meteor.Rendering
 						Viewport viewport = graphicsDevice.Viewport;
 						viewport.Width = shadowMapSize;
 						viewport.Height = shadowMapSize;
-						viewport.X = shadowMapSize * (cascade % 2);
-						viewport.Y = shadowMapSize * (cascade / 2);
+						viewport.X = shadowMapSize * (cascade % mapsPerRow);
+						viewport.Y = shadowMapSize * (cascade / mapsPerRow);
 						graphicsDevice.Viewport = viewport;
 
 						// Update view matrices

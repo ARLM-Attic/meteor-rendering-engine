@@ -1,15 +1,20 @@
 
-#define NUM_CASCADES 4
-
 float4x4 View;
 float4x4 Projection;
-float4x4 lightProjection[NUM_CASCADES];
-float4x4 lightViewProj[NUM_CASCADES];
 float4x4 inverseView;
 float4x4 invertViewProj;
 
 float2 halfPixel;
 float3 camPosition;
+
+// Cascaded shadow map settings
+
+#define NUM_CASCADES 3
+#define MAPS_PER_ROW 2
+#define MAPS_PER_COL 2
+
+float4x4 lightProjection[NUM_CASCADES];
+float4x4 lightViewProj[NUM_CASCADES];
 float cascadeSplits[NUM_CASCADES];
 
 float3 lightDirection;
@@ -103,18 +108,18 @@ float3 LinearFilter4Samples(sampler smp, float3 ambient, float2 texCoord, float 
 	[unroll]
 	for (int i = 0; i < 4; i++)
 	{
-		samples[i].x = tex2D(smp, texCoord + float2(i%2,     i/2) * shadowMapPixelSize).r > ourdepth;
-		samples[i].y = tex2D(smp, texCoord + float2(i%2 + 1, i/2) * shadowMapPixelSize).r > ourdepth;
-		samples[i].z = tex2D(smp, texCoord + float2(i%2,     i/2 + 1) * shadowMapPixelSize).r > ourdepth;
-		samples[i].w = tex2D(smp, texCoord + float2(i%2 + 1, i/2 + 1) * shadowMapPixelSize).r > ourdepth;
+		samples[i].x = tex2D(smp, texCoord + float2(i % 2,     i/ 2) * shadowMapPixelSize).r > ourdepth;
+		samples[i].y = tex2D(smp, texCoord + float2(i % 2 + 1, i/ 2) * shadowMapPixelSize).r > ourdepth;
+		samples[i].z = tex2D(smp, texCoord + float2(i % 2,     i/ 2 + 1) * shadowMapPixelSize).r > ourdepth;
+		samples[i].w = tex2D(smp, texCoord + float2(i % 2 + 1, i/ 2 + 1) * shadowMapPixelSize).r > ourdepth;
 
 		newSamples[i] = dot(samples[i], 0.25f);  
 	}
 
 	// Determine the lerp amounts           
 	float2 lerps;
-	lerps.x = frac(texCoord.x * (shadowMapSize * 2));
-	lerps.y = frac(texCoord.y * (shadowMapSize * 2));
+	lerps.x = frac(texCoord.x * (shadowMapSize * MAPS_PER_ROW));
+	lerps.y = frac(texCoord.y * (shadowMapSize * MAPS_PER_COL));
 
 	// lerp between the shadow values to calculate our light amount
 
@@ -185,11 +190,11 @@ float3 FindShadow(float4 shadowMapPos, float shadowIndex, float3 normal)
 	// Project the shadow map and find the position in it for this pixel
 	float2 shadowTexCoord = shadowMapPos.xy / shadowMapPos.w / 2.0f + float2(0.5, 0.5);
 
-	shadowTexCoord.x /= 2.f;
-	shadowTexCoord.x += (shadowIndex % 2) / 2.f;
+	shadowTexCoord.x /= MAPS_PER_ROW;
+	shadowTexCoord.x += (shadowIndex % MAPS_PER_ROW) / MAPS_PER_ROW;
 	shadowTexCoord.y = 1 - shadowTexCoord.y;
-	shadowTexCoord.y /= 2.f;
-	shadowTexCoord.y += floor(shadowIndex / 2) / 2.f;
+	shadowTexCoord.y /= MAPS_PER_COL;
+	shadowTexCoord.y += floor(shadowIndex / MAPS_PER_ROW) / MAPS_PER_COL;
 
 	// Calculate the current pixel depth
 	float ourdepth = (shadowMapPos.z / shadowMapPos.w) - DepthBias;  

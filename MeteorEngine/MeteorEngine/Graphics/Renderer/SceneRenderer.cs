@@ -417,7 +417,7 @@ namespace Meteor.Rendering
 					effect.Parameters["View"].SetValue(camera.View);
 					effect.Parameters["Projection"].SetValue(camera.Projection);
 					effect.Parameters["WorldInverseTranspose"].SetValue(
-									Matrix.Transpose(Matrix.Invert(world * mesh.ParentBone.Transform)));
+						Matrix.Transpose(Matrix.Invert(world * mesh.ParentBone.Transform)));
 					effect.Parameters["CameraPosition"].SetValue(camera.Position);
 
 					for (int i = 0; i < effect.CurrentTechnique.Passes.Count; i++)

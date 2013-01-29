@@ -57,7 +57,7 @@ namespace Meteor.Resources
 		{
 			public List<EntityInstance> instances;
 			public List<EntityInstance> visibleInstances;
-			public List<Matrix> tempMatrices;
+			public Matrix[] tempMatrices;
 
 			public DynamicVertexBuffer instanceVB;
 			public string meshName;
@@ -66,7 +66,7 @@ namespace Meteor.Resources
 			{
 				instances = new List<EntityInstance>();
 				visibleInstances = new List<EntityInstance>();
-				tempMatrices = new List<Matrix>();
+				tempMatrices = new Matrix[1];
 
 				meshName = name;
 			}
@@ -143,7 +143,9 @@ namespace Meteor.Resources
 				// Add instance data
 				meshInstanceGroups[meshIndex] = new MeshInstanceGroup(meshName);
 				meshInstanceGroups[meshIndex].instances.Add(new EntityInstance());
-				meshInstanceGroups[meshIndex].tempMatrices.Add(new Matrix());
+
+				//Array.Resize(ref meshInstanceGroups[meshIndex].tempMatrices, 1);
+				meshInstanceGroups[meshIndex].tempMatrices[0] = new Matrix();
 
 				// Add dynamic vertex buffers
 				meshInstanceGroups[meshIndex].instanceVB =
@@ -234,7 +236,7 @@ namespace Meteor.Resources
 				instanceGroup.tempMatrices[i] = instanceGroup.instances[i].Transform;
 
 			// Update vertex buffer
-			instanceGroup.instanceVB.SetData(instanceGroup.tempMatrices.ToArray());
+			instanceGroup.instanceVB.SetData(instanceGroup.tempMatrices);
 
 			return instanceGroup.instanceVB;
 		}
@@ -247,7 +249,10 @@ namespace Meteor.Resources
 		public InstancedModel NewInstance(Matrix transform)
 		{
 			foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups)
+			{
 				instanceGroup.instances.Add(new EntityInstance(transform));
+				Array.Resize(ref instanceGroup.tempMatrices, instanceGroup.tempMatrices.Length + 1);
+			}
 
 			return this;
 		}
@@ -259,7 +264,10 @@ namespace Meteor.Resources
 		public InstancedModel NewInstance()
 		{
 			foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups)
+			{
 				instanceGroup.instances.Add(new EntityInstance(Matrix.Identity));
+				Array.Resize(ref instanceGroup.tempMatrices, instanceGroup.tempMatrices.Length + 1);
+			}
 
 			return this;
 		}
