@@ -107,7 +107,7 @@
     <Compile Include="Graphics\Components\MeteorComponent.cs" />
     <Compile Include="Graphics\Components\Drawables\QuadRenderer.cs" />
     <Compile Include="Graphics\Renderer\SceneRenderer.cs" />
-    <Compile Include="Core.cs" />
+    <Compile Include="Graphics\Components\Core.cs" />
     <Compile Include="Graphics\Helpers\GaussianBlur.cs" />
     <Compile Include="Graphics\Helpers\CopyShader.cs" />
     <Compile Include="Graphics\Helpers\RenderInput.cs" />
@@ -167,11 +167,16 @@
     <None Include="bin\x86\Debug\MeteorEngine.Content\null_normal.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\null_specular.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\random.xnb" />
+    <None Include="bin\x86\Debug\MeteorEngine.Content\seattle.xnb" />
+    <None Include="bin\x86\Debug\MeteorEngine.Content\skyblue_cube.xnb" />
+    <None Include="bin\x86\Debug\MeteorEngine.Content\skyblue_wrap.xnb" />
+    <None Include="bin\x86\Debug\MeteorEngine.Content\Sunset.xnb" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="MeteorContentResource.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>MeteorContentResource1.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

@@ -79,7 +79,9 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
     return output;
 }
 
-float DepthBias = 0.001f;
+float DepthBias = 0.002f;
+
+/// Poisson disk filter currently not being used
 
 float2 poissonDisk[4] = {
 	float2( -0.94201624, -0.39906216 ),
@@ -177,8 +179,8 @@ float4 CalculateWorldPosition(float2 texCoord, float depthVal)
 float3 FindShadow(float4 shadowMapPos, float shadowIndex, float3 normal)
 {
 	// In progress: calculate the bias based on the angle of the surface relative to the light
-	//float3 lightDir = -normalize(lightDirection);
-	//float bias = lerp(0.0002, 0.2, dot(lightDir, normal));
+	float3 lightDir = -normalize(lightDirection);
+	float bias = dot(lightDir, normal) * 0.005f;
 
 	// Project the shadow map and find the position in it for this pixel
 	float2 shadowTexCoord = shadowMapPos.xy / shadowMapPos.w / 2.0f + float2(0.5, 0.5);

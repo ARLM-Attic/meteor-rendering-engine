@@ -19,7 +19,7 @@ namespace Meteor.Resources
 		/// 
 		float smoothing = 1.5f;
 
-		float moveSpeed = 0.25f;
+		float moveSpeed = 0.0625f;
 
 		KeyboardState currentKeyboardState = new KeyboardState();
 		GamePadState currentGamePadState = new GamePadState();
@@ -58,7 +58,7 @@ namespace Meteor.Resources
 
 		Vector2 lastMousePos = new Vector2(640, 360);
 
-		public void Update(GameTime gameTime)
+		public override void Update(GameTime gameTime)
 		{
 			float time = (float)gameTime.ElapsedGameTime.TotalMilliseconds;
 

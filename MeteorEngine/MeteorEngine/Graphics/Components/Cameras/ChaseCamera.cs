@@ -169,7 +169,7 @@ namespace Meteor.Resources
         /// behind the chased object. The camera's animation is controlled by a simple
         /// physical spring attached to the camera and anchored to the desired position.
         /// </summary>
-        public void Update(GameTime gameTime)
+        public override void Update(GameTime gameTime)
         {
             UpdateWorldPositions();
 

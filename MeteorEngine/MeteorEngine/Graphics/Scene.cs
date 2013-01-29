@@ -132,20 +132,29 @@ namespace Meteor.Resources
 
 		private InstancedModel AddModel(String directory, String modelPath)
 		{
-			string key = modelPath;
-			staticModels.Add(key, new InstancedModel(FindModel(directory, modelPath), graphicsDevice));
+			staticModels.Add(modelPath, new InstancedModel(FindModel(directory, modelPath), graphicsDevice));
 
-			for (int i = 0; i < staticModels[key].model.Meshes.Count; i++)
+			for (int i = 0; i < staticModels[modelPath].model.Meshes.Count; i++)
 			{
 				orderedMeshes.Add(new OrderedMeshData());
 			}
 
-			return staticModels[key];
+			return staticModels[modelPath];
 		}
 
 		private InstancedModel AddModel(String modelPath)
 		{
 			return AddModel(modelPath, modelPath);
+		}
+
+		/// <summary>
+		/// Return a model from the list given the same key
+		/// </summary>
+		/// 
+		public InstancedModel Model(String modelKey)
+		{
+			return (staticModels.ContainsKey(modelKey)) ?
+				staticModels[modelKey] : AddModel(modelKey);
 		}
 
 		/// <summary>
@@ -171,7 +180,17 @@ namespace Meteor.Resources
 			AnimationClip clip = skinningData.AnimationClips[take];
 			instancedModel.animationPlayer.StartClip(clip);
 
-			return instancedModel;
+			return skinnedModels[modelPath];
+		}
+
+		/// <summary>
+		/// Return a model from the list given the same key
+		/// </summary>
+		/// 
+		public InstancedModel SkinnedModel(String modelKey)
+		{
+			return (skinnedModels.ContainsKey(modelKey)) ?
+				skinnedModels[modelKey] : AddSkinnedModel(modelKey);
 		}
 
 		/// <summary>
@@ -194,16 +213,6 @@ namespace Meteor.Resources
 			InstancedModel instancedModel = blendModels[modelPath];
 
 			return blendModels[modelPath];
-		}
-
-		/// <summary>
-		/// Return a model from the list given the same key
-		/// </summary>
-		/// 
-		public InstancedModel Model(String modelKey)
-		{
-			return (staticModels.ContainsKey(modelKey)) ?
-				staticModels[modelKey] : AddModel(modelKey);
 		}
 
 		/// <summary>

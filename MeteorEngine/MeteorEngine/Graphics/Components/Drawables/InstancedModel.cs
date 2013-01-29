@@ -7,6 +7,7 @@ using SkinnedModel;
 
 namespace Meteor.Resources
 {
+
 	public class InstancedModel
 	{
 		/// Model representing the object
@@ -20,13 +21,13 @@ namespace Meteor.Resources
 		}
 
 		/// List to keep bounding boxes for all model meshes
-		BoundingBox[] boundingBoxes;
-		public BoundingBox[] BoundingBoxes
+		Dictionary<string, BoundingBox> boundingBoxes;
+		public Dictionary<string, BoundingBox> BoundingBoxes
 		{
 			get { return boundingBoxes; }
 		}
 
-		public BoundingBox[] tempBoxes;
+		public Dictionary<string, BoundingBox> tempBoxes;
 
 		/// List to keep position of meshes
 		Vector3[] meshPos;
@@ -43,14 +44,33 @@ namespace Meteor.Resources
 		}
 
 		/// Array for the instancing groups of each mesh
-		List<EntityInstance>[] meshInstanceGroups;
-		public List<EntityInstance>[] MeshInstanceGroups
+		/// Instances are grouped by mesh name
+		MeshInstanceGroup[] meshInstanceGroups;
+		public MeshInstanceGroup[] MeshInstanceGroups
 		{
 			get { return meshInstanceGroups; }
 		}
 
-		/// Dynamic vertex buffer to store instancing data
-		public DynamicVertexBuffer[] instanceVB;
+		/// Data structure to contain all instance data
+		/// and related vertex buffer for instancing
+		public class MeshInstanceGroup
+		{
+			public List<EntityInstance> instances;
+			public List<EntityInstance> visibleInstances;
+			public List<Matrix> tempMatrices;
+
+			public DynamicVertexBuffer instanceVB;
+			public string meshName;
+
+			public MeshInstanceGroup(string name)
+			{
+				instances = new List<EntityInstance>();
+				visibleInstances = new List<EntityInstance>();
+				tempMatrices = new List<Matrix>();
+
+				meshName = name;
+			}
+		}
 
 		/// Initialize an array of bounding box indices
 		public static readonly short[] bBoxIndices = {
@@ -91,40 +111,49 @@ namespace Meteor.Resources
 
 			// Set up model data
 			modelTextures = new List<Texture2D>();
-			meshInstanceGroups = new List<EntityInstance>[model.Meshes.Count];
+			meshInstanceGroups = new MeshInstanceGroup[model.Meshes.Count];
 
 			// Bounding box data
-			boundingBoxes = new BoundingBox[model.Meshes.Count];
-			tempBoxes = new BoundingBox[model.Meshes.Count];
+			boundingBoxes = new Dictionary<string, BoundingBox>();
+			tempBoxes = new Dictionary<string, BoundingBox>();
 			boxVertices = new VertexPositionColor[BoundingBox.CornerCount];
 
 			// Set up positions
 			meshPos = new Vector3[model.Meshes.Count];
 			screenPos = new Vector2[model.Meshes.Count];
 
-			// Add matrices and instancing vertex buffer
-			instanceVB = new DynamicVertexBuffer[model.Meshes.Count];
+			// Add model matrices
 			boneMatrices = new Matrix[model.Bones.Count];
 			model.CopyAbsoluteBoneTransformsTo(boneMatrices);
 
 			// Extract textures and create bounding boxes
 
-			for (int i = 0; i < model.Meshes.Count; i++)
+			int meshIndex = 0;
+			foreach (ModelMesh mesh in model.Meshes)
 			{
+				string meshName = mesh.Name;
+
+				if (mesh.Name == null)
+					meshName = "DefaultName";
+
 				// Build bounding boxes
-				Matrix meshTransform = boneMatrices[model.Meshes[i].ParentBone.Index];
-				boundingBoxes[i] = BuildBoundingBox(model.Meshes[i], meshTransform);
+				Matrix meshTransform = boneMatrices[mesh.ParentBone.Index];
+				boundingBoxes.Add(meshName, BuildBoundingBox(mesh, meshTransform));
 
 				// Add instance data
-				meshInstanceGroups[i] = new List<EntityInstance>();
-				meshInstanceGroups[i].Add(new EntityInstance());
+				meshInstanceGroups[meshIndex] = new MeshInstanceGroup(meshName);
+				meshInstanceGroups[meshIndex].instances.Add(new EntityInstance());
+				meshInstanceGroups[meshIndex].tempMatrices.Add(new Matrix());
 
 				// Add dynamic vertex buffers
-				instanceVB[i] = CreateInstanceVB(graphicsDevice, meshInstanceGroups[i]);
+				meshInstanceGroups[meshIndex].instanceVB =
+					CreateInstanceVB(graphicsDevice, meshInstanceGroups[meshIndex].instances);
 
 				// Add mesh textures
-				foreach (ModelMeshPart meshPart in model.Meshes[i].MeshParts)
+				foreach (ModelMeshPart meshPart in mesh.MeshParts)
 					modelTextures.Add(meshPart.Effect.Parameters["Texture"].GetValueTexture2D());
+
+				meshIndex++;
 			}
 		}
 
@@ -195,20 +224,19 @@ namespace Meteor.Resources
 		/// Update the instancing vertex buffer
 		/// </summary>
 
-		private DynamicVertexBuffer UpdateInstanceVB(
-			DynamicVertexBuffer instanceVB, List<EntityInstance> meshInstances)
+		public DynamicVertexBuffer UpdateInstanceVB(MeshInstanceGroup instanceGroup)
 		{
-			int totalInstances = meshInstances.Count;
-			EntityInstance.InstanceData[] instances = new EntityInstance.InstanceData[totalInstances];
 
+			int totalInstances = instanceGroup.instances.Count;
+			
 			// Copy transform data to InstanceData structure
 			for (int i = 0; i < totalInstances; i++)
-				instances[i].transform = meshInstances[i].Transform;
+				instanceGroup.tempMatrices[i] = instanceGroup.instances[i].Transform;
 
 			// Update vertex buffer
-			instanceVB.SetData(instances);
+			instanceGroup.instanceVB.SetData(instanceGroup.tempMatrices.ToArray());
 
-			return instanceVB;
+			return instanceGroup.instanceVB;
 		}
 
 		/// <summary>
@@ -218,10 +246,40 @@ namespace Meteor.Resources
 
 		public InstancedModel NewInstance(Matrix transform)
 		{
-			foreach(List<EntityInstance> instances in meshInstanceGroups)
-				instances.Add(new EntityInstance(transform));
+			foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups)
+				instanceGroup.instances.Add(new EntityInstance(transform));
 
 			return this;
+		}
+
+		/// <summary>
+		/// Add a new instance of this model with no transformation.
+		/// </summary>
+
+		public InstancedModel NewInstance()
+		{
+			foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups)
+				instanceGroup.instances.Add(new EntityInstance(Matrix.Identity));
+
+			return this;
+		}
+
+		/// <summary>
+		/// Returns the last instance of this model.
+		/// </summary>
+
+		public Vector3 Position
+		{
+			get 
+			{ 
+				Vector3 position = new Vector3();
+				foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups)
+				{
+					position = instanceGroup.instances[0].position;
+					break;
+				}
+				return position;
+			}
 		}
 
 		/// <summary>
@@ -230,12 +288,12 @@ namespace Meteor.Resources
 
 		public InstancedModel Translate(float x, float y, float z)
 		{
-			int i = 0;
-			foreach(List<EntityInstance> instances in meshInstanceGroups)
+			foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups)
 			{
-				instances[instances.Count - 1].position = new Vector3(x, y, z);
-				instances[instances.Count - 1].UpdateMatrix();
-				UpdateInstanceVB(instanceVB[i++], instances);
+				int last = instanceGroup.instances.Count - 1;
+
+				instanceGroup.instances[last].position = new Vector3(x, y, z);
+				instanceGroup.instances[last].UpdateMatrix();
 			}
 
 			return this;
@@ -243,12 +301,12 @@ namespace Meteor.Resources
 
 		public InstancedModel Translate(Vector3 translate)
 		{
-			int i = 0;
-			foreach (List<EntityInstance> instances in meshInstanceGroups)
+			foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups)
 			{
-				instances[instances.Count - 1].position = translate;
-				instances[instances.Count - 1].UpdateMatrix();
-				UpdateInstanceVB(instanceVB[i++], instances);
+				int last = instanceGroup.instances.Count - 1;
+
+				instanceGroup.instances[last].position = translate;
+				instanceGroup.instances[last].UpdateMatrix();
 			}
 
 			return this;
@@ -266,11 +324,12 @@ namespace Meteor.Resources
 		public InstancedModel Scale(float scale)
 		{
 			int i = 0;
-			foreach (List<EntityInstance> instances in meshInstanceGroups)
+			foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups)
 			{
-				instances[instances.Count - 1].scaling = new Vector3(scale);
-				instances[instances.Count - 1].UpdateMatrix();
-				UpdateInstanceVB(instanceVB[i++], instances);
+				int last = instanceGroup.instances.Count - 1;
+
+				instanceGroup.instances[last].scaling = new Vector3(scale);
+				instanceGroup.instances[last].UpdateMatrix();
 			}
 
 			return this;
@@ -287,11 +346,12 @@ namespace Meteor.Resources
 			z = MathHelper.ToRadians(z);
 
 			int i = 0;
-			foreach (List<EntityInstance> instances in meshInstanceGroups)
+			foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups)
 			{
-				instances[instances.Count - 1].rotation = Quaternion.CreateFromYawPitchRoll(y, x, z);
-				instances[instances.Count - 1].UpdateMatrix();
-				UpdateInstanceVB(instanceVB[i++], instances);
+				int last = instanceGroup.instances.Count - 1;
+
+				instanceGroup.instances[last].rotation = Quaternion.CreateFromYawPitchRoll(y, x, z);
+				instanceGroup.instances[last].UpdateMatrix();
 			}
 			return this;
 		}

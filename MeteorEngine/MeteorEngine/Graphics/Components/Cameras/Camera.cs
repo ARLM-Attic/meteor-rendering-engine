@@ -91,10 +91,16 @@ namespace Meteor.Resources
 			get { return (float)viewAspect.X / (float)viewAspect.Y; }
 		}
 
-        public float nearPlaneDistance = 4f;
-        public float farPlaneDistance = 4000.0f;
+        public float nearPlaneDistance = 1f;
+        public float farPlaneDistance = 1000.0f;
 		public float nearSplitPlaneDistance;
 		public float farSplitPlaneDistance;
+
+		/// <summary>
+		/// Return frustum split info based on cascaded shadow mapping.
+		/// Split distances can be interpolated between linear and logarithmic distance 
+		/// depending on the lambda coefficient.
+		/// </summary>
 
 		public Vector2 GetFrustumSplit(int split, int numSplits, float lambda = 0.25f)
 		{
@@ -121,8 +127,12 @@ namespace Meteor.Resources
 			if (split > 0)
 				nearSplitPlaneDistance *= 0.95f;
 
-			return new Vector2(nearPlaneDistance * (split + 1), farSplitPlaneDistance);
+			return new Vector2(nearPlaneDistance * ((split + 1) * (split + 1)), farSplitPlaneDistance);
 		}
+
+		/// <summary>
+		/// Default camera constructor with default position
+		/// </summary>
 
         public Camera()
         {
@@ -131,6 +141,10 @@ namespace Meteor.Resources
 			nearSplitPlaneDistance = nearPlaneDistance;
 			farSplitPlaneDistance = farPlaneDistance;
         }
+
+		/// <summary>
+		/// Camera constructor with a given position and lookAt location.
+		/// </summary>
 
 		public Camera(Vector3 pos, Vector2 orientation)
 		{
@@ -184,7 +198,7 @@ namespace Meteor.Resources
 			targetArc = orientation.Y; // pitch			
 		}
 
-		public virtual void Update()
+		public virtual void Update(GameTime gameTime = null)
 		{
 			oldView = view;
 			oldProjection = projection;

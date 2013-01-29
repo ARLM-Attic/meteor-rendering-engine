@@ -64,9 +64,12 @@ VertexShaderOutput DepthMapVS(VertexShaderInput input, InstanceInput instance)
 #define MaxBones 60
 float4x4 bones[MaxBones];
 
-VertexShaderOutput DepthMapSkinnedAnimation(VertexShaderInput input)
+VertexShaderOutput DepthMapSkinnedAnimation(VertexShaderInput input, InstanceInput instance)
 {
     VertexShaderOutput output;
+
+	float4x4 WorldInstance = 
+		float4x4(instance.vWorld1, instance.vWorld2, instance.vWorld3, instance.vWorld4);
 
 	// Blend between the weighted bone matrices.
 	float4x4 skinTransform = 0;
@@ -77,6 +80,7 @@ VertexShaderOutput DepthMapSkinnedAnimation(VertexShaderInput input)
 	skinTransform += bones[input.boneIndices.w] * input.boneWeights.w;
 
 	float4 position = mul(input.Position, skinTransform);
+	position = mul(position, WorldInstance);
 
 	output.position = mul(position, mul(World, LightViewProj));
 	output.depth = output.position.z;

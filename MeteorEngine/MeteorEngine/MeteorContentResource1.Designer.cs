@@ -158,9 +158,23 @@ namespace MeteorEngine {
             }
         }
         
+        internal static byte[] seattle {
+            get {
+                object obj = ResourceManager.GetObject("seattle", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
         internal static byte[] segoeUI {
             get {
                 object obj = ResourceManager.GetObject("segoeUI", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        internal static byte[] skyblue_cube {
+            get {
+                object obj = ResourceManager.GetObject("skyblue_cube", resourceCulture);
                 return ((byte[])(obj));
             }
         }

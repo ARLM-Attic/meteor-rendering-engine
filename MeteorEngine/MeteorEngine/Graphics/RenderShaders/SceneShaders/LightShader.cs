@@ -34,7 +34,7 @@ namespace Meteor.Rendering
 		Camera lightCamera;
 
 		/// Texture dimensions for individual shadow cascade
-		const int shadowMapSize = 1536;
+		const int shadowMapSize = 2048;
 
 		/// Total number of cascades for CSM
 		const int numCascades = 4;
@@ -42,7 +42,7 @@ namespace Meteor.Rendering
 		/// Ambient light irradiance
 		Vector3 ambientTerm;
 
-		public float splitLambda = 0.55f;
+		public float splitLambda = 0.65f;
 
 		Matrix[] lightViewProj;
 		Matrix[] lightProjection;
@@ -352,7 +352,7 @@ namespace Meteor.Rendering
 
 			// Create the projection matrix for the light
 			// The projection is orthographic since we are using a directional light
-			float nearScale = 1.5f;
+			float nearScale = 2.5f;
 			lightCamera.Projection = 
 				Matrix.CreateOrthographic(boxSize.X, boxSize.Y, -boxSize.Z * nearScale, boxSize.Z / 2f);
 		}

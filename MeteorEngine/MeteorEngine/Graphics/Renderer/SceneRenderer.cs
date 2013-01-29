@@ -36,6 +36,7 @@ namespace Meteor.Rendering
 		ContentManager content;
 		GraphicsDevice graphicsDevice;
 		Texture2D testNormal;
+		TextureCube environment;
 		Texture2D blankTexture, blankSpecular;
 
 		MeshPrioritySort meshPrioritySort;
@@ -58,6 +59,7 @@ namespace Meteor.Rendering
 			testNormal = content.Load<Texture2D>("null_normal");
 			blankTexture = content.Load<Texture2D>("null_color");
 			blankSpecular = content.Load<Texture2D>("null_specular");
+			environment = content.Load<TextureCube>("skyblue_cube");
 
 			meshPrioritySort = new MeshPrioritySort();
 
@@ -367,20 +369,28 @@ namespace Meteor.Rendering
 
 			int meshIndex = 0;
 
-			foreach (ModelMesh mesh in instancedModel.model.Meshes)
+			//foreach (ModelMesh mesh in instancedModel.model.Meshes)
+			foreach (InstancedModel.MeshInstanceGroup instanceGroup in instancedModel.MeshInstanceGroups)
 			{
-				int totalInstances = instancedModel.MeshInstanceGroups[meshIndex].Count;
+				int totalInstances = instanceGroup.instances.Count;
 
 				/// Resize the vertex buffer for instances if needed
-				if (totalInstances > instancedModel.instanceVB[meshIndex].VertexCount)
+				if (totalInstances > instanceGroup.instanceVB.VertexCount)
 				{
-					instancedModel.instanceVB[meshIndex] =
-						instancedModel.CreateInstanceVB(graphicsDevice, instancedModel.MeshInstanceGroups[meshIndex]);
+					instanceGroup.instanceVB =
+						instancedModel.CreateInstanceVB(graphicsDevice, instanceGroup.instances);
 				}
+				else
+				{
+					instancedModel.UpdateInstanceVB(instanceGroup);
+				}
+
+				// Retrieve the current mesh from the mesh list
+				ModelMesh mesh = instancedModel.model.Meshes[meshIndex];
 
 				foreach (ModelMeshPart meshPart in mesh.MeshParts)
 				{
-					VertexBuffer meshInstanceVB = instancedModel.instanceVB[meshIndex];
+					VertexBuffer meshInstanceVB = instanceGroup.instanceVB;
 
 					bindings[0] = new VertexBufferBinding(meshPart.VertexBuffer, meshPart.VertexOffset, 0);
 					bindings[1] = new VertexBufferBinding(meshInstanceVB, 0, 1);
@@ -393,7 +403,7 @@ namespace Meteor.Rendering
 					Effect effect = meshPart.Effect;
 					effect.CurrentTechnique = effect.Techniques[tech];
 
-					Matrix world = instancedModel.boneMatrices[mesh.ParentBone.Index] * Matrix.Identity;
+					Matrix world = instancedModel.boneMatrices[mesh.ParentBone.Index];
 
 					// A bit hacky way to limit number of mesh bones. Will fix soon
 					if (instancedModel.animationPlayer != null)
@@ -402,9 +412,13 @@ namespace Meteor.Rendering
 					if (instancedModel.Textures[meshIndex] == null)
 						effect.Parameters["Texture"].SetValue(blankTexture);
 
+					effect.Parameters["EnvironmentMap"].SetValue(environment);
 					effect.Parameters["World"].SetValue(world);
 					effect.Parameters["View"].SetValue(camera.View);
 					effect.Parameters["Projection"].SetValue(camera.Projection);
+					effect.Parameters["WorldInverseTranspose"].SetValue(
+									Matrix.Transpose(Matrix.Invert(world * mesh.ParentBone.Transform)));
+					effect.Parameters["CameraPosition"].SetValue(camera.Position);
 
 					for (int i = 0; i < effect.CurrentTechnique.Passes.Count; i++)
 					{
@@ -418,9 +432,10 @@ namespace Meteor.Rendering
 
 					totalPolys += meshPart.PrimitiveCount * totalInstances;
 				}
+
+				// Finished drawing mesh parts
 				meshIndex++;
 			}
-
 			// End model rendering
 		}
 
@@ -446,20 +461,27 @@ namespace Meteor.Rendering
 
 			int meshIndex = 0;	
 
-			foreach (ModelMesh mesh in instancedModel.model.Meshes)
+			foreach (InstancedModel.MeshInstanceGroup instanceGroup in instancedModel.MeshInstanceGroups)
 			{
-				int totalInstances = instancedModel.MeshInstanceGroups[meshIndex].Count;
+				int totalInstances = instanceGroup.instances.Count;			
 
 				/// Resize the vertex buffer for instances if needed
-				if (totalInstances > instancedModel.instanceVB[meshIndex].VertexCount)
+				if (totalInstances > instanceGroup.instanceVB.VertexCount)
 				{
-					instancedModel.instanceVB[meshIndex] =
-						instancedModel.CreateInstanceVB(graphicsDevice, instancedModel.MeshInstanceGroups[meshIndex]);
+					instanceGroup.instanceVB =
+						instancedModel.CreateInstanceVB(graphicsDevice, instanceGroup.instances);
 				}
+				else
+				{
+					instancedModel.UpdateInstanceVB(instanceGroup);
+				}
+
+				// Retrieve the current mesh from the mesh list
+				ModelMesh mesh = instancedModel.model.Meshes[meshIndex];
 
 				foreach (ModelMeshPart meshPart in mesh.MeshParts)
 				{
-					VertexBuffer meshInstanceVB = instancedModel.instanceVB[meshIndex];
+					VertexBuffer meshInstanceVB = instanceGroup.instanceVB;
 
 					bindings[0] = new VertexBufferBinding(meshPart.VertexBuffer, meshPart.VertexOffset, 0);
 					bindings[1] = new VertexBufferBinding(meshInstanceVB, 0, 1);
@@ -485,7 +507,9 @@ namespace Meteor.Rendering
 							meshPart.PrimitiveCount, totalInstances);
 					}
 				}
+
 				// Finished drawing mesh parts
+				meshIndex++;
 			}
 		}
 
@@ -546,9 +570,12 @@ namespace Meteor.Rendering
 		private void DrawBoundingBoxes(InstancedModel model, Camera camera)
 		{
 			int meshIndex = 0;
-			
-			foreach (BoundingBox box in model.BoundingBoxes)
-			{				
+
+			foreach (KeyValuePair<string, BoundingBox> boxEntry in model.BoundingBoxes)
+			{
+				string boxName = boxEntry.Key;
+				BoundingBox box = boxEntry.Value;
+
 				// Assign the box corners
 				boxCorners[0] = new Vector3(box.Min.X, box.Max.Y, box.Max.Z);
 				boxCorners[1] = new Vector3(box.Max.X, box.Max.Y, box.Max.Z); // maximum
@@ -562,7 +589,7 @@ namespace Meteor.Rendering
 				//Color[] colors = { Color.Cyan, Color.White, Color.Magenta, Color.Blue,
 				//	Color.Green, Color.Yellow, Color.Red, Color.Black };XZ
 
-				foreach (EntityInstance modelInstance in model.MeshInstanceGroups[meshIndex])
+				foreach (EntityInstance modelInstance in model.MeshInstanceGroups[meshIndex].instances)
 				{
 					Matrix modelTransform = modelInstance.Transform;
 
@@ -575,9 +602,12 @@ namespace Meteor.Rendering
 					// Transform the temporary bounding boxes with the model instance's world matrix
 					// TODO: Update these boxes only when intances are updated
 
-					model.tempBoxes[meshIndex] = box;
-					model.tempBoxes[meshIndex].Min = box.Min + modelInstance.position;//Vector3.Transform(box.Min, modelTransform);
-					model.tempBoxes[meshIndex].Max = box.Max + modelInstance.position;//Vector3.Transform(box.Max, modelTransform);
+					box.Min += modelInstance.position;
+					box.Max += modelInstance.position;
+
+					model.tempBoxes[boxName] = box;
+					//model.tempBoxes[boxName].Min = box.Min + modelInstance.position;//Vector3.Transform(box.Min, modelTransform);
+					//model.tempBoxes[boxName].Max = box.Max + modelInstance.position;//Vector3.Transform(box.Max, modelTransform);
 
 					// Render the bounding box for this instance
 					//if (camera.Frustum.Contains(model.tempBoxes[meshIndex]) != ContainmentType.Disjoint)
