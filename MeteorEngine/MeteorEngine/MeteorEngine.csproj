@@ -97,15 +97,17 @@
     <Compile Include="Graphics\Components\Cameras\DragCamera.cs" />
     <Compile Include="Graphics\Components\Cameras\FreeCamera.cs" />
     <Compile Include="Graphics\Components\DrawableComponent.cs" />
-    <Compile Include="Graphics\Components\Drawables\EntityInstance.cs">
+    <Compile Include="Graphics\Components\Drawables\MeshInstance.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Graphics\Components\Drawables\InstancedModel.cs" />
+    <Compile Include="Graphics\Components\Drawables\ShapeRenderer.cs" />
     <Compile Include="Graphics\Components\Drawables\TerrainMap.cs" />
     <Compile Include="Graphics\Components\Lights\DirectionalLight.cs" />
     <Compile Include="Graphics\Components\Lights\PointLight.cs" />
     <Compile Include="Graphics\Components\MeteorComponent.cs" />
     <Compile Include="Graphics\Components\Drawables\QuadRenderer.cs" />
+    <Compile Include="Graphics\Components\QuadTree.cs" />
     <Compile Include="Graphics\Renderer\SceneRenderer.cs" />
     <Compile Include="Graphics\Components\Core.cs" />
     <Compile Include="Graphics\Helpers\GaussianBlur.cs" />
@@ -131,7 +133,7 @@
     <Compile Include="Graphics\SampleRenderProfiles\LightPrePassRenderer.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Graphics\Scene.cs" />
+    <Compile Include="Graphics\Components\Scene.cs" />
     <Compile Include="MeteorContentResource1.Designer.cs">
       <DependentUpon>MeteorContentResource.resx</DependentUpon>
       <DesignTime>True</DesignTime>

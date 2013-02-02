@@ -28,16 +28,19 @@ namespace Meteor.Rendering
 		Model sphereModel;
 
 		/// Debug point lights
-		public bool wireframe = false;
+		public bool stippled = false;
+
+		/// Measures the next time to update some shadow maps
+		int shadowUpdateTimer = 0;	
 
 		/// Camera to represent viewpoint of light
 		Camera lightCamera;
 
 		/// Texture dimensions for individual shadow cascade
-		const int shadowMapSize = 1536;
+		const int shadowMapSize = 1024;
 
 		/// Total number of cascades for CSM
-		const int numCascades = 3;
+		const int numCascades = 4;
 
 		/// Arrangement of depth maps in atlas
 		const int mapsPerRow = 2;
@@ -138,6 +141,9 @@ namespace Meteor.Rendering
 				if (scene.totalLights > 0)
 					DrawPointLights(scene, camera, inputTargets);
 			}
+			
+			// Increment the shadow update time
+			shadowUpdateTimer = 1 - shadowUpdateTimer;
 
 			renderStopWatch.Stop();
 			return outputs;
@@ -248,7 +254,11 @@ namespace Meteor.Rendering
 					graphicsDevice.Clear(Color.White);
 
 					for (int cascade = 0; cascade < numCascades; cascade++)
-					{
+					{	
+						// Skip update of far shadow cascades in intervals
+						//if (cascade >= 1 && shadowUpdateTimer == 0)
+						//	break;
+
 						graphicsDevice.DepthStencilState = DepthStencilState.Default;
 
 						// Set camera's near and far view distance
@@ -416,7 +426,7 @@ namespace Meteor.Rendering
 				float camToCenter = Vector3.Distance(camera.Position, lightPosition);
 				radius = radiusVector.Length();
 
-				BoundingSphere bSphere = new BoundingSphere(lightPosition, radius * 1.25f);
+				BoundingSphere bSphere = new BoundingSphere(lightPosition, radius);
 				PlaneIntersectionType planeIntersectionType;
 				cameraFrustum.Near.Intersects(ref bSphere, out planeIntersectionType);
 
@@ -481,7 +491,7 @@ namespace Meteor.Rendering
 					);
 
 					graphicsDevice.Indices = meshPart.IndexBuffer;
-					int totalPasses = (wireframe) ? 1 : 0;
+					int totalPasses = (stippled) ? 1 : 0;
 
 					for (int i = totalPasses; i < totalPasses + 1; i++)
 					{

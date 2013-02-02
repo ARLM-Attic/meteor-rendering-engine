@@ -9,7 +9,7 @@ float3 camPosition;
 
 // Cascaded shadow map settings
 
-#define NUM_CASCADES 3
+#define NUM_CASCADES 4
 #define MAPS_PER_ROW 2
 #define MAPS_PER_COL 2
 
@@ -84,15 +84,35 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
     return output;
 }
 
-float DepthBias = 0.002f;
+float DepthBias = 0.0015f;
 
 /// Poisson disk filter currently not being used
 
-float2 poissonDisk[4] = {
-	float2( -0.94201624, -0.39906216 ),
-	float2( 0.94558609, -0.76890725 ),
-	float2( -0.094184101, -0.92938870 ),
-	float2( 0.34495938, 0.29387760 )
+float2 poissonDisk[24] = { 
+	float2(0.5713538f, 0.7814451f),
+	float2(0.2306823f, 0.6228884f),
+	float2(0.1000122f, 0.9680607f),
+	float2(0.947788f, 0.2773731f),
+	float2(0.2837818f, 0.303393f),
+	float2(0.6001099f, 0.4147638f),
+	float2(-0.2314563f, 0.5434746f),
+	float2(-0.08173513f, 0.0796717f),
+	float2(-0.4692954f, 0.8651238f),
+	float2(0.2768489f, -0.3682062f),
+	float2(-0.5900795f, 0.3607553f),
+	float2(-0.1010569f, -0.5284956f),
+	float2(-0.4741178f, -0.2713854f),
+	float2(0.4067073f, -0.00782522f),
+	float2(-0.4603044f, 0.0511527f),
+	float2(0.9820454f, -0.1295522f),
+	float2(0.8187376f, -0.4105208f),
+	float2(-0.8115796f, -0.106716f),
+	float2(-0.4698426f, -0.6179109f),
+	float2(-0.8402727f, -0.4400948f),
+	float2(-0.2302377f, -0.879307f),
+	float2(0.2748472f, -0.708988f),
+	float2(-0.7874522f, 0.6162704f),
+	float2(-0.9310728f, 0.3289311f)
 };
 
 // Linear filter with 4 samples
@@ -102,33 +122,26 @@ float2 poissonDisk[4] = {
 float3 LinearFilter4Samples(sampler smp, float3 ambient, float2 texCoord, float ourdepth)
 {	
 	// Get the current depth stored in the shadow map
-	float4x4 samples = (float4x4)0; 
-	float4 newSamples;
+	float4 samples[24]; 
+
+	float shadow = 0;
+	float spread = 2;
+	float totalSamples = 16;
+
+	//float blockerDistance = saturate(
+	//	ourdepth - tex2D(smp, texCoord + shadowMapPixelSize).r);
+	//blockerDistance = pow(blockerDistance * 5.f, 2) * 100.f;
+
+	float2 pixelSize = shadowMapPixelSize * spread;
 
 	[unroll]
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < totalSamples; i++)
 	{
-		samples[i].x = tex2D(smp, texCoord + float2(i % 2,     i/ 2) * shadowMapPixelSize).r > ourdepth;
-		samples[i].y = tex2D(smp, texCoord + float2(i % 2 + 1, i/ 2) * shadowMapPixelSize).r > ourdepth;
-		samples[i].z = tex2D(smp, texCoord + float2(i % 2,     i/ 2 + 1) * shadowMapPixelSize).r > ourdepth;
-		samples[i].w = tex2D(smp, texCoord + float2(i % 2 + 1, i/ 2 + 1) * shadowMapPixelSize).r > ourdepth;
-
-		newSamples[i] = dot(samples[i], 0.25f);  
+		samples[i] = tex2D(smp, texCoord + poissonDisk[i] * pixelSize).r > ourdepth;
+		shadow += samples[i];
 	}
 
-	// Determine the lerp amounts           
-	float2 lerps;
-	lerps.x = frac(texCoord.x * (shadowMapSize * MAPS_PER_ROW));
-	lerps.y = frac(texCoord.y * (shadowMapSize * MAPS_PER_COL));
-
-	// lerp between the shadow values to calculate our light amount
-
-	//float shadow = lerp(lerp(samples[0].x, samples[0].y, lerps.x), 
-	//	lerp(samples[0].z, samples[0].w, lerps.x ), lerps.y); 
-
-	float shadow = lerp(lerp(newSamples.x, newSamples.y, lerps.x), 
-		lerp(newSamples.z, newSamples.w, lerps.x ), lerps.y); 	
-
+	shadow /= (totalSamples + 1);
 	return shadow + ambientTerm;
 }
 
@@ -141,8 +154,8 @@ float4 DirectionalLightPS(VertexShaderOutput input, float4 position) : COLOR0
 
 	// Get specular data
 
-	float specPower = 12;//normalData.a * 255;
-	float3 specIntensity = normalData.a;
+	float specPower = 20;//normalData.a * 255;
+	float3 specIntensity = 0.2;//normalData.a;
 
 	float3 lightDir = -normalize(lightDirection);
 
@@ -200,7 +213,9 @@ float3 FindShadow(float4 shadowMapPos, float shadowIndex, float3 normal)
 	float ourdepth = (shadowMapPos.z / shadowMapPos.w) - DepthBias;  
 
 	// Shadow calculation
-	return LinearFilter4Samples(shadowMapSampler, ambientTerm, shadowTexCoord, ourdepth);
+	float3 shadow = 
+		LinearFilter4Samples(shadowMapSampler, ambientTerm, shadowTexCoord, ourdepth);
+	return shadow;
 }
 
 float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0

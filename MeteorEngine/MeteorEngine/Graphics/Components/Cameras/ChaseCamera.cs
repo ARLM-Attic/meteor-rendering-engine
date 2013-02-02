@@ -124,7 +124,7 @@ namespace Meteor.Resources
         /// </summary>
         protected override void UpdateMatrices()
         {
-			worldMatrix = Matrix.CreateTranslation(position);
+			worldTransform = Matrix.CreateTranslation(position);
             view = Matrix.CreateLookAt(position, LookAt, up);
             projection = Matrix.CreatePerspectiveFieldOfView(fieldOfView,
                 aspectRatio, nearPlaneDistance, farPlaneDistance);

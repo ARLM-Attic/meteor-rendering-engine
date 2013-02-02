@@ -7,6 +7,58 @@ using SkinnedModel;
 
 namespace Meteor.Resources
 {
+	/// Data structure to contain all instance data
+	/// and related vertex buffer for instancing
+	public class MeshInstanceGroup
+	{
+		/// <summary>
+		/// List of all instances present for this mesh
+		/// </summary>
+		public List<MeshInstance> instances;
+
+		/// <summary>
+		/// List of all visible instances after culling
+		/// </summary>
+		public List<MeshInstance> visibleInstances;
+
+		/// <summary>
+		/// Number of visible instances after culling
+		/// </summary>
+		public int totalVisible = 0;
+
+		/// <summary>
+		/// Temporary transforms for copying
+		/// </summary>
+		public Matrix[] tempTransforms;
+
+		/// <summary>
+		/// Tightest bounding box that fits this mesh
+		/// </summary>
+		public BoundingBox boundingBox;
+
+		/// <summary>
+		/// Vertex buffer for all mesh instances
+		/// </summary>
+		public DynamicVertexBuffer instanceVB;
+
+		/// <summary>
+		/// Name take from the mesh
+		/// </summary>
+		public string meshName;
+
+		/// <summary>
+		/// Default constructor
+		/// </summary>
+		public MeshInstanceGroup(string name)
+		{
+			instances = new List<MeshInstance>();
+			visibleInstances = new List<MeshInstance>();
+			tempTransforms = new Matrix[1];
+
+			meshName = name;
+		}
+	}
+
 
 	public class InstancedModel
 	{
@@ -20,56 +72,12 @@ namespace Meteor.Resources
 			get { return modelTextures; }
 		}
 
-		/// List to keep bounding boxes for all model meshes
-		Dictionary<string, BoundingBox> boundingBoxes;
-		public Dictionary<string, BoundingBox> BoundingBoxes
-		{
-			get { return boundingBoxes; }
-		}
-
-		public Dictionary<string, BoundingBox> tempBoxes;
-
-		/// List to keep position of meshes
-		Vector3[] meshPos;
-		public Vector3[] MeshPos
-		{
-			get { return meshPos; }
-		}
-
-		/// Array to keep screen space locations of each mesh
-		Vector2[] screenPos;
-		public Vector2[] ScreenPos
-		{
-			get { return screenPos; }
-		}
-
 		/// Array for the instancing groups of each mesh
 		/// Instances are grouped by mesh name
-		MeshInstanceGroup[] meshInstanceGroups;
-		public MeshInstanceGroup[] MeshInstanceGroups
+		Dictionary<string, MeshInstanceGroup> meshInstanceGroups;
+		public Dictionary<string, MeshInstanceGroup> MeshInstanceGroups
 		{
 			get { return meshInstanceGroups; }
-		}
-
-		/// Data structure to contain all instance data
-		/// and related vertex buffer for instancing
-		public class MeshInstanceGroup
-		{
-			public List<EntityInstance> instances;
-			public List<EntityInstance> visibleInstances;
-			public Matrix[] tempMatrices;
-
-			public DynamicVertexBuffer instanceVB;
-			public string meshName;
-
-			public MeshInstanceGroup(string name)
-			{
-				instances = new List<EntityInstance>();
-				visibleInstances = new List<EntityInstance>();
-				tempMatrices = new Matrix[1];
-
-				meshName = name;
-			}
 		}
 
 		/// Initialize an array of bounding box indices
@@ -111,24 +119,16 @@ namespace Meteor.Resources
 
 			// Set up model data
 			modelTextures = new List<Texture2D>();
-			meshInstanceGroups = new MeshInstanceGroup[model.Meshes.Count];
+			meshInstanceGroups = new Dictionary<string, MeshInstanceGroup>();
 
 			// Bounding box data
-			boundingBoxes = new Dictionary<string, BoundingBox>();
-			tempBoxes = new Dictionary<string, BoundingBox>();
 			boxVertices = new VertexPositionColor[BoundingBox.CornerCount];
-
-			// Set up positions
-			meshPos = new Vector3[model.Meshes.Count];
-			screenPos = new Vector2[model.Meshes.Count];
 
 			// Add model matrices
 			boneMatrices = new Matrix[model.Bones.Count];
 			model.CopyAbsoluteBoneTransformsTo(boneMatrices);
 
 			// Extract textures and create bounding boxes
-
-			int meshIndex = 0;
 			foreach (ModelMesh mesh in model.Meshes)
 			{
 				string meshName = mesh.Name;
@@ -136,26 +136,26 @@ namespace Meteor.Resources
 				if (mesh.Name == null)
 					meshName = "DefaultName";
 
-				// Build bounding boxes
+				// Add mesh Instance Group
+				meshInstanceGroups.Add(meshName, new MeshInstanceGroup(meshName));
+
+				// Build bounding volumes
 				Matrix meshTransform = boneMatrices[mesh.ParentBone.Index];
-				boundingBoxes.Add(meshName, BuildBoundingBox(mesh, meshTransform));
+				BoundingSphere boundingSphere = new BoundingSphere();
+				meshInstanceGroups[meshName].boundingBox = BuildBoundingBox(mesh, ref boundingSphere);
 
 				// Add instance data
-				meshInstanceGroups[meshIndex] = new MeshInstanceGroup(meshName);
-				meshInstanceGroups[meshIndex].instances.Add(new EntityInstance());
-
-				//Array.Resize(ref meshInstanceGroups[meshIndex].tempMatrices, 1);
-				meshInstanceGroups[meshIndex].tempMatrices[0] = new Matrix();
+				meshInstanceGroups[meshName].instances.Add(new MeshInstance(boundingSphere));
+				meshInstanceGroups[meshName].visibleInstances.Add(new MeshInstance(boundingSphere));
+				meshInstanceGroups[meshName].tempTransforms[0] = new Matrix();
 
 				// Add dynamic vertex buffers
-				meshInstanceGroups[meshIndex].instanceVB =
-					CreateInstanceVB(graphicsDevice, meshInstanceGroups[meshIndex].instances);
+				meshInstanceGroups[meshName].instanceVB =
+					CreateInstanceVB(graphicsDevice, meshInstanceGroups[meshName].instances);
 
 				// Add mesh textures
 				foreach (ModelMeshPart meshPart in mesh.MeshParts)
 					modelTextures.Add(meshPart.Effect.Parameters["Texture"].GetValueTexture2D());
-
-				meshIndex++;
 			}
 		}
 
@@ -163,11 +163,13 @@ namespace Meteor.Resources
 		/// Create a bounding box for each model mesh
 		/// </summary>
 
-		private static BoundingBox BuildBoundingBox(ModelMesh mesh, Matrix meshTransform)
+		private static BoundingBox BuildBoundingBox(ModelMesh mesh, ref BoundingSphere sphere)
 		{
 			// Create initial variables to hold min and max xyz values for the mesh
 			Vector3 meshMax = new Vector3(float.MinValue);
 			Vector3 meshMin = new Vector3(float.MaxValue);
+
+			Vector3[] vertexPositions = null;
 
 			foreach (ModelMeshPart part in mesh.MeshParts)
 			{
@@ -176,6 +178,8 @@ namespace Meteor.Resources
 				int stride = part.VertexBuffer.VertexDeclaration.VertexStride;
 
 				VertexPositionNormalTexture[] vertexData = new VertexPositionNormalTexture[part.NumVertices];
+				vertexPositions = new Vector3[part.NumVertices];
+
 				part.VertexBuffer.GetData(part.VertexOffset * stride, vertexData, 0, part.NumVertices, stride);
 
 				// Find minimum and maximum xyz values for this mesh part
@@ -184,6 +188,7 @@ namespace Meteor.Resources
 				for (int i = 0; i < vertexData.Length; i++)
 				{
 					vertPosition = vertexData[i].Position;
+					vertexPositions[i] = vertexData[i].Position;
 
 					// update our values from this vertex
 					meshMin = Vector3.Min(meshMin, vertPosition);
@@ -191,12 +196,10 @@ namespace Meteor.Resources
 				}
 			}
 
-			// transform by mesh bone transforms
-			meshMin = Vector3.Transform(meshMin, meshTransform);
-			meshMax = Vector3.Transform(meshMax, meshTransform);
-
 			// Create the bounding box
 			BoundingBox box = new BoundingBox(meshMin, meshMax);
+
+			sphere = BoundingSphere.CreateFromPoints(vertexPositions);
 			return box;
 		}
 
@@ -205,14 +208,14 @@ namespace Meteor.Resources
 		/// </summary>
 		
 		public DynamicVertexBuffer CreateInstanceVB(
-			GraphicsDevice graphicsDevice, List<EntityInstance> meshInstances)
+			GraphicsDevice graphicsDevice, List<MeshInstance> meshInstances)
 		{
 			int totalInstances = meshInstances.Count;
-			EntityInstance.InstanceData[] instances = new EntityInstance.InstanceData[totalInstances];
+			Matrix[] instances = new Matrix[totalInstances];
 
 			// Copy transform data to InstanceData structure
 			for (int i = 0; i < totalInstances; i++)
-				instances[i].transform = meshInstances[i].Transform;
+				instances[i] = meshInstances[i].Transform;
 
 			// Initialize vertex buffer
 			DynamicVertexBuffer instanceVB = new DynamicVertexBuffer(
@@ -227,16 +230,13 @@ namespace Meteor.Resources
 		/// </summary>
 
 		public DynamicVertexBuffer UpdateInstanceVB(MeshInstanceGroup instanceGroup)
-		{
-
-			int totalInstances = instanceGroup.instances.Count;
-			
+		{			
 			// Copy transform data to InstanceData structure
-			for (int i = 0; i < totalInstances; i++)
-				instanceGroup.tempMatrices[i] = instanceGroup.instances[i].Transform;
+			for (int i = 0; i < instanceGroup.totalVisible; i++)
+				instanceGroup.tempTransforms[i] = instanceGroup.visibleInstances[i].Transform;
 
 			// Update vertex buffer
-			instanceGroup.instanceVB.SetData(instanceGroup.tempMatrices);
+			instanceGroup.instanceVB.SetData(instanceGroup.tempTransforms);
 
 			return instanceGroup.instanceVB;
 		}
@@ -248,10 +248,13 @@ namespace Meteor.Resources
 
 		public InstancedModel NewInstance(Matrix transform)
 		{
-			foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups)
+			int i = 0;
+			foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups.Values)
 			{
-				instanceGroup.instances.Add(new EntityInstance(transform));
-				Array.Resize(ref instanceGroup.tempMatrices, instanceGroup.tempMatrices.Length + 1);
+				instanceGroup.instances.Add(new MeshInstance(model.Meshes[i++].BoundingSphere, transform));
+				instanceGroup.visibleInstances.Add(null);
+
+				Array.Resize(ref instanceGroup.tempTransforms, instanceGroup.tempTransforms.Length + 1);
 			}
 
 			return this;
@@ -263,10 +266,14 @@ namespace Meteor.Resources
 
 		public InstancedModel NewInstance()
 		{
-			foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups)
+			int i = 0;
+
+			foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups.Values)
 			{
-				instanceGroup.instances.Add(new EntityInstance(Matrix.Identity));
-				Array.Resize(ref instanceGroup.tempMatrices, instanceGroup.tempMatrices.Length + 1);
+				instanceGroup.instances.Add(new MeshInstance(model.Meshes[i++].BoundingSphere));
+				instanceGroup.visibleInstances.Add(null);
+
+				Array.Resize(ref instanceGroup.tempTransforms, instanceGroup.tempTransforms.Length + 1);
 			}
 
 			return this;
@@ -281,7 +288,7 @@ namespace Meteor.Resources
 			get 
 			{ 
 				Vector3 position = new Vector3();
-				foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups)
+				foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups.Values)
 				{
 					position = instanceGroup.instances[0].position;
 					break;
@@ -296,7 +303,7 @@ namespace Meteor.Resources
 
 		public InstancedModel Translate(float x, float y, float z)
 		{
-			foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups)
+			foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups.Values)
 			{
 				int last = instanceGroup.instances.Count - 1;
 
@@ -309,7 +316,7 @@ namespace Meteor.Resources
 
 		public InstancedModel Translate(Vector3 translate)
 		{
-			foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups)
+			foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups.Values)
 			{
 				int last = instanceGroup.instances.Count - 1;
 
@@ -331,8 +338,7 @@ namespace Meteor.Resources
 
 		public InstancedModel Scale(float scale)
 		{
-			int i = 0;
-			foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups)
+			foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups.Values)
 			{
 				int last = instanceGroup.instances.Count - 1;
 
@@ -353,8 +359,7 @@ namespace Meteor.Resources
 			y = MathHelper.ToRadians(y);
 			z = MathHelper.ToRadians(z);
 
-			int i = 0;
-			foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups)
+			foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups.Values)
 			{
 				int last = instanceGroup.instances.Count - 1;
 

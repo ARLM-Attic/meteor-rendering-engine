@@ -20,7 +20,7 @@ namespace Meteor.Rendering
 		}
 	}
 
-	public class SceneRenderComponent
+	public class SceneRenderer
 	{
 		/// Basic effect to be used for skinned meshes, for now
 		BasicEffect basicEffect;
@@ -36,7 +36,6 @@ namespace Meteor.Rendering
 		ContentManager content;
 		GraphicsDevice graphicsDevice;
 		Texture2D testNormal;
-		TextureCube environment;
 		Texture2D blankTexture, blankSpecular;
 
 		MeshPrioritySort meshPrioritySort;
@@ -48,7 +47,7 @@ namespace Meteor.Rendering
 		/// Swap space for vertex buffer bindings
 		VertexBufferBinding[] bindings;
 
-	    public SceneRenderComponent(GraphicsDevice device, ResourceContentManager content)
+	    public SceneRenderer(GraphicsDevice device, ResourceContentManager content)
         {
 			this.graphicsDevice = device; 
 			this.content = content;
@@ -59,9 +58,10 @@ namespace Meteor.Rendering
 			testNormal = content.Load<Texture2D>("null_normal");
 			blankTexture = content.Load<Texture2D>("null_color");
 			blankSpecular = content.Load<Texture2D>("null_specular");
-			environment = content.Load<TextureCube>("skyblue_cube");
 
+			// Helpers for sorting and drawing debug shapes
 			meshPrioritySort = new MeshPrioritySort();
+			ShapeRenderer.Initialize(graphicsDevice);
 
 			// Effect for bounding box drawing
 			basicEffect = new BasicEffect(device);
@@ -138,26 +138,6 @@ namespace Meteor.Rendering
 		}
 
 		/// <summary>
-		/// Clear all visible meshes from all models
-		/// </summary>
-
-		public void CullAllModels(Scene scene)
-		{
-			scene.culledMeshes = 0;
-			/*
-			// Pre-cull mesh parts
-			foreach (InstancedModel instancedModel in scene.staticModels.Values)
-				instancedModel.VisibleMeshes.Clear();
-
-			foreach (InstancedModel instancedModel in scene.skinnedModels.Values)
-				instancedModel.VisibleMeshes.Clear();
-
-			foreach (InstancedModel instancedModel in scene.blendModels.Values)
-				instancedModel.VisibleMeshes.Clear();
-			*/
-		}
-
-		/// <summary>
 		/// Remove all scene meshes from the culling list.
 		/// </summary>
 
@@ -177,40 +157,32 @@ namespace Meteor.Rendering
 		private void CullFromModelList(Scene scene, Camera camera, Dictionary<String, InstancedModel> modelList)
 		{
 			// Pre-cull mesh parts
-			/*
+			
 			foreach (InstancedModel instancedModel in modelList.Values)
 			{
 				int meshIndex = 0;
-				
-				foreach (BoundingBox box in instancedModel.BoundingBoxes)
-				{			
-					instancedModel.tempBoxes[meshIndex] = box;
-					instancedModel.tempBoxes[meshIndex].Min = 
-						Vector3.Transform(box.Min, instancedModel.MeshInstances[meshIndex][instancedModel.MeshInstances.Count - 1].transform);
-					instancedModel.tempBoxes[meshIndex].Max = Vector3.Transform(box.Max, instancedModel.Transform);
+				foreach (MeshInstanceGroup instanceGroup in instancedModel.MeshInstanceGroups.Values)
+				{				
+					instanceGroup.totalVisible = 0;
+					foreach (MeshInstance meshInstance in instanceGroup.instances)
+					{			
+						// Add mesh and instances to visible list if they're contained in the frustum
 
-					// Add to mesh to visible list if it's contained in the frustum
-
-					if (camera.Frustum.Contains(instancedModel.tempBoxes[meshIndex]) != ContainmentType.Disjoint)
-					{
-						scene.visibleMeshes++;
+						if (camera.Frustum.Contains(meshInstance.BSphere) != ContainmentType.Disjoint)
+						{
+							scene.visibleMeshes++;
+							instanceGroup.visibleInstances[instanceGroup.totalVisible] = meshInstance;
+							instanceGroup.totalVisible++;
+						}
+						else
+						{
+							scene.culledMeshes++;
+						}
 					}
-					else
-					{
-						scene.culledMeshes++;
-					}
-
-					// Move position into screen space homoegenous coordinates
-					Vector4 source = Vector4.Transform(
-						instancedModel.MeshPos[meshIndex], camera.View * camera.Projection);
-					instancedModel.ScreenPos[meshIndex] = 
-						new Vector2((source.X / source.W + 1f) / 2f, (-source.Y / source.W + 1f) / 2f);
 					meshIndex++;
-				}
-				
+				}			
 				// Finished culling this model
 			}
-			 */
 		}
 
 		/// <summary>
@@ -244,32 +216,6 @@ namespace Meteor.Rendering
 			// Pre-cull mesh parts
 			if (scene.orderedMeshes.Count == 0)
 				return;
-			/*
-			int i = 0;
-			foreach (KeyValuePair<string, InstancedModel> instancedModel in modelList)
-			{
-				int meshIndex = 0;
-
-				foreach (ModelMesh mesh in instancedModel.Value.model.Meshes)
-				{
-					float radius = mesh.BoundingSphere.Radius * instancedModel.Value.scaling.X;
-					float distance = Vector3.Distance(
-						camera.Position, mesh.BoundingSphere.Center + instancedModel.Value.position);
-					if (distance < 0.01f) distance = 0.01f;
-
-					// Set mesh metadata
-					scene.orderedMeshes[i].modelName = instancedModel.Key;
-					scene.orderedMeshes[i].meshID = meshIndex;
-					scene.orderedMeshes[i].priority = radius / distance;
-
-					i++;
-					scene.visibleMeshes++;
-				}
-				// Finished adding this model
-			}
-			*/
-			// Sort the order priority
-			//scene.orderedMeshes.Sort(meshPrioritySort);
 		}
 
 		/// <summary>
@@ -309,6 +255,8 @@ namespace Meteor.Rendering
 			graphicsDevice.DepthStencilState = DepthStencilState.Default; 
 			graphicsDevice.RasterizerState = rasterizerState;
 			graphicsDevice.BlendState = blendState;
+
+			graphicsDevice.SetVertexBuffer(null);
 
 			foreach (InstancedModel instancedModel in scene.staticModels.Values)
 				DrawModel(instancedModel, effect, "Default");
@@ -351,26 +299,34 @@ namespace Meteor.Rendering
 		);	
 
 		/// <summary>
+		/// A bit hacky way to limit bone transforms. Will fix soon.
+		/// </summary>
+		/// <param name="instancedModel"></param>
+
+		private void TrimBoneTransforms(InstancedModel instancedModel)
+		{
+			instancedModel.model.CopyAbsoluteBoneTransformsTo(instancedModel.boneMatrices);
+
+			if (instancedModel.animationPlayer != null)
+			{
+				Matrix[] bones = instancedModel.animationPlayer.GetSkinTransforms();
+				int maxBones = (bones.Count() > 60) ? 60 : bones.Count();
+
+				// Not very efficient to do, need a way to avoid copying arrays
+				Array.Copy(bones, tempBones, maxBones);
+			}
+		}
+
+		/// <summary>
 		/// Draw all visible meshes for this model with its default effect.
 		/// </summary>
 
 		private void DrawModel(InstancedModel instancedModel, Camera camera, string tech)
 		{
-			// Draw the model.
-			instancedModel.model.CopyAbsoluteBoneTransformsTo(instancedModel.boneMatrices);
-
-			// A bit hacky way to limit number of mesh bones. Will fix soon
-			if (instancedModel.animationPlayer != null)
-			{
-				Matrix[] bones = instancedModel.animationPlayer.GetSkinTransforms();
-				int maxBones = (bones.Count() > 60) ? 60 : bones.Count();
-				Array.Copy(bones, tempBones, maxBones);
-			}
-
+			TrimBoneTransforms(instancedModel);
 			int meshIndex = 0;
 
-			//foreach (ModelMesh mesh in instancedModel.model.Meshes)
-			foreach (InstancedModel.MeshInstanceGroup instanceGroup in instancedModel.MeshInstanceGroups)
+			foreach (MeshInstanceGroup instanceGroup in instancedModel.MeshInstanceGroups.Values)
 			{
 				int totalInstances = instanceGroup.instances.Count;
 
@@ -390,6 +346,10 @@ namespace Meteor.Rendering
 
 				foreach (ModelMeshPart meshPart in mesh.MeshParts)
 				{
+					// Skip rendering the mesh parts if they aren't visible
+					if (instanceGroup.totalVisible == 0)
+						continue;
+
 					VertexBuffer meshInstanceVB = instanceGroup.instanceVB;
 
 					bindings[0] = new VertexBufferBinding(meshPart.VertexBuffer, meshPart.VertexOffset, 0);
@@ -404,16 +364,15 @@ namespace Meteor.Rendering
 					effect.CurrentTechnique = effect.Techniques[tech];
 
 					Matrix world = instancedModel.boneMatrices[mesh.ParentBone.Index];
+					effect.Parameters["World"].SetValue(world);
 
-					// A bit hacky way to limit number of mesh bones. Will fix soon
+					// Set bones if the model is animated
 					if (instancedModel.animationPlayer != null)
 						effect.Parameters["bones"].SetValue(tempBones);
 
 					if (instancedModel.Textures[meshIndex] == null)
 						effect.Parameters["Texture"].SetValue(blankTexture);
 
-					effect.Parameters["EnvironmentMap"].SetValue(environment);
-					effect.Parameters["World"].SetValue(world);
 					effect.Parameters["View"].SetValue(camera.View);
 					effect.Parameters["Projection"].SetValue(camera.Projection);
 					effect.Parameters["WorldInverseTranspose"].SetValue(
@@ -427,7 +386,7 @@ namespace Meteor.Rendering
 						graphicsDevice.DrawInstancedPrimitives(
 							PrimitiveType.TriangleList, 0, 0,
 							meshPart.NumVertices, meshPart.StartIndex,
-							meshPart.PrimitiveCount, totalInstances);
+							meshPart.PrimitiveCount, instanceGroup.totalVisible);
 					}
 
 					totalPolys += meshPart.PrimitiveCount * totalInstances;
@@ -445,23 +404,10 @@ namespace Meteor.Rendering
 
 		public void DrawModel(InstancedModel instancedModel, Effect effect, String tech = "Default")
 		{			
-			// Draw the model.
-			instancedModel.model.CopyAbsoluteBoneTransformsTo(instancedModel.boneMatrices);
+			TrimBoneTransforms(instancedModel);
+			int meshIndex = 0;
 
-			// A bit hacky. Will fix soon
-			if (instancedModel.animationPlayer != null)
-			{
-				Matrix[] bones = instancedModel.animationPlayer.GetSkinTransforms();
-				int maxBones = (bones.Count() > 60) ? 60 : bones.Count();
-
-				// Not very efficient to do, need a way to avoid copying arrays
-				Array.Copy(bones, tempBones, maxBones);
-				effect.Parameters["bones"].SetValue(tempBones);
-			}
-
-			int meshIndex = 0;	
-
-			foreach (InstancedModel.MeshInstanceGroup instanceGroup in instancedModel.MeshInstanceGroups)
+			foreach (MeshInstanceGroup instanceGroup in instancedModel.MeshInstanceGroups.Values)
 			{
 				int totalInstances = instanceGroup.instances.Count;			
 
@@ -481,6 +427,10 @@ namespace Meteor.Rendering
 
 				foreach (ModelMeshPart meshPart in mesh.MeshParts)
 				{
+					// Skip rendering the mesh parts if they aren't visible
+					if (instanceGroup.totalVisible == 0)
+						continue;
+
 					VertexBuffer meshInstanceVB = instanceGroup.instanceVB;
 
 					bindings[0] = new VertexBufferBinding(meshPart.VertexBuffer, meshPart.VertexOffset, 0);
@@ -493,9 +443,13 @@ namespace Meteor.Rendering
 					// Assign effect technique
 					effect.CurrentTechnique = effect.Techniques[tech];
 
-					Matrix world = instancedModel.boneMatrices[mesh.ParentBone.Index] * Matrix.Identity;
+					Matrix world = instancedModel.boneMatrices[mesh.ParentBone.Index];
 					effect.Parameters["World"].SetValue(world);
 					effect.Parameters["Texture"].SetValue(instancedModel.Textures[meshIndex]);
+
+					// Set bones if the model is animated
+					if (instancedModel.animationPlayer != null)
+						effect.Parameters["bones"].SetValue(tempBones);
 
 					for (int i = 0; i < effect.CurrentTechnique.Passes.Count; i++)
 					{
@@ -504,7 +458,7 @@ namespace Meteor.Rendering
 						graphicsDevice.DrawInstancedPrimitives(
 							PrimitiveType.TriangleList, 0, 0,
 							meshPart.NumVertices, meshPart.StartIndex,
-							meshPart.PrimitiveCount, totalInstances);
+							meshPart.PrimitiveCount, instanceGroup.totalVisible);
 					}
 				}
 
@@ -531,7 +485,11 @@ namespace Meteor.Rendering
 			if (scene.Skybox == null)
 				return;
 			
-			// Draw all skybox meshes
+			// Make skybox visible and copy instance data
+			scene.Skybox.MeshInstanceGroups["DefaultName"].totalVisible = 1;
+			scene.Skybox.MeshInstanceGroups["DefaultName"].visibleInstances[0] =
+				scene.Skybox.MeshInstanceGroups["DefaultName"].instances[0];
+
 			scene.Skybox.Translate(camera.Position);
 			DrawModel(scene.Skybox, camera, this.shaderTechnique);
 		}
@@ -544,7 +502,7 @@ namespace Meteor.Rendering
 		{
 			if (scene.debug == true)
 			{
-				CullModelMeshes(scene, camera);
+				//CullModelMeshes(scene, camera);
 
 				basicEffect.View = camera.View;
 				basicEffect.Projection = camera.Projection;
@@ -571,10 +529,9 @@ namespace Meteor.Rendering
 		{
 			int meshIndex = 0;
 
-			foreach (KeyValuePair<string, BoundingBox> boxEntry in model.BoundingBoxes)
+			foreach (MeshInstanceGroup instancedGroup in model.MeshInstanceGroups.Values)
 			{
-				string boxName = boxEntry.Key;
-				BoundingBox box = boxEntry.Value;
+				BoundingBox box = instancedGroup.boundingBox;
 
 				// Assign the box corners
 				boxCorners[0] = new Vector3(box.Min.X, box.Max.Y, box.Max.Z);
@@ -589,9 +546,9 @@ namespace Meteor.Rendering
 				//Color[] colors = { Color.Cyan, Color.White, Color.Magenta, Color.Blue,
 				//	Color.Green, Color.Yellow, Color.Red, Color.Black };XZ
 
-				foreach (EntityInstance modelInstance in model.MeshInstanceGroups[meshIndex].instances)
+				foreach (MeshInstance meshInstance in instancedGroup.instances)
 				{
-					Matrix modelTransform = modelInstance.Transform;
+					Matrix modelTransform = meshInstance.Transform;
 
 					for (int i = boxCorners.Length; i-- > 0; )
 					{
@@ -602,16 +559,12 @@ namespace Meteor.Rendering
 					// Transform the temporary bounding boxes with the model instance's world matrix
 					// TODO: Update these boxes only when intances are updated
 
-					box.Min += modelInstance.position;
-					box.Max += modelInstance.position;
-
-					model.tempBoxes[boxName] = box;
-					//model.tempBoxes[boxName].Min = box.Min + modelInstance.position;//Vector3.Transform(box.Min, modelTransform);
-					//model.tempBoxes[boxName].Max = box.Max + modelInstance.position;//Vector3.Transform(box.Max, modelTransform);
-
 					// Render the bounding box for this instance
-					//if (camera.Frustum.Contains(model.tempBoxes[meshIndex]) != ContainmentType.Disjoint)
+					if (camera.Frustum.Contains(meshInstance.BSphere) == ContainmentType.Contains)
 					{
+						// Add a bounding sphere to the list of shapes to draw
+						ShapeRenderer.AddBoundingSphere(meshInstance.BSphere, Color.Red);
+
 						for (int i = 0; i < basicEffect.CurrentTechnique.Passes.Count; i++)
 						{
 							basicEffect.CurrentTechnique.Passes[i].Apply();
@@ -620,8 +573,10 @@ namespace Meteor.Rendering
 								InstancedModel.bBoxIndices, 0, 12);
 						}
 					}
-				}
-				
+
+					// Render our shapes now
+					ShapeRenderer.Draw(camera.View, camera.Projection);
+				}			
 				meshIndex++;
 			}
 			

@@ -25,6 +25,10 @@ namespace DeferredRenderingPipeline
     [ContentProcessor(DisplayName = "Meteor Model Processor")]
     public class MeteorModelProcessor : ModelProcessor
     {
+		// this constant determines where we will look for the diffuse map in the opaque
+		// data dictionary.
+		public const string DiffuseMapKey = "Texture";
+
         // this constant determines where we will look for the normal map in the opaque
         // data dictionary.
         public const string NormalMapKey = "NormalMap";
@@ -157,6 +161,14 @@ namespace DeferredRenderingPipeline
 
                 foreach (GeometryContent geometry in mesh.Geometry)
                 {
+					// Add diffuse map textures
+					if (geometry.Material.Textures.ContainsKey(DiffuseMapKey))
+					{
+						ExternalReference<TextureContent> texRef = geometry.Material.Textures[DiffuseMapKey];
+						geometry.Material.Textures.Remove(DiffuseMapKey);
+						geometry.Material.Textures.Add("Texture", texRef);
+					}
+
                     // Add normal map textures
                     if (geometry.Material.Textures.ContainsKey(NormalMapKey))
                     {
@@ -271,14 +283,15 @@ namespace DeferredRenderingPipeline
                 in material.Textures)
             {
                 normalMappingMaterial.Textures.Add(texture.Key, texture.Value);
+				/*
 				if (texture.Key.ToLower().Equals("diffusemap") || texture.Key.ToLower().Equals("texture"))
 				{
-					if (material.Textures.ContainsKey("diffusemap") || material.Textures.ContainsKey("texture"))
+					if (normalMappingMaterial.Textures.ContainsKey("diffusemap") || normalMappingMaterial.Textures.ContainsKey("texture"))
 					{
-						material.Textures.Remove("diffusemap");
-						normalMappingMaterial.Textures.Add("diffusemap", texture.Value);
+						normalMappingMaterial.Textures.Remove("diffusemap");
+						normalMappingMaterial.Textures.Add("Texture", texture.Value);
 					}
-				}
+				} */
             }
 
             // and convert the material using the NormalMappingMaterialProcessor,

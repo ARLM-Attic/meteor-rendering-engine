@@ -9,7 +9,7 @@ using Meteor.Resources;
 namespace Meteor.Rendering
 {
 	public abstract class RenderInput
-	{
+	{		
 		protected BaseShader renderer;
 
 		public BaseShader Renderer
@@ -45,10 +45,9 @@ namespace Meteor.Rendering
 	{
 		public RenderTarget2D target;
 
-		public RenderTargetInput(RenderTarget2D target, BaseShader renderer)
+		public RenderTargetInput(RenderTarget2D target)
 		{
 			this.target = target;
-			this.renderer = renderer;
 		}
 	}
 }

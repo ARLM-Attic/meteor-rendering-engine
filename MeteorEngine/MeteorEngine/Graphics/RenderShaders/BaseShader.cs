@@ -14,7 +14,7 @@ namespace Meteor.Rendering
 		protected QuadRenderComponent quadRenderer;
 
 		/// Used to draw scenes
-		protected SceneRenderComponent sceneRenderer;
+		protected SceneRenderer sceneRenderer;
 
 		// Backbuffer size for render targets
 		protected int backBufferWidth;
@@ -85,7 +85,7 @@ namespace Meteor.Rendering
 
 			// Setup rendering components
 			quadRenderer = new QuadRenderComponent(graphicsDevice);
-			sceneRenderer = new SceneRenderComponent(graphicsDevice, content);
+			sceneRenderer = new SceneRenderer(graphicsDevice, content);
 			LoadContent();
 		}
 
@@ -99,8 +99,8 @@ namespace Meteor.Rendering
 			PresentationParameters pp = graphicsDevice.PresentationParameters;
 
 			//get the sizes of the backbuffer, in order to have matching render targets   
-			backBufferWidth = (int)(pp.BackBufferWidth);
-			backBufferHeight = (int)(pp.BackBufferHeight);
+			backBufferWidth = (int)(pp.BackBufferWidth * 1.5f);
+			backBufferHeight = (int)(pp.BackBufferHeight * 1.5f);
 
 			halfPixel.X = 0.5f / (float)backBufferWidth;
 			halfPixel.Y = 0.5f / (float)backBufferHeight;
@@ -119,7 +119,7 @@ namespace Meteor.Rendering
 			renderInputs.Clear();
 			for (int i = 0; i < targets.Length; i++)
 			{
-				renderInputs.Add("target_" + i, new RenderTargetInput(targets[i], this));
+				renderInputs.Add("target_" + i, new RenderTargetInput(targets[i]));
 			}
 		}
 

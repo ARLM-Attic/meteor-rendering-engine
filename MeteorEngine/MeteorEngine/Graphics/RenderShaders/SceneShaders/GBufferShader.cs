@@ -62,7 +62,7 @@ namespace Meteor.Rendering
 			quadRenderer.Render(Vector2.One * -1, Vector2.One);
 
 			sceneRenderer.CullLights(scene, camera);
-			sceneRenderer.CullModelMeshes(scene, camera);
+			//sceneRenderer.CullModelMeshes(scene, camera);
 
 			// Render the scene
 			sceneRenderer.UseTechnique("GBuffer");
@@ -133,8 +133,8 @@ namespace Meteor.Rendering
 			graphicsDevice.Clear(Color.Transparent);
 
 			graphicsDevice.DepthStencilState = DepthStencilState.Default;
-			graphicsDevice.SamplerStates[0] = SamplerState.LinearWrap;
-			graphicsDevice.SamplerStates[1] = SamplerState.LinearWrap;
+			graphicsDevice.SamplerStates[0] = SamplerState.PointWrap;
+			graphicsDevice.SamplerStates[1] = SamplerState.PointWrap;
 
 			// Clear the small GBuffer
 			clearBufferEffect.CurrentTechnique = clearBufferEffect.Techniques["ClearSmall"];
@@ -142,8 +142,7 @@ namespace Meteor.Rendering
 			quadRenderer.Render(Vector2.One * -1, Vector2.One);
 
 			sceneRenderer.CullLights(scene, camera);
-			sceneRenderer.IgnoreCulling(scene, camera);
-			//sceneRenderer.CullModelMeshes(scene, camera);
+			sceneRenderer.CullModelMeshes(scene, camera);
 
 			// Render the scene
 			sceneRenderer.UseTechnique("SmallGBuffer");

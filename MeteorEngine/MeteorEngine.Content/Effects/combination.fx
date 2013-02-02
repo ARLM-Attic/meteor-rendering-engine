@@ -104,7 +104,7 @@ float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 	if (includeSSAO >= 1)
 		ssao = tex2D(ssaoSampler, input.TexCoord);
 
-	light *= ssao;	
+	light *= ssao;
 
 	float4 finalColor = float4(light.rgb * diffuse + specular, diffuse.a);
 

@@ -97,12 +97,12 @@ namespace Meteor.Rendering
 
 		public override void Draw(GameTime gameTime)
 		{
-			// Forward render the scene with diffuse only 
-			diffuse.Draw();
-
 			// Create the lighting map
 			smallGBuffer.Draw();
 			lights.Draw();
+
+			// Forward render the scene with diffuse only 
+			diffuse.Draw();
 
 			// Combine with lighting
 			composite.Draw();

@@ -27,10 +27,10 @@ namespace Meteor.Resources
             get { return cameraRotation; }
         }
 
-		protected Matrix worldMatrix;
+		protected Matrix worldTransform;
 		public Matrix WorldMatrix
 		{
-			get { return worldMatrix; }
+			get { return worldTransform; }
 		}
 
 		protected Matrix view;
@@ -125,9 +125,10 @@ namespace Meteor.Resources
 
 			nearSplitPlaneDistance = fLog * lambda + fLinear * (1 - lambda);
 			if (split > 0)
-				nearSplitPlaneDistance *= 0.95f;
+				nearSplitPlaneDistance *= 0.8f;
 
-			return new Vector2(nearPlaneDistance * ((split + 1) * (split + 1)), farSplitPlaneDistance);
+			//* ((split + 1) * (split + 1))
+			return new Vector2(nearSplitPlaneDistance, farSplitPlaneDistance);
 		}
 
 		/// <summary>
@@ -172,7 +173,7 @@ namespace Meteor.Resources
 
 			cameraFrustum = new BoundingFrustum(Matrix.Identity);
 			frustumCorners = new Vector3[8];
-			worldMatrix = Matrix.Identity;
+			worldTransform = Matrix.Identity;
 
 			UpdateProjection();
         }
@@ -186,11 +187,6 @@ namespace Meteor.Resources
             farPlaneDistance = clipPlanes.Y;
             UpdateProjection();
         }
-
-		public void SetLookAt(Vector3 lookAt)
-		{
-			position = lookAt;
-		}
 
 		public void SetOrientation(Vector2 orientation)
 		{
@@ -211,7 +207,7 @@ namespace Meteor.Resources
         /// </summary>
 		protected virtual void UpdateMatrices()
         {
-            view = Matrix.CreateLookAt(position, position + worldMatrix.Forward, worldMatrix.Up);
+            view = Matrix.CreateLookAt(position, position + worldTransform.Forward, worldTransform.Up);
 			cameraFrustum.Matrix = view * projection;
         }
 
@@ -223,6 +219,8 @@ namespace Meteor.Resources
 			float aspectRatio = (float)viewAspect.X / (float)viewAspect.Y;
             projection = Matrix.CreatePerspectiveFieldOfView(
                 viewAngle, aspectRatio, nearPlaneDistance, farPlaneDistance);
+
+			cameraFrustum.Matrix = view * projection;
         }
 	}
 
