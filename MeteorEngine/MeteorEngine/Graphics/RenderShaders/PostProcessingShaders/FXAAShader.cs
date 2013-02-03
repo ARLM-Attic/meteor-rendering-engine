@@ -23,8 +23,13 @@ namespace Meteor.Rendering
 			: base(profile, content) 
 		{
 			// Light and combined effect targets
-			finalRT = profile.AddRenderTarget(backBufferWidth,
-				backBufferHeight, SurfaceFormat.Color, DepthFormat.None);
+			finalRT = profile.AddRenderTarget(
+				(int)(backBufferWidth * bufferScaling),
+				(int)(backBufferHeight * bufferScaling), SurfaceFormat.Color, DepthFormat.None);
+
+			// Set new half-pixel values to reflect new sizes
+			halfPixel.X = 0.5f / (float)(backBufferWidth * bufferScaling);
+			halfPixel.Y = 0.5f / (float)(backBufferHeight * bufferScaling);
 
 			outputTargets = new RenderTarget2D[]
 			{

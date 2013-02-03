@@ -12,19 +12,31 @@ namespace Meteor.Rendering
         /// Color and specular intensity
         RenderTarget2D diffuseRT;
 
+		/// External source for GBuffer effect
+		protected Effect GBufferEffect;
+
         public DiffuseShader(RenderProfile profile, ResourceContentManager content)
             : base(profile, content) 
 		{
 			hasSceneInput = true;
 
             // Diffuse render target
-			diffuseRT = profile.AddRenderTarget(backBufferWidth,
-                backBufferHeight, SurfaceFormat.Rgba1010102, DepthFormat.Depth24);
+			diffuseRT = profile.AddRenderTarget(
+				(int)(backBufferWidth * bufferScaling),
+				(int)(backBufferHeight * bufferScaling),
+				SurfaceFormat.Rgba1010102, DepthFormat.Depth24);
+
+			// Set new half-pixel values to reflect new sizes
+			halfPixel.X = 0.5f / (float)(backBufferWidth * bufferScaling);
+			halfPixel.Y = 0.5f / (float)(backBufferHeight * bufferScaling);
 
 			outputTargets = new RenderTarget2D[] 
 			{
 				diffuseRT
 			};
+
+			// Load the shader effects
+			GBufferEffect = content.Load<Effect>("renderGBuffer");
         }
 
         /// <summary>
@@ -42,12 +54,15 @@ namespace Meteor.Rendering
 			// Sampler states for the diffuse map
 			graphicsDevice.SamplerStates[0] = SamplerState.LinearWrap;
 
-			sceneRenderer.CullLights(scene, camera);
-			sceneRenderer.IgnoreCulling(scene, camera);
-			
+			// Cull the objects
+			sceneRenderer.CullModelMeshes(scene, camera);
+
             // Forward render the scene
 			sceneRenderer.UseTechnique("DiffuseRender");
 			sceneRenderer.Draw(scene, camera);
+
+			sceneRenderer.UseTechnique("DiffuseRenderTerrain");
+			sceneRenderer.DrawTerrain(scene, camera, GBufferEffect);
 			
 			// Render the skybox and update sampler state
 			graphicsDevice.SamplerStates[0] = SamplerState.LinearClamp;

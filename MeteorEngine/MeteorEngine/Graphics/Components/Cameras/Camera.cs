@@ -91,36 +91,42 @@ namespace Meteor.Resources
 			get { return (float)viewAspect.X / (float)viewAspect.Y; }
 		}
 
-        public float nearPlaneDistance = 1f;
-        public float farPlaneDistance = 1000.0f;
+        public float nearPlaneDistance = 2f;
+        public float farPlaneDistance = 2000.0f;
 		public float nearSplitPlaneDistance;
 		public float farSplitPlaneDistance;
 
 		/// <summary>
 		/// Return frustum split info based on cascaded shadow mapping.
 		/// Split distances can be interpolated between linear and logarithmic distance 
-		/// depending on the lambda coefficient.
+		/// depending on the lambda coefficient. 
+		/// 
+		/// The limit scales back by how far shadows will be rendered. This is useful for
+		/// better looking shadows at shorter distances.
 		/// </summary>
 
-		public Vector2 GetFrustumSplit(int split, int numSplits, float lambda = 0.25f)
+		public Vector2 GetFrustumSplit(int split, int numSplits, float lambda = 0.25f, float limit = 1f)
 		{
+			limit = (limit > 1f) ? 1f : limit;
 			split = (split > numSplits) ? numSplits : split;
+
+			float farDistance = farPlaneDistance * limit;
 
 			// CLi = n*(f/n)^(i/numsplits)
 			// CUi = n + (f-n)*(i/numsplits)
 			// Ci = CLi*(lambda) + CUi*(1-lambda)
 
 			float fLog = nearPlaneDistance *
-				(float)Math.Pow((farPlaneDistance / nearPlaneDistance), (split + 1) / (float)numSplits);
-			float fLinear = nearPlaneDistance + (farPlaneDistance - nearPlaneDistance) * 
+				(float)Math.Pow((farDistance / nearPlaneDistance), (split + 1) / (float)numSplits);
+			float fLinear = nearPlaneDistance + (farDistance - nearPlaneDistance) * 
 				((split + 1) / (float)numSplits);
 
 			// make sure border values are right
 			farSplitPlaneDistance = fLog * lambda + fLinear * (1 - lambda);
 
 			fLog = nearPlaneDistance *
-				(float)Math.Pow((farPlaneDistance / nearPlaneDistance), split / (float)numSplits);
-			fLinear = nearPlaneDistance + (farPlaneDistance - nearPlaneDistance) *
+				(float)Math.Pow((farDistance / nearPlaneDistance), split / (float)numSplits);
+			fLinear = nearPlaneDistance + (farDistance - nearPlaneDistance) *
 				(split / (float)numSplits);
 
 			nearSplitPlaneDistance = fLog * lambda + fLinear * (1 - lambda);
@@ -207,7 +213,6 @@ namespace Meteor.Resources
         /// </summary>
 		protected virtual void UpdateMatrices()
         {
-            view = Matrix.CreateLookAt(position, position + worldTransform.Forward, worldTransform.Up);
 			cameraFrustum.Matrix = view * projection;
         }
 
@@ -237,12 +242,12 @@ namespace Meteor.Resources
 
 			// Calculate the near and far plane centers
 			Vector3 nearPlaneCenter = camera.Position +
-				Vector3.Normalize(camera.WorldMatrix.Forward) * camera.nearPlaneDistance;
+				Vector3.Normalize(camera.WorldMatrix.Forward) * camera.nearSplitPlaneDistance;
 			Vector3 farPlaneCenter = camera.Position +
 				Vector3.Normalize(camera.WorldMatrix.Forward) * camera.farSplitPlaneDistance;
 
 			// Get the vertical and horizontal extent locations from the center
-			float nearExtentDistance = (float)Math.Tan(camera.ViewAngle / 2f) * camera.nearPlaneDistance;
+			float nearExtentDistance = (float)Math.Tan(camera.ViewAngle / 2f) * camera.nearSplitPlaneDistance;
 			Vector3 nearExtentY = nearExtentDistance * camera.WorldMatrix.Up;
 			Vector3 nearExtentX = nearExtentDistance * camera.AspectRatio * camera.WorldMatrix.Left;
 

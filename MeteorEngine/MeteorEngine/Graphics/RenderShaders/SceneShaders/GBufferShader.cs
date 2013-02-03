@@ -61,8 +61,9 @@ namespace Meteor.Rendering
 			clearBufferEffect.CurrentTechnique.Passes[0].Apply();
 			quadRenderer.Render(Vector2.One * -1, Vector2.One);
 
-			sceneRenderer.CullLights(scene, camera);
-			//sceneRenderer.CullModelMeshes(scene, camera);
+			// Cull the objects
+			SceneCuller.CullLights(scene, camera);
+			sceneRenderer.CullModelMeshes(scene, camera);
 
 			// Render the scene
 			sceneRenderer.UseTechnique("GBuffer");
@@ -88,9 +89,15 @@ namespace Meteor.Rendering
 		/// Scene depth
 		protected RenderTarget2D depthRT;
 
-		/// Clearing GBuffer
+		/// External source for GBuffer effect
+		protected Effect GBufferEffect;
+
+		/// Source effect for clearing GBuffer
 		protected Effect clearBufferEffect;
 
+		/// <summary>
+		/// Render binding target array used by both GBuffer shaders.
+		/// </summary>
 		protected RenderTargetBinding[] bindingTargets;
 
 		/// <summary>
@@ -101,10 +108,18 @@ namespace Meteor.Rendering
 			: base(profile, content)
 		{
 			// Normal render targets
-			normalRT = profile.AddRenderTarget(backBufferWidth,
-				backBufferHeight, SurfaceFormat.Color, DepthFormat.Depth24Stencil8);
-			depthRT = profile.AddRenderTarget(backBufferWidth,
-				backBufferHeight, SurfaceFormat.Single, DepthFormat.None);
+			normalRT = profile.AddRenderTarget(
+				(int)(backBufferWidth * bufferScaling),
+				(int)(backBufferHeight * bufferScaling), 
+				SurfaceFormat.Color, DepthFormat.Depth24Stencil8);
+
+			depthRT = profile.AddRenderTarget(
+				(int)(backBufferWidth * bufferScaling),
+				(int)(backBufferHeight * bufferScaling), SurfaceFormat.Rg32, DepthFormat.None);
+
+			// Set new half-pixel values to reflect new sizes
+			halfPixel.X = 0.5f / (float)(backBufferWidth * bufferScaling);
+			halfPixel.Y = 0.5f / (float)(backBufferHeight * bufferScaling);
 
 			bindingTargets = new RenderTargetBinding[2];
 			bindingTargets[0] = normalRT;
@@ -115,6 +130,7 @@ namespace Meteor.Rendering
 			outputTargets[1] = depthRT;
 
 			// Load the shader effects
+			GBufferEffect = content.Load<Effect>("renderGBuffer");
 			clearBufferEffect = content.Load<Effect>("clearGBuffer");
 		}
 
@@ -141,12 +157,16 @@ namespace Meteor.Rendering
 			clearBufferEffect.CurrentTechnique.Passes[0].Apply();
 			quadRenderer.Render(Vector2.One * -1, Vector2.One);
 
-			sceneRenderer.CullLights(scene, camera);
+			// Cull objects
+			SceneCuller.CullLights(scene, camera);
 			sceneRenderer.CullModelMeshes(scene, camera);
 
 			// Render the scene
 			sceneRenderer.UseTechnique("SmallGBuffer");
 			sceneRenderer.Draw(scene, camera);
+
+			sceneRenderer.UseTechnique("SmallGBufferTerrain");
+			sceneRenderer.DrawTerrain(scene, camera, GBufferEffect);
 
 			renderStopWatch.Stop();
 			return outputTargets;

@@ -2,16 +2,20 @@
 float4x4 World;
 float4x4 View;
 float4x4 Projection;
-float4x4 TextureMatrix;
+float4x4 WorldInverseTranspose;
+float3 CameraPosition;
 
 texture Texture;
 texture NormalMap;
 texture SpecularMap;
+texture EnvironmentMap;
 
 sampler diffuseSampler : register(s0) = sampler_state
 {
     Texture = <Texture>;
 	Filter = MIN_MAG_MIP_LINEAR;
+	AddressU = Wrap;
+	AddressV = Wrap;
 };
 
 sampler specularSampler : register(s1) = sampler_state
@@ -30,6 +34,14 @@ sampler normalMapSampler : register(s2) = sampler_state
 	AddressV = Wrap;
 };
 
+sampler environmentMapSampler : register(s3) = sampler_state
+{
+    Texture = <EnvironmentMap>;
+	Filter = MIN_MAG_MIP_LINEAR;
+	AddressU = Mirror; 
+	AddressV = Mirror; 
+};
+
 struct VertexShaderInput
 {
     float4 Position : POSITION0;
@@ -41,12 +53,30 @@ struct VertexShaderInput
     float4 boneWeights : BLENDWEIGHT0;
 };
 
+struct VertexTerrainInput
+{
+    float4 Position : POSITION0;
+    float3 Normal : NORMAL0;
+    float2 TexCoord : TEXCOORD0;
+};
+
+struct VertexTerrainOutput
+{
+    float4 Position : POSITION0;
+    float2 TexCoord : TEXCOORD0;
+    float3 Depth : TEXCOORD1;
+	float3 Normal : TEXCOORD2;
+	float4 NewPosition : TEXCOORD3;
+};
+
 struct VertexShaderOutput
 {
     float4 Position : POSITION0;
     float2 TexCoord : TEXCOORD0;
     float3 Depth : TEXCOORD1;
     float3x3 TangentToWorld	: TEXCOORD2;
+	float3 Reflection : TEXCOORD5;
+	float4 NewPosition : TEXCOORD6;
 };
 
 struct InstanceInput
@@ -57,19 +87,21 @@ struct InstanceInput
 	float4 vWorld4 : TEXCOORD4;
 };
 
+//--- VertexShaders ---//
+
 VertexShaderOutput VertexShaderFunction(VertexShaderInput input, InstanceInput instance)
 {
     VertexShaderOutput output;
 
-	// First transform by the instance matrix
+	float4x4 wvp = mul(mul(World, View), Projection);
 	float4x4 WorldInstance = 
 		float4x4(instance.vWorld1, instance.vWorld2, instance.vWorld3, instance.vWorld4);
-	input.Position = mul(input.Position, WorldInstance);
 
-	// Translate along World View Projetion matrices
-    float4 worldPosition = mul(input.Position, World);
+	// First transform by the instance matrix
+    float4 worldPosition = mul(input.Position, WorldInstance);
     float4 viewPosition = mul(worldPosition, View);
-    output.Position = mul(viewPosition, Projection);
+	output.Position = mul(worldPosition, wvp);
+	output.NewPosition = output.Position;
 
 	//pass the texture coordinates further
     output.TexCoord = input.TexCoord;
@@ -82,17 +114,21 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input, InstanceInput i
 
     // calculate tangent space to world space matrix using the world space tangent,
     // binormal, and normal as basis vectors.
-	output.TangentToWorld[0] = mul(input.tangent, View);
-    output.TangentToWorld[1] = mul(input.binormal, View);
-    output.TangentToWorld[2] = mul(input.Normal, View);
+	output.TangentToWorld[0] = mul(normalize(mul(input.tangent, WorldInstance)), View);
+    output.TangentToWorld[1] = mul(normalize(mul(input.binormal, WorldInstance)), View);
+    output.TangentToWorld[2] = mul(normalize(mul(input.Normal, WorldInstance)), View);
+
+    // Compute a reflection vector for the environment map.
+	float3 ViewDirection = CameraPosition - output.Position;
+    output.Reflection = reflect(normalize(ViewDirection), input.Normal);
 
     return output;
 }
 
-#define MaxBones 58
+#define MaxBones 60
 float4x4 bones[MaxBones];
 
-VertexShaderOutput VertexShaderSkinnedAnimation(VertexShaderInput input)
+VertexShaderOutput VertexShaderSkinnedAnimation(VertexShaderInput input, InstanceInput instance)
 {
     VertexShaderOutput output;
 
@@ -108,9 +144,15 @@ VertexShaderOutput VertexShaderSkinnedAnimation(VertexShaderInput input)
 	input.tangent = mul(input.tangent, skinTransform);
 	input.binormal = mul(input.binormal, skinTransform);
 
-	float4 worldPosition = mul(mul(input.Position, skinTransform), World);
+	// Instancing transformation
+	float4x4 wvp = mul(mul(World, View), Projection);
+	float4x4 WorldInstance = 
+		float4x4(instance.vWorld1, instance.vWorld2, instance.vWorld3, instance.vWorld4);
+
+	float4 worldPosition = mul(mul(input.Position, skinTransform), WorldInstance);
     float4 viewPosition = mul(worldPosition, View);
     output.Position = mul(viewPosition, Projection);
+	output.NewPosition = output.Position;
 
 	//pass the texture coordinates further
     output.TexCoord = input.TexCoord;
@@ -123,18 +165,51 @@ VertexShaderOutput VertexShaderSkinnedAnimation(VertexShaderInput input)
 
     // calculate tangent space to world space matrix using the world space tangent,
     // binormal, and normal as basis vectors.
-	output.TangentToWorld[0] = mul(input.tangent, View);
-    output.TangentToWorld[1] = mul(input.binormal, View);
-    output.TangentToWorld[2] = mul(input.Normal, View);
+	output.TangentToWorld[0] = mul(normalize(mul(input.tangent, WorldInstance)), View);
+    output.TangentToWorld[1] = mul(normalize(mul(input.binormal, WorldInstance)), View);
+    output.TangentToWorld[2] = mul(normalize(mul(input.Normal, WorldInstance)), View);
+
+    // Compute a reflection vector for the environment map.
+	float3 ViewDirection = CameraPosition - output.Position;
+    output.Reflection = reflect(normalize(ViewDirection), input.Normal);
 
     return output;
 }
+
+VertexTerrainOutput VertexShaderTerrain(VertexTerrainInput input)
+{
+    VertexTerrainOutput output;
+
+	float4x4 wvp = mul(mul(World, View), Projection);
+
+	// First transform by the instance matrix
+    //float4 worldPosition = mul(input.Position, WorldInstance);
+    float4 viewPosition = mul(input.Position, View);
+	output.Position = mul(input.Position, wvp);
+	output.NewPosition = output.Position;
+
+	//pass the texture coordinates further
+    output.TexCoord = input.TexCoord;
+
+	//get normal into world space
+    input.Normal = normalize(mul(input.Normal, World));
+	output.Normal = input.Normal;
+
+    output.Depth.x = output.Position.z;// - 100.f; // Subtract to make color more visible
+    output.Depth.y = output.Position.w;
+	output.Depth.z = viewPosition.z;
+
+    return output;
+}
+
+//--- PixelShaders ---//
 
 struct PixelShaderOutput1
 {
     half4 Color : COLOR0;
     half4 Normal : COLOR1;
     half4 Depth : COLOR2;
+	//float Depth2 : DEPTH;
 };
 
 struct PixelShaderOutput2
@@ -152,9 +227,6 @@ PixelShaderOutput1 PixelShaderGBuffer(VertexShaderOutput input)
     output.Color = tex2D(diffuseSampler, input.TexCoord);
 	clip(output.Color.a - 0.5);
 
-	// Gamma correct
-	output.Color.rgb *= output.Color.rgb;
-
     // Output the normal, in [0,1] space
     float3 normalFromMap = tex2D(normalMapSampler, input.TexCoord);
 
@@ -169,6 +241,8 @@ PixelShaderOutput1 PixelShaderGBuffer(VertexShaderOutput input)
 	// Output Depth
     //output.Depth = -input.Depth / 2000.f;	//output Depth in linear space, [0..1] 
 	output.Depth = input.Depth.x / input.Depth.y;  
+
+	//output.Depth2 = output.Depth;
     return output;
 }
 
@@ -198,17 +272,47 @@ PixelShaderOutput2 PixelShaderSmallGBuffer(VertexShaderOutput input)
     return output;
 }
 
+PixelShaderOutput2 PixelTerrainSmallGBuffer(VertexTerrainOutput input)
+{
+    PixelShaderOutput2 output = (PixelShaderOutput2)1;
+
+    // Output the normal, in [0,1] space
+    float3 normalFromMap = tex2D(normalMapSampler, input.TexCoord);
+
+    normalFromMap = input.Normal;	
+    normalFromMap = normalize(mul(normalFromMap, View));
+    output.Normal.rgb = 0.5f * (normalFromMap + 1.0f);
+
+	// Output SpecularPower
+	// Output SpecularIntensity
+	float4 specularAttributes = tex2D(specularSampler, input.TexCoord);
+    output.Normal.a = specularAttributes.r; //specularIntensity;
+
+	// Output Depth
+	output.Depth = input.Depth.x / input.Depth.y; 
+    return output;
+}
+
 float4 PixelShaderDiffuseRender(VertexShaderOutput input) : COLOR0
 {
 	// First check if mask channel is opaque
 	float4 diffuse = tex2D(diffuseSampler, input.TexCoord);
 	clip(diffuse.a - 0.5);
 
-	// Gamma correct
-	diffuse.rgb *= diffuse.rgb;
+	float3 envmap = texCUBE(environmentMapSampler, normalize(input.Reflection));
+
+    // Output the normal, in [0,1] space
+    float3 normalFromMap = tex2D(normalMapSampler, input.TexCoord);
+
+    normalFromMap = mul(normalFromMap, input.TangentToWorld);	
+    normalFromMap = normalize(normalFromMap);
+
+	// Compute a fresnel coefficient from the view vector.
+	//float3 ViewDirection = CameraPosition - input.NewPosition;
+	//float fresnel = saturate(1 + dot(normalize(ViewDirection), normalFromMap));
 
 	// Just output the diffuse color
-	return diffuse;
+	return diffuse;//float4(lerp(diffuse, envmap, pow(fresnel, 2) * 0.7f), 1);
 }
 
 /// Very basic shader ahead
@@ -245,16 +349,19 @@ struct VertexShaderSkyboxData
 	float2 TexCoord : TEXCOORD0;
 };
 
-VertexShaderSkyboxData VertexShaderSkybox(VertexShaderInput input)
+VertexShaderSkyboxData VertexShaderSkybox(VertexShaderInput input, InstanceInput instance)
 {
     VertexShaderSkyboxData output;
 
+	float4x4 WorldInstance = 
+		float4x4(instance.vWorld1, instance.vWorld2, instance.vWorld3, instance.vWorld4);
+
 	//handle the position as direction
-	float4 hPos = float4(input.Position.xyzw);//,0);
+	float4 hPos = mul(input.Position, WorldInstance);//,0);
 	float4x4 wvp = mul(mul(World, View), Projection);
  
 	//we should set z and w to the same value, so we will have the skybox at the far plane 
-    output.Position = mul(hPos, wvp).xyzw;
+    output.Position = mul(hPos, wvp);//.xyzw;
 	output.TexCoord = input.TexCoord;
 
 	return output;
@@ -275,8 +382,8 @@ technique GBuffer
     pass Pass1
     {
 	    ZEnable = true;
-        VertexShader = compile vs_2_0 VertexShaderFunction();
-        PixelShader = compile ps_2_0 PixelShaderGBuffer();
+        VertexShader = compile vs_3_0 VertexShaderFunction();
+        PixelShader = compile ps_3_0 PixelShaderGBuffer();
     }
 }
 
@@ -285,8 +392,8 @@ technique GBufferAnimated
     pass Pass1
     {
 	    ZEnable = true;
-        VertexShader = compile vs_2_0 VertexShaderSkinnedAnimation();
-        PixelShader = compile ps_2_0 PixelShaderGBuffer();
+        VertexShader = compile vs_3_0 VertexShaderSkinnedAnimation();
+        PixelShader = compile ps_3_0 PixelShaderGBuffer();
     }
 }
 
@@ -295,8 +402,8 @@ technique SmallGBuffer
     pass Pass1
     {
 	    ZEnable = true;
-        VertexShader = compile vs_2_0 VertexShaderFunction();
-        PixelShader = compile ps_2_0 PixelShaderSmallGBuffer();
+        VertexShader = compile vs_3_0 VertexShaderFunction();
+        PixelShader = compile ps_3_0 PixelShaderSmallGBuffer();
     }
 }
 
@@ -305,8 +412,18 @@ technique SmallGBufferAnimated
     pass Pass1
     {
 	    ZEnable = true;
-        VertexShader = compile vs_2_0 VertexShaderSkinnedAnimation();
-        PixelShader = compile ps_2_0 PixelShaderSmallGBuffer();
+        VertexShader = compile vs_3_0 VertexShaderSkinnedAnimation();
+        PixelShader = compile ps_3_0 PixelShaderSmallGBuffer();
+    }
+}
+
+technique SmallGBufferTerrain
+{
+    pass Pass1
+    {
+	    ZEnable = true;
+        VertexShader = compile vs_3_0 VertexShaderTerrain();
+        PixelShader = compile ps_3_0 PixelTerrainSmallGBuffer();
     }
 }
 
@@ -317,9 +434,8 @@ technique DiffuseRender
     pass Pass1
     {
 		AlphablendEnable = false;
-		CullMode = CCW;
-        VertexShader = compile vs_2_0 VertexShaderFunction();
-        PixelShader = compile ps_2_0 PixelShaderDiffuseRender();
+        VertexShader = compile vs_3_0 VertexShaderFunction();
+        PixelShader = compile ps_3_0 PixelShaderDiffuseRender();
     }
 }
 
@@ -328,11 +444,21 @@ technique DiffuseRenderAnimated
     pass Pass1
     {
 		AlphablendEnable = false;
-		CullMode = CCW;
-        VertexShader = compile vs_2_0 VertexShaderSkinnedAnimation();
-        PixelShader = compile ps_2_0 PixelShaderDiffuseRender();
+        VertexShader = compile vs_3_0 VertexShaderSkinnedAnimation();
+        PixelShader = compile ps_3_0 PixelShaderDiffuseRender();
     }
 }
+
+technique DiffuseRenderTerrain
+{
+    pass Pass1
+    {
+	    ZEnable = true;
+        VertexShader = compile vs_3_0 VertexShaderTerrain();
+        PixelShader = compile ps_3_0 PixelShaderDiffuseRender();
+    }
+}
+
 
 technique Skybox
 {
@@ -343,8 +469,8 @@ technique Skybox
 		ZFUNC = LESSEQUAL;
 		ZWRITEENABLE = False;		
 		
-        VertexShader = compile vs_2_0 VertexShaderSkybox();
-        PixelShader = compile ps_2_0 BasicPS();
+        VertexShader = compile vs_3_0 VertexShaderSkybox();
+        PixelShader = compile ps_3_0 BasicPS();
     }
 }
 
@@ -358,5 +484,4 @@ technique PassThrough
         PixelShader = compile ps_2_0 BasicPS();
     }
 }
-
 

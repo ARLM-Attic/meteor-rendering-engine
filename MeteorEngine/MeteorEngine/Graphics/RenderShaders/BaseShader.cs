@@ -45,6 +45,10 @@ namespace Meteor.Rendering
 		// Render target outputs
 		protected RenderTarget2D[] outputTargets;
 
+		// How much to upscale some rendertargets
+		// and downscale to the render buffer
+		protected float bufferScaling = 1f;
+
 		public virtual RenderTarget2D[] outputs
 		{
 			get
@@ -99,8 +103,8 @@ namespace Meteor.Rendering
 			PresentationParameters pp = graphicsDevice.PresentationParameters;
 
 			//get the sizes of the backbuffer, in order to have matching render targets   
-			backBufferWidth = (int)(pp.BackBufferWidth * 1.5f);
-			backBufferHeight = (int)(pp.BackBufferHeight * 1.5f);
+			backBufferWidth = (int)(pp.BackBufferWidth);
+			backBufferHeight = (int)(pp.BackBufferHeight);
 
 			halfPixel.X = 0.5f / (float)backBufferWidth;
 			halfPixel.Y = 0.5f / (float)backBufferHeight;

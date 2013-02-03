@@ -48,7 +48,7 @@ sampler specularSampler : register(s2) = sampler_state
 
 sampler depthSampler : register(s4) = sampler_state
 {
-	Filter = MIN_MAG_MIP_POINT;
+	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Clamp;
 	AddressV = Clamp;
 	Texture = <depthMap>;
@@ -154,8 +154,8 @@ float4 DirectionalLightPS(VertexShaderOutput input, float4 position) : COLOR0
 
 	// Get specular data
 
-	float specPower = 20;//normalData.a * 255;
-	float3 specIntensity = 0.2;//normalData.a;
+	float specPower = normalData.a * 255;
+	float3 specIntensity = 0;//normalData.a;
 
 	float3 lightDir = -normalize(lightDirection);
 

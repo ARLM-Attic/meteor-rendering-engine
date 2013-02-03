@@ -149,7 +149,7 @@ float4 PixelShaderFunction(VertexShaderOutput IN) : COLOR0
 	// SSAO Calculation //
 	for (int j = 0; j < sampleKernelSize; ++j)
 	{
-		coord1 = reflect(vec[j % 4], rand) * rad;
+		coord1 = reflect(vec[j % 4], 0.25f) * rad;
 		coord2 = float2(coord1.x * 0.707 - coord1.y * 0.707,
 					  coord1.x * 0.707 + coord1.y * 0.707);
   
@@ -160,7 +160,8 @@ float4 PixelShaderFunction(VertexShaderOutput IN) : COLOR0
 	} 
 
 	ao /= (float)sampleKernelSize;
-	return 1 - (ao * g_intensity);
+	float attenuate = 1 - pow(depthVal, 10);
+	return 1 - (ao * attenuate * g_intensity);
 }																
 
 technique SSAO

@@ -101,20 +101,21 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Graphics\Components\Drawables\InstancedModel.cs" />
-    <Compile Include="Graphics\Components\Drawables\ShapeRenderer.cs" />
+    <Compile Include="Graphics\Rendering\ShapeRenderer.cs" />
     <Compile Include="Graphics\Components\Drawables\TerrainMap.cs" />
     <Compile Include="Graphics\Components\Lights\DirectionalLight.cs" />
     <Compile Include="Graphics\Components\Lights\PointLight.cs" />
     <Compile Include="Graphics\Components\MeteorComponent.cs" />
-    <Compile Include="Graphics\Components\Drawables\QuadRenderer.cs" />
+    <Compile Include="Graphics\Rendering\QuadRenderer.cs" />
     <Compile Include="Graphics\Components\QuadTree.cs" />
-    <Compile Include="Graphics\Renderer\SceneRenderer.cs" />
+    <Compile Include="Graphics\Rendering\SceneCuller.cs" />
+    <Compile Include="Graphics\Rendering\SceneRenderer.cs" />
     <Compile Include="Graphics\Components\Core.cs" />
-    <Compile Include="Graphics\Helpers\GaussianBlur.cs" />
-    <Compile Include="Graphics\Helpers\CopyShader.cs" />
-    <Compile Include="Graphics\Helpers\RenderInput.cs" />
-    <Compile Include="Graphics\Renderer\RenderProfile.cs" />
-    <Compile Include="Graphics\Helpers\StringBuilderNumeric.cs" />
+    <Compile Include="Helpers\GaussianBlur.cs" />
+    <Compile Include="Helpers\CopyShader.cs" />
+    <Compile Include="Graphics\Rendering\RenderInput.cs" />
+    <Compile Include="Graphics\Rendering\RenderProfile.cs" />
+    <Compile Include="Helpers\StringBuilderNumeric.cs" />
     <Compile Include="Graphics\RenderShaders\BaseShader.cs" />
     <Compile Include="Graphics\RenderShaders\PostProcessingShaders\BloomShader.cs" />
     <Compile Include="Graphics\RenderShaders\PostProcessingShaders\BlurShader.cs" />
@@ -126,7 +127,7 @@
     <Compile Include="Graphics\RenderShaders\SceneShaders\GBufferShader.cs" />
     <Compile Include="Graphics\RenderShaders\SceneShaders\LightShader.cs" />
     <Compile Include="Graphics\RenderShaders\SceneShaders\ShadowMapper.cs" />
-    <Compile Include="Graphics\Helpers\RenderStats.cs" />
+    <Compile Include="Helpers\RenderStats.cs" />
     <Compile Include="Graphics\SampleRenderProfiles\DeferredRenderer.cs">
       <SubType>Code</SubType>
     </Compile>

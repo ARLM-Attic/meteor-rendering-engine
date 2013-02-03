@@ -107,7 +107,7 @@ float4 QuickBlur(VertexShaderOutput input) : COLOR0
 const float focalDistance;
 const float focalRange;
 const float near = 0.001;
-const float far = 0.99999;
+const float far = 0.99999f;
 
 float4 DepthOfFieldFull(VertexShaderOutput input) : COLOR0
 {

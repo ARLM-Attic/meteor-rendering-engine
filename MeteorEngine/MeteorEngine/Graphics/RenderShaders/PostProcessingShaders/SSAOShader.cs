@@ -14,8 +14,8 @@ namespace Meteor.Rendering
 	public class SSAOShader : BaseShader
 	{
 		// Basic parameters
-		public float radius = 2.25f;
-		public float intensity = 1.2f;
+		public float radius = 0.5f;
+		public float intensity = 1f;
 		public float scale = 1f;
 		public float bias = 0.0001f;
 		public bool applyBlur = false;
@@ -69,7 +69,7 @@ namespace Meteor.Rendering
 			//ssaoEffect.Parameters["RandomMap"].SetValue(randomMap);
 
 			// Initialize blur
-			blur = new GaussianBlur(backBufferWidth, backBufferHeight, 3f, blurEffect);
+			blur = new GaussianBlur(backBufferWidth, backBufferHeight, 2f, blurEffect);
 		}
 
 		/// <summary>
