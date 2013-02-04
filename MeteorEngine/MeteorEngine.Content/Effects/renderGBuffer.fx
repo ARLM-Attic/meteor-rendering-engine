@@ -186,7 +186,7 @@ VertexTerrainOutput VertexShaderTerrain(VertexTerrainInput input)
     //float4 worldPosition = mul(input.Position, WorldInstance);
     float4 viewPosition = mul(input.Position, View);
 	output.Position = mul(input.Position, wvp);
-	output.NewPosition = output.Position;
+	output.NewPosition = input.Position;
 
 	//pass the texture coordinates further
     output.TexCoord = input.TexCoord;
@@ -315,7 +315,34 @@ float4 PixelShaderDiffuseRender(VertexShaderOutput input) : COLOR0
 	return diffuse;//float4(lerp(diffuse, envmap, pow(fresnel, 2) * 0.7f), 1);
 }
 
-/// Very basic shader ahead
+float4 PixelShaderTerrainRender(VertexTerrainOutput input) : COLOR0
+{
+	float4 diffuse = tex2D(diffuseSampler, input.TexCoord);
+
+    // Output the normal, in [0,1] space
+    float3 normalFromMap = normalize(mul(input.Normal, View));
+    normalFromMap = 0.5f * (normalFromMap + 1.0f);
+
+	float mXY = abs(input.Normal.z);
+	float mXZ = abs(input.Normal.y);
+	float mYZ = abs(input.Normal.x);
+
+	float total = mXY + mXZ + mYZ;
+	mXY /= total;
+	mXZ /= total;
+	mYZ /= total;
+
+	float4 cXY = tex2D(diffuseSampler, input.NewPosition.xy / 50);
+	float4 cXZ = tex2D(diffuseSampler, input.NewPosition.xz / 50);
+	float4 cYZ = tex2D(diffuseSampler, input.NewPosition.yz / 50);
+
+	diffuse = cXY * mXY + cXZ * mXZ + cYZ * mYZ; 
+
+	// Just output the diffuse color
+	return diffuse;
+}
+
+/// Very basic shaders ahead
 
 float2 halfPixel;
 
@@ -421,7 +448,8 @@ technique SmallGBufferTerrain
 {
     pass Pass1
     {
-	    ZEnable = true;
+		CullMode = CCW;
+		ZENABLE = True;
         VertexShader = compile vs_3_0 VertexShaderTerrain();
         PixelShader = compile ps_3_0 PixelTerrainSmallGBuffer();
     }
@@ -453,9 +481,11 @@ technique DiffuseRenderTerrain
 {
     pass Pass1
     {
-	    ZEnable = true;
+		CullMode = CCW;
+		ZENABLE = True;
+
         VertexShader = compile vs_3_0 VertexShaderTerrain();
-        PixelShader = compile ps_3_0 PixelShaderDiffuseRender();
+        PixelShader = compile ps_3_0 PixelShaderTerrainRender();
     }
 }
 

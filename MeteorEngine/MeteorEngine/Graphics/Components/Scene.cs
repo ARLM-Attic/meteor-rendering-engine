@@ -251,7 +251,7 @@ namespace Meteor.Resources
 			{
 				if (skinnedModel.animationPlayer != null)
 				{
-					skinnedModel.animationPlayer.playSpeed = 1f;
+					skinnedModel.animationPlayer.playSpeed = 2f;
 					skinnedModel.animationPlayer.Update(gameTime.ElapsedGameTime, true, Matrix.Identity);					
 				}
 				// Finished updating mesh

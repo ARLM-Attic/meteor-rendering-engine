@@ -229,12 +229,12 @@ namespace Meteor.Resources
 			left = (int)(positionOnMap.X / scale);
 			top = (int)(positionOnMap.Z / scale);
 
+			// Clamp coordinates
 			left = (left <= 0) ? 0 : left;
 			top = (top <= 0) ? 0 : top;
 
-			// next, we'll use modulus to find out how far away we are from the upper
-			// left corner of the cell. Mod will give us a value from 0 to terrainScale,
-			// which we then divide by terrainScale to normalize 0 to 1.
+			// Use modulus to find out how far away we are from the upper
+			// left corner of the cell, then normalize it with the scale.
 			float xNormalized = (positionOnMap.X % scale) / scale;
 			float zNormalized = (positionOnMap.Z % scale) / scale;
 

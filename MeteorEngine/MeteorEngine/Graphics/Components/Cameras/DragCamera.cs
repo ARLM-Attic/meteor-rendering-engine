@@ -117,7 +117,7 @@ namespace Meteor.Resources
 				position -= worldTransform.Forward * time * moveSpeed;
 			}
 
-			cameraArc += currentGamePadState.ThumbSticks.Right.Y * time * 0.05f;
+			cameraArc += currentGamePadState.ThumbSticks.Right.Y * time;
 			cameraArc += targetArc - (cameraArc / smoothing);
 
 			// Limit the arc movement.
@@ -137,7 +137,7 @@ namespace Meteor.Resources
 				position += worldTransform.Left * time * moveSpeed;
 			}
 
-			cameraRotation += currentGamePadState.ThumbSticks.Right.X * time * 0.05f;
+			cameraRotation += currentGamePadState.ThumbSticks.Right.X * time;
 			cameraRotation += targetRotation - (cameraRotation / smoothing);
 
 			if (currentGamePadState.Buttons.RightStick == ButtonState.Pressed ||

@@ -53,6 +53,7 @@ namespace Meteor.Rendering
 			
 			// Sampler states for the diffuse map
 			graphicsDevice.SamplerStates[0] = SamplerState.LinearWrap;
+			graphicsDevice.SamplerStates[1] = SamplerState.PointClamp;
 
 			// Cull the objects
 			sceneRenderer.CullModelMeshes(scene, camera);
