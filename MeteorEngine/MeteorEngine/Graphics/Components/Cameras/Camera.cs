@@ -92,7 +92,7 @@ namespace Meteor.Resources
 		}
 
         public float nearPlaneDistance = 2f;
-        public float farPlaneDistance = 2000.0f;
+        public float farPlaneDistance = 2000f;
 		public float nearSplitPlaneDistance;
 		public float farSplitPlaneDistance;
 
@@ -147,6 +147,8 @@ namespace Meteor.Resources
 
 			nearSplitPlaneDistance = nearPlaneDistance;
 			farSplitPlaneDistance = farPlaneDistance;
+
+			cameraFrustum = new BoundingFrustum(Matrix.Identity);
         }
 
 		/// <summary>

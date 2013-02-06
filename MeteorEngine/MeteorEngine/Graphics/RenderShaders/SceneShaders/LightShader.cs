@@ -29,7 +29,7 @@ namespace Meteor.Rendering
 
 		/// Debug point lights
 		public bool stippled = false;
-
+			
 		/// Measures the next time to update some shadow maps
 		int shadowUpdateTimer = 0;	
 
@@ -37,7 +37,7 @@ namespace Meteor.Rendering
 		Camera lightCamera;
 
 		/// Texture dimensions for individual shadow cascade
-		const int shadowMapSize = 800;
+		const int shadowMapSize = 1024;
 
 		/// Total number of cascades for CSM
 		const int numCascades = 4;

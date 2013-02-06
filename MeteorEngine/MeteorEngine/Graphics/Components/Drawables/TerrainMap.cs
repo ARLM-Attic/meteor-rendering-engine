@@ -7,13 +7,69 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace Meteor.Resources
 {
+	class TriangleTreeNode 
+	{ 
+		/// <summary>
+		/// The corners (in map coordinates) of the node
+		/// </summary>
+		public Vector2[] corners;
+
+		/// <summary>
+		/// The children for this tree node
+		/// </summary>
+		public TriangleTreeNode leftChild, rightChild;
+
+		/// <summary>
+		/// The location that divides the longest edge in half
+		/// </summary>
+		private Vector2 edgeSplit;
+
+		/// <summary>
+		/// minimum length for each node
+		/// </summary>
+		public static float edgeMinimum = 8;
+
+		/// <summary>
+		/// minimum length for each node
+		/// </summary>
+		public static float heightTolerance = 5f;
+
+		/// <summary>
+		/// Create a node with corners and edge coordinates
+		/// </summary>
+		public TriangleTreeNode(float[,] heights, params Vector2[] triangleCorners)
+		{
+			// Set this node's corners
+			corners = triangleCorners;
+
+			// Split the longest edge
+			edgeSplit = (corners[0] + corners[2]) / 2;
+
+			// Calculate the averaged height value from the two corners
+			float edgeHeight =
+				(heights[(int)corners[0].X, (int)corners[0].Y] +
+				heights[(int)corners[2].X, (int)corners[2].Y]) / 2;
+
+			// If the triangle split coordinates are coarser than the threshold,
+			// add two new children. Otherwise, we have reached the final node
+			// for this tree.
+			if (edgeSplit.X % edgeMinimum == 0 || edgeSplit.Y % edgeMinimum == 0)
+			{
+				leftChild = new TriangleTreeNode(heights, corners[1], edgeSplit, corners[2]);
+				rightChild = new TriangleTreeNode(heights, corners[0], edgeSplit, corners[1]);
+			}
+
+			// Finish building this node
+		}
+	};
+
+	/// <summary>
+	/// Class that stores original terrain heightmap info and vertex patches
+	/// to visually represent it.
+	/// </summary>
+	
 	public class TerrainMap
 	{
-		/// <summary>
-		/// Number of times to split up the map and generate it
-		/// </summary>
-		int totalIterations;
-
 		/// <summary>
 		/// Graphics device to set map data
 		/// </summary>
@@ -51,6 +107,11 @@ namespace Meteor.Resources
 		private float scale;
 
 		/// <summary>
+		/// Amount to scale heightmap textures by
+		/// </summary>
+		private float textureScale = 10f;
+
+		/// <summary>
 		/// Primary texture to apply to the terrain mesh
 		/// </summary>
 		private Texture2D mainTexture;
@@ -63,7 +124,17 @@ namespace Meteor.Resources
 		/// <summary>
 		/// Reduction factor for LOD maps
 		/// </summary>
-		private int reductionFactor = 2;
+		private int reductionFactor = 1;
+
+		/// <summary>
+		/// Vertex buffer for terain mesh
+		/// </summary>
+		private VertexBuffer terrainVB;
+
+		/// <summary>
+		/// Index buffer for terrain mesh
+		/// </summary>
+		private IndexBuffer terrainIndices;
 
 		/// <summary>
 		/// Constructor to set up content and default texture
@@ -76,7 +147,7 @@ namespace Meteor.Resources
 			this.content = content;
 			this.graphicsDevice = device;
 
-			scale = 2.5f;
+			scale = 10f;
 		}
 
 		/// <summary>
@@ -107,33 +178,35 @@ namespace Meteor.Resources
 				for (int y = 0; y < terrainHeight; y++)
 					heightData[x, y] = heightMapColors[x + y * terrainWidth].R / 5.0f;
 					
-			SetUpVerticesLOD();
-			SetUpIndices();
-			CalculateNormals();
+			// Create the terrain tree data.
+			Regenerate(TriangleTreeNode.edgeMinimum);
 		}
 
 		/// <summary>
-		/// Create terrain mesh based on the input data
+		/// Re-create the terrain mesh with the current parameters.
 		/// </summary>
-
-		private void SetUpVertices()
+		public void Regenerate(float terrainDetail)
 		{
-			vertices = new VertexPositionNormalTexture[terrainWidth * terrainHeight];
-			for (int x = 0; x < terrainWidth; x++)
-			{
-				for (int y = 0; y < terrainHeight; y++)
-				{
-					vertices[x + y * terrainWidth].Position =
-						new Vector3(x * scale, heightData[x, y] * scale, y * scale);
+			TriangleTreeNode.edgeMinimum = terrainDetail;
+		
+			GenerateVertexPatches();
 
-					vertices[x + y * terrainWidth].TextureCoordinate.X = (float)x / 50.0f;
-					vertices[x + y * terrainWidth].TextureCoordinate.Y = (float)y / 50.0f;
-				}
-			}
+			//SetUpVerticesLOD();
+			//SetUpIndices();
+
+			CalculateNormals();
+
+			// Set vertex and index buffers
+			terrainVB = new VertexBuffer(graphicsDevice,
+				VertexPositionNormalTexture.VertexDeclaration, vertices.Length, BufferUsage.WriteOnly);
+			terrainVB.SetData(vertices);
+
+			terrainIndices = new IndexBuffer(graphicsDevice, typeof(int), indices.Length, BufferUsage.WriteOnly);
+			terrainIndices.SetData(indices);
 		}
 
 		/// <summary>
-		/// Set the vertices for a reduced detailed version of the mesh.
+		/// Set the vertices for a reduced detail version of the mesh.
 		/// </summary>
 
 		private void SetUpVerticesLOD()
@@ -154,6 +227,82 @@ namespace Meteor.Resources
 					vertices[x + y * reducedWidth].TextureCoordinate.Y = (float)y / 20.0f;
 				}
 			}
+		}
+
+		/// <summary>
+		/// Automatically generate vertex patches based on the ROAM method
+		/// </summary>
+
+		private void GenerateVertexPatches()
+		{
+			// First generate two root (level 0) tree nodes with map coordinates
+			Vector2[] bottomLeftCoords = {
+				new Vector2(0, 0),
+				new Vector2(0, terrainHeight - 1),
+				new Vector2(terrainWidth - 1, terrainHeight - 1)
+			};
+
+			Vector2[] topRightCoords = {
+				new Vector2(0, 0),
+				new Vector2(terrainWidth - 1, 0),
+				new Vector2(terrainWidth - 1, terrainHeight - 1)
+			};
+
+			TriangleTreeNode bottomLeft = new TriangleTreeNode(heightData, bottomLeftCoords);
+			TriangleTreeNode topRight = new TriangleTreeNode(heightData, topRightCoords);
+
+			// Get the vertex locations for all tree node patches.
+			List<Vector2> patchVertices = new List<Vector2>();
+			
+			patchVertices.AddRange(GetVerticesFromPatches(bottomLeft));
+			patchVertices.AddRange(GetVerticesFromPatches(topRight));
+
+			// Create an array of vertices from the tree patch structure,
+			// and set the data.
+			vertices = new VertexPositionNormalTexture[patchVertices.Count];
+
+			for (int i = 0; i < patchVertices.Count; i++)
+			{
+				vertices[i].Position = new Vector3(
+					patchVertices[i].X,
+					heightData[(int)patchVertices[i].X, (int)patchVertices[i].Y], 
+					-patchVertices[i].Y);
+
+				vertices[i].TextureCoordinate.X = (float)patchVertices[i].X / 20.0f;
+				vertices[i].TextureCoordinate.Y = (float)patchVertices[i].Y / 20.0f;
+
+				vertices[i].Normal = Vector3.Up;
+			}
+
+			// Create the indices
+			indices = new int[patchVertices.Count];
+			for (int i = 0; i < patchVertices.Count; i++)
+				indices[i] = i;
+
+			patchVertices.Clear();
+		}
+
+		/// <summary>
+		/// Get the vertex locations for all the patches recursively down the tree.
+		/// </summary>
+
+		List<Vector2> GetVerticesFromPatches(TriangleTreeNode node)
+		{
+			List<Vector2> vertices = new List<Vector2>();
+
+			// First traverse through child nodes if they are valid.
+			if (node.leftChild != null)
+				vertices.AddRange(GetVerticesFromPatches(node.leftChild));
+
+			if (node.rightChild != null)
+				vertices.AddRange(GetVerticesFromPatches(node.rightChild));
+
+			// Finally, if its child nodes aren't valid, we have reached the lowest
+			// level node, so add its vertices instead.
+			if (node.leftChild == null && node.rightChild == null)
+				vertices.AddRange(node.corners);
+
+			return vertices;
 		}
 
 		/// <summary>
@@ -262,11 +411,16 @@ namespace Meteor.Resources
 			Matrix worldMatrix = Matrix.CreateScale(reduction * scale);
 			worldMatrix *= Matrix.CreateTranslation(heightmapPosition);
 
-			//RasterizerState rWireframeState = new RasterizerState();
-			//rWireframeState.FillMode = FillMode.WireFrame;
-			//graphicsDevice.RasterizerState = rWireframeState;
+			RasterizerState rWireframeState = new RasterizerState();
+			rWireframeState.FillMode = FillMode.WireFrame;
+			graphicsDevice.RasterizerState = rWireframeState;
+
+			// Set vertex and index buffers
+			graphicsDevice.Indices = terrainIndices;
+			graphicsDevice.SetVertexBuffer(terrainVB);
 
 			effect.Parameters["Texture"].SetValue(mainTexture);
+			effect.Parameters["TextureScale"].SetValue(textureScale);
 
 			// Set world transformation for the map
 			effect.Parameters["World"].SetValue(worldMatrix);
@@ -276,21 +430,15 @@ namespace Meteor.Resources
 				// Set camera transformation matrices
 				effect.Parameters["View"].SetValue(camera.View);
 				effect.Parameters["Projection"].SetValue(camera.Projection);
-
-				// Additional camera parameters
-				effect.Parameters["WorldInverseTranspose"].SetValue(
-					Matrix.Transpose(Matrix.Invert(worldMatrix)));
-				effect.Parameters["CameraPosition"].SetValue(camera.Position);
 			}
 
 			foreach (EffectPass pass in effect.CurrentTechnique.Passes)
 			{
 				pass.Apply();
 
-				graphicsDevice.DrawUserIndexedPrimitives(
-					PrimitiveType.TriangleList, vertices, 0, 
-					vertices.Length, indices, 0, 
-					indices.Length / 3, VertexPositionNormalTexture.VertexDeclaration);
+				graphicsDevice.DrawIndexedPrimitives(
+					PrimitiveType.TriangleList, 0, 0, 
+					vertices.Length, 0, indices.Length / 3);
 			}
 
 			// Add to the total number of polygons drawn;

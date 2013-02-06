@@ -10,7 +10,7 @@ using Meteor.Resources;
 
 namespace Meteor.Rendering
 {
-	public abstract class RenderProfile : DrawableComponent
+	public abstract class RenderProfile
 	{
 		/// List to keep all renderers in order
 		protected Dictionary<string, BaseShader> renderTasks;
@@ -24,8 +24,10 @@ namespace Meteor.Rendering
 		protected Dictionary<string, BaseShader> startingPoints;
 		protected Dictionary<string, BaseShader>.Enumerator iter;
 
-		/// Render targets used by all the rendering tasks
-		protected List<RenderTarget2D> renderTaskTargets;
+		/// <summary>
+		/// Use the graphics device given by the graphics service
+		/// </summary>
+		public GraphicsDevice graphicsDevice;
 
 		/// <summary>
 		/// Final render output to the buffer for this profile
@@ -37,33 +39,28 @@ namespace Meteor.Rendering
 		/// </summary>
 		public RenderTarget2D Output
 		{
-			get
-			{
-				return output;
-			}
+			get { return output; }
 		}
 
-		public List<RenderTarget2D> RenderTaskTargets
-		{
-			get
-			{
-				return renderTaskTargets;
-			}
-		}
+		/// <summary>
+		/// Render targets to pool for this profile
+		/// </summary>
+		protected List<RenderTarget2D> renderTaskTargets;
 
 		/// Render targets to display for debugging purposes
 		protected List<RenderTarget2D> debugRenderTargets;
-
-		public List<RenderTarget2D> DebugTargets
+		public List<RenderTarget2D> DebugRenderTargets
 		{
-			get
-			{
-				return debugRenderTargets;
-			}
+			get { return debugRenderTargets; }
 		}
 
-		public RenderProfile(IServiceProvider service, ResourceContentManager content)
-			: base(service)
+		/// <summary>
+		/// Constructor for render profile
+		/// </summary>
+		/// <param name="service"></param>
+		/// <param name="content"></param>
+
+		public RenderProfile(GraphicsDevice graphics, ResourceContentManager content)
 		{
 			// Build a map of available RenderShaders
 			renderTasks = new Dictionary<string, BaseShader>();
@@ -74,21 +71,18 @@ namespace Meteor.Rendering
 			debugRenderTargets = new List<RenderTarget2D>();
 			renderTaskTargets = new List<RenderTarget2D>();
 
-			this.Disposed += new EventHandler<EventArgs>(DisposeRenderers);
+			//this.Disposed += new EventHandler<EventArgs>(DisposeRenderers);
 			this.resxContent = content;
+			this.graphicsDevice = graphics;
+
+			Initialize();
 		}
 
 		/// <summary>
 		/// Initialize the SceneRenderer and call LoadContent.
 		/// </summary> 
 
-		public override void Initialize()
-		{
-			debugRenderTargets.Clear();
-			renderTaskTargets.Clear();
-
-			base.Initialize();
-		}
+		public abstract void Initialize();
 
 		/// <summary>
 		/// Mapping input and output of scenes, cameras and render targets.
@@ -136,10 +130,7 @@ namespace Meteor.Rendering
 		/// </summary>
 		/// <param name="gameTime"></param>
 
-		public override void Draw(GameTime gameTime)
-		{
-			base.Draw(gameTime);
-		}
+		public abstract void Draw();
 
 		/// <summary>
 		/// Dispose of all contents of Renderers used by this render profile.

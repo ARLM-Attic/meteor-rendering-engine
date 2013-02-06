@@ -161,7 +161,7 @@ float4 PixelShaderFunction(VertexShaderOutput IN) : COLOR0
 
 	ao /= (float)sampleKernelSize;
 	float attenuate = 1 - pow(depthVal, 10);
-	return 1 - (ao * attenuate * g_intensity);
+	return 1 - (ao * attenuate * (g_intensity * 2));
 }																
 
 technique SSAO

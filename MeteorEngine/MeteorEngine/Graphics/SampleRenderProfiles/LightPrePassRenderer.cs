@@ -42,11 +42,11 @@ namespace Meteor.Rendering
 		BaseShader ssao;
 
 		/// <summary>
-		/// Load all the renderers needed for this profile
+		/// Constructor to initialize the renderer
 		/// </summary>
 
-		public LightPrePassRenderer(IServiceProvider service, 
-			ResourceContentManager content) : base(service, content) { Initialize(); }
+		public LightPrePassRenderer(GraphicsDevice graphics, 
+			ResourceContentManager content) : base(graphics, content) { }
 
 		/// <summary>
 		/// Load all the renderers needed for this profile
@@ -54,8 +54,6 @@ namespace Meteor.Rendering
 
 		public override void Initialize()
 		{
-			base.Initialize();
-
 			smallGBuffer = new SmallGBufferShader(this, resxContent);
 			lights = new LightShader(this, resxContent);
 			diffuse = new DiffuseShader(this, resxContent);
@@ -95,7 +93,7 @@ namespace Meteor.Rendering
 			debugRenderTargets.Add(lights.outputs[1]);
 		}
 
-		public override void Draw(GameTime gameTime)
+		public override void Draw()
 		{
 			// Create the lighting map
 			smallGBuffer.Draw();

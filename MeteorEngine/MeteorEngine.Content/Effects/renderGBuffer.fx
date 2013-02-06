@@ -53,22 +53,6 @@ struct VertexShaderInput
     float4 boneWeights : BLENDWEIGHT0;
 };
 
-struct VertexTerrainInput
-{
-    float4 Position : POSITION0;
-    float3 Normal : NORMAL0;
-    float2 TexCoord : TEXCOORD0;
-};
-
-struct VertexTerrainOutput
-{
-    float4 Position : POSITION0;
-    float2 TexCoord : TEXCOORD0;
-    float3 Depth : TEXCOORD1;
-	float3 Normal : TEXCOORD2;
-	float4 NewPosition : TEXCOORD3;
-};
-
 struct VertexShaderOutput
 {
     float4 Position : POSITION0;
@@ -176,32 +160,6 @@ VertexShaderOutput VertexShaderSkinnedAnimation(VertexShaderInput input, Instanc
     return output;
 }
 
-VertexTerrainOutput VertexShaderTerrain(VertexTerrainInput input)
-{
-    VertexTerrainOutput output;
-
-	float4x4 wvp = mul(mul(World, View), Projection);
-
-	// First transform by the instance matrix
-    //float4 worldPosition = mul(input.Position, WorldInstance);
-    float4 viewPosition = mul(input.Position, View);
-	output.Position = mul(input.Position, wvp);
-	output.NewPosition = input.Position;
-
-	//pass the texture coordinates further
-    output.TexCoord = input.TexCoord;
-
-	//get normal into world space
-    input.Normal = normalize(mul(input.Normal, World));
-	output.Normal = input.Normal;
-
-    output.Depth.x = output.Position.z;// - 100.f; // Subtract to make color more visible
-    output.Depth.y = output.Position.w;
-	output.Depth.z = viewPosition.z;
-
-    return output;
-}
-
 //--- PixelShaders ---//
 
 struct PixelShaderOutput1
@@ -272,27 +230,6 @@ PixelShaderOutput2 PixelShaderSmallGBuffer(VertexShaderOutput input)
     return output;
 }
 
-PixelShaderOutput2 PixelTerrainSmallGBuffer(VertexTerrainOutput input)
-{
-    PixelShaderOutput2 output = (PixelShaderOutput2)1;
-
-    // Output the normal, in [0,1] space
-    float3 normalFromMap = tex2D(normalMapSampler, input.TexCoord);
-
-    normalFromMap = input.Normal;	
-    normalFromMap = normalize(mul(normalFromMap, View));
-    output.Normal.rgb = 0.5f * (normalFromMap + 1.0f);
-
-	// Output SpecularPower
-	// Output SpecularIntensity
-	float4 specularAttributes = tex2D(specularSampler, input.TexCoord);
-    output.Normal.a = specularAttributes.r; //specularIntensity;
-
-	// Output Depth
-	output.Depth = input.Depth.x / input.Depth.y; 
-    return output;
-}
-
 float4 PixelShaderDiffuseRender(VertexShaderOutput input) : COLOR0
 {
 	// First check if mask channel is opaque
@@ -313,33 +250,6 @@ float4 PixelShaderDiffuseRender(VertexShaderOutput input) : COLOR0
 
 	// Just output the diffuse color
 	return diffuse;//float4(lerp(diffuse, envmap, pow(fresnel, 2) * 0.7f), 1);
-}
-
-float4 PixelShaderTerrainRender(VertexTerrainOutput input) : COLOR0
-{
-	float4 diffuse = tex2D(diffuseSampler, input.TexCoord);
-
-    // Output the normal, in [0,1] space
-    float3 normalFromMap = normalize(mul(input.Normal, View));
-    normalFromMap = 0.5f * (normalFromMap + 1.0f);
-
-	float mXY = abs(input.Normal.z);
-	float mXZ = abs(input.Normal.y);
-	float mYZ = abs(input.Normal.x);
-
-	float total = mXY + mXZ + mYZ;
-	mXY /= total;
-	mXZ /= total;
-	mYZ /= total;
-
-	float4 cXY = tex2D(diffuseSampler, input.NewPosition.xy / 50);
-	float4 cXZ = tex2D(diffuseSampler, input.NewPosition.xz / 50);
-	float4 cYZ = tex2D(diffuseSampler, input.NewPosition.yz / 50);
-
-	diffuse = cXY * mXY + cXZ * mXZ + cYZ * mYZ; 
-
-	// Just output the diffuse color
-	return diffuse;
 }
 
 /// Very basic shaders ahead
@@ -444,17 +354,6 @@ technique SmallGBufferAnimated
     }
 }
 
-technique SmallGBufferTerrain
-{
-    pass Pass1
-    {
-		CullMode = CCW;
-		ZENABLE = True;
-        VertexShader = compile vs_3_0 VertexShaderTerrain();
-        PixelShader = compile ps_3_0 PixelTerrainSmallGBuffer();
-    }
-}
-
 /// Separately render the diffuse/albedo component to combine, for light pre-pass.
 
 technique DiffuseRender
@@ -476,19 +375,6 @@ technique DiffuseRenderAnimated
         PixelShader = compile ps_3_0 PixelShaderDiffuseRender();
     }
 }
-
-technique DiffuseRenderTerrain
-{
-    pass Pass1
-    {
-		CullMode = CCW;
-		ZENABLE = True;
-
-        VertexShader = compile vs_3_0 VertexShaderTerrain();
-        PixelShader = compile ps_3_0 PixelShaderTerrainRender();
-    }
-}
-
 
 technique Skybox
 {
@@ -514,4 +400,3 @@ technique PassThrough
         PixelShader = compile ps_2_0 BasicPS();
     }
 }
-

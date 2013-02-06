@@ -13,7 +13,7 @@ namespace Meteor.Rendering
         RenderTarget2D diffuseRT;
 
 		/// External source for GBuffer effect
-		protected Effect GBufferEffect;
+		protected Effect terrainGBufferEffect;
 
         public DiffuseShader(RenderProfile profile, ResourceContentManager content)
             : base(profile, content) 
@@ -36,7 +36,7 @@ namespace Meteor.Rendering
 			};
 
 			// Load the shader effects
-			GBufferEffect = content.Load<Effect>("renderGBuffer");
+			terrainGBufferEffect = content.Load<Effect>("terrainGBuffer");
         }
 
         /// <summary>
@@ -52,8 +52,8 @@ namespace Meteor.Rendering
 			graphicsDevice.BlendState = BlendState.Opaque;
 			
 			// Sampler states for the diffuse map
-			graphicsDevice.SamplerStates[0] = SamplerState.LinearWrap;
-			graphicsDevice.SamplerStates[1] = SamplerState.PointClamp;
+			graphicsDevice.SamplerStates[0] = SamplerState.PointWrap;
+			graphicsDevice.SamplerStates[1] = SamplerState.PointWrap;
 
 			// Cull the objects
 			sceneRenderer.CullModelMeshes(scene, camera);
@@ -63,7 +63,7 @@ namespace Meteor.Rendering
 			sceneRenderer.Draw(scene, camera);
 
 			sceneRenderer.UseTechnique("DiffuseRenderTerrain");
-			sceneRenderer.DrawTerrain(scene, camera, GBufferEffect);
+			sceneRenderer.DrawTerrain(scene, camera, terrainGBufferEffect);
 			
 			// Render the skybox and update sampler state
 			graphicsDevice.SamplerStates[0] = SamplerState.LinearClamp;

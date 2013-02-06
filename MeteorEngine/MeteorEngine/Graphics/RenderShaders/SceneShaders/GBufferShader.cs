@@ -23,8 +23,10 @@ namespace Meteor.Rendering
 		{
 			// Diffuse/albedo render target
 
-			diffuseRT = profile.AddRenderTarget(backBufferWidth,
-				backBufferHeight, SurfaceFormat.Color, DepthFormat.Depth24Stencil8);
+			diffuseRT = profile.AddRenderTarget(
+				(int)(backBufferWidth * bufferScaling),
+				(int)(backBufferHeight * bufferScaling), 
+				SurfaceFormat.Color, DepthFormat.Depth24Stencil8);
 
 			outputTargets = new RenderTarget2D[3];
 			outputTargets[0] = normalRT;
@@ -50,7 +52,7 @@ namespace Meteor.Rendering
 			graphicsDevice.BlendState = BlendState.Opaque;
 			graphicsDevice.SetRenderTargets(bindingTargets);
 			graphicsDevice.DepthStencilState = DepthStencilState.Default;
-			graphicsDevice.Clear(Color.Transparent);
+			graphicsDevice.Clear(Color.Black);
 
 			// Reset the sampler states after SpriteBatch
 			graphicsDevice.SamplerStates[0] = SamplerState.PointWrap;
@@ -68,6 +70,9 @@ namespace Meteor.Rendering
 			// Render the scene
 			sceneRenderer.UseTechnique("GBuffer");
 			sceneRenderer.Draw(scene, camera);
+
+			sceneRenderer.UseTechnique("GBufferTerrain");
+			sceneRenderer.DrawTerrain(scene, camera, terrainGBufferEffect);
 
 			// Render the skybox
 			// Update the sampler state
@@ -90,7 +95,7 @@ namespace Meteor.Rendering
 		protected RenderTarget2D depthRT;
 
 		/// External source for GBuffer effect
-		protected Effect GBufferEffect;
+		protected Effect terrainGBufferEffect;
 
 		/// Source effect for clearing GBuffer
 		protected Effect clearBufferEffect;
@@ -130,7 +135,7 @@ namespace Meteor.Rendering
 			outputTargets[1] = depthRT;
 
 			// Load the shader effects
-			GBufferEffect = content.Load<Effect>("renderGBuffer");
+			terrainGBufferEffect = content.Load<Effect>("terrainGBuffer");
 			clearBufferEffect = content.Load<Effect>("clearGBuffer");
 		}
 
@@ -147,8 +152,9 @@ namespace Meteor.Rendering
 			graphicsDevice.BlendState = BlendState.Opaque;
 			graphicsDevice.SetRenderTargets(bindingTargets);
 			graphicsDevice.Clear(Color.Transparent);
-
 			graphicsDevice.DepthStencilState = DepthStencilState.Default;
+
+			// Reset the sampler states after SpriteBatch
 			graphicsDevice.SamplerStates[0] = SamplerState.PointWrap;
 			graphicsDevice.SamplerStates[1] = SamplerState.PointWrap;
 
@@ -166,7 +172,7 @@ namespace Meteor.Rendering
 			sceneRenderer.Draw(scene, camera);
 
 			sceneRenderer.UseTechnique("SmallGBufferTerrain");
-			sceneRenderer.DrawTerrain(scene, camera, GBufferEffect);
+			sceneRenderer.DrawTerrain(scene, camera, terrainGBufferEffect);
 
 			renderStopWatch.Stop();
 			return outputTargets;

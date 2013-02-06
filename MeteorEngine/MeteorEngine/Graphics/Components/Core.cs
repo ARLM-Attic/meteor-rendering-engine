@@ -15,7 +15,6 @@ namespace Meteor
     {
         /// Cameras to render with
 		List <Camera> cameras; 
-
         Camera currentCamera;
 
         /// Scenes used for rendering
@@ -42,17 +41,6 @@ namespace Meteor
         /// Parameters to set render options
         int rtIndex = 0;
 		bool debugText = true;
-
-        public enum RtView
-        {
-            final,
-            diffuse,
-            normal,
-            lights
-        };
-        
-        /// Specifies which render target to display
-        public RtView rtView;
 
         /// Useful for all DrawableComponents
         SpriteFont font;
@@ -152,7 +140,7 @@ namespace Meteor
 		{
 			/// Instantiate a render profile with the resource content manager
 			RenderProfile profile =
-				(RenderProfile)Activator.CreateInstance(renderProfileType, ServiceContainer, resxContent);
+				(RenderProfile)Activator.CreateInstance(renderProfileType, graphicsDevice, resxContent);
 
 			renderProfiles.Add(profile);
 			currentRenderProfile = profile;
@@ -201,6 +189,10 @@ namespace Meteor
 			nullTexture = resxContent.Load<Texture2D>("null_color");
         }
 
+		/// <summary>
+		/// Handles input and updates scenes
+		/// </summary>
+
         public override void Update(GameTime gameTime)
         {
 			renderStats.Update(gameTime);
@@ -236,11 +228,12 @@ namespace Meteor
 				return;
 			}
 
-			(currentCamera as DragCamera).Update(gameTime);
-
 			foreach (Scene scene in scenes)
 				scene.Update(gameTime);
+
+			currentCamera.Update(gameTime);
 			
+
 			base.Update(gameTime);
         }
         
@@ -257,7 +250,7 @@ namespace Meteor
 			{
 				if (renderProfile != null)
 				{
-					renderProfile.Draw(gameTime);
+					renderProfile.Draw();
 					outputs.Add(renderProfile.Output);
 				}
 			}
@@ -277,9 +270,6 @@ namespace Meteor
 			}
 
 			spriteBatch.End();
-
-			/// Setup for bounding boxes
-			sceneRenderer.DrawBoundingBoxes(currentScene, this.currentCamera);
 
             if (rtIndex == 1)
                 DrawDebugData();
@@ -306,11 +296,11 @@ namespace Meteor
 			spriteBatch.Begin(0, BlendState.Opaque, SamplerState.PointClamp, 
 				DepthStencilState.Default, RasterizerState.CullCounterClockwise);
 
-			for (int i = 0; i < currentRenderProfile.DebugTargets.Count; i++)
+			for (int i = 0; i < currentRenderProfile.DebugRenderTargets.Count; i++)
 			{
 				if (i == 3) rect.Height = halfWidth;
 
-				spriteBatch.Draw(currentRenderProfile.DebugTargets[i], rect, null, Color.White);
+				spriteBatch.Draw(currentRenderProfile.DebugRenderTargets[i], rect, null, Color.White);
 				rect.X += halfWidth;
 			}
 
@@ -375,46 +365,7 @@ namespace Meteor
 				new Vector2(4, font.LineSpacing * 6 + height), Color.White);
 			debugString.Clear();
 
-			spriteBatch.End(); /*
-			spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp, 
-				DepthStencilState.None, RasterizerState.CullNone);
-			
-			foreach (InstancedModel instancedModel in currentScene.staticModels.Values)
-			{
-				for (int i = 0; i < instancedModel.ScreenPos.Length; i++)
-				{
-					if (instancedModel.ScreenPos[i].X > -1 || instancedModel.ScreenPos[i].Y > -1)
-					{
-						float distance = Vector3.Distance(currentCamera.Position, instancedModel.MeshPos[i]);
-
-						Vector2 screenPos = instancedModel.ScreenPos[i];
-						screenPos.X *= targetWidth;
-						screenPos.Y *= targetHeight;
-
-						spriteBatch.Draw(nullTexture, new Rectangle(
-							(int)(screenPos.X), (int)(screenPos.Y),
-							(int)(40000f / distance), (int)(8000f / distance)),
-							new Color(0, 0, 0, 120));
-
-						spriteBatch.DrawString(font, debugString.Append("OBJ_Mesh "),
-							screenPos, Color.White, 0f, Vector2.Zero, 250f / distance, 
-							SpriteEffects.None, 1);
-						debugString.Clear();
-
-						Vector2 offsetPos = screenPos;
-						offsetPos.Y += 4000f / distance;
-
-						spriteBatch.DrawString(font, debugString.
-							Concat(instancedModel.MeshPos[i].X, 3).Append(", ").
-							Concat(instancedModel.MeshPos[i].Y, 3).Append(", ").
-							Concat(instancedModel.MeshPos[i].Z, 3), offsetPos, 
-							Color.White, 0f, Vector2.Zero, 250f / distance, SpriteEffects.None, 1);
-						debugString.Clear();		
-					}
-				}
-			}		
-
-            spriteBatch.End(); */
+			spriteBatch.End();
         }
     }
 }

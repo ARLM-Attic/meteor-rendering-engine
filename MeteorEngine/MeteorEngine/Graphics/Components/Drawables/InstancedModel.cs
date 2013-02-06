@@ -199,7 +199,7 @@ namespace Meteor.Resources
 			// Create the bounding box
 			BoundingBox box = new BoundingBox(meshMin, meshMax);
 
-			sphere = BoundingSphere.CreateFromPoints(vertexPositions);
+			sphere = BoundingSphere.CreateFromBoundingBox(box);
 			return box;
 		}
 
@@ -290,8 +290,8 @@ namespace Meteor.Resources
 				Vector3 position = new Vector3();
 				foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups.Values)
 				{
-					position = instanceGroup.instances[0].position;
-					break;
+					int last = instanceGroup.instances.Count - 1;
+					position = instanceGroup.instances[last].Transform.Translation;
 				}
 				return position;
 			}

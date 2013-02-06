@@ -40,7 +40,7 @@ namespace Meteor.Rendering
 		/// <summary>
 		/// Farthest depth value to render scene from.
 		/// </summary>
-		const float farDepth = 0.99999f;
+		const float farDepth = 0.999999f;
 
 		/// </summary>
 		/// Resources used for loading and rendering scene content
@@ -154,6 +154,9 @@ namespace Meteor.Rendering
 				DrawModel(skinnedModel, camera, this.shaderTechnique + "Animated");
 
 			scene.totalPolys = totalPolys;
+
+			// Debug bounding volumes
+			DrawBoundingVolumes(scene, camera);
 		}
 
 		/// <summary>
@@ -184,8 +187,11 @@ namespace Meteor.Rendering
 
 		public void DrawTerrain(Scene scene, Camera camera, Effect effect)
 		{
-			effect.CurrentTechnique = effect.Techniques[shaderTechnique];
-			scene.totalPolys += scene.terrain.Draw(camera, effect, blankTexture);
+			if (scene.terrain != null)
+			{
+				effect.CurrentTechnique = effect.Techniques[shaderTechnique];
+				scene.totalPolys += scene.terrain.Draw(camera, effect, blankTexture);
+			}
 		}
 
 		/// <summary>
@@ -194,7 +200,8 @@ namespace Meteor.Rendering
 
 		public void DrawTerrainDefault(Scene scene, Camera camera, Effect effect)
 		{
-			scene.totalPolys += scene.terrain.Draw(camera, effect, blankTexture);
+			if (scene.terrain != null)
+				scene.totalPolys += scene.terrain.Draw(camera, effect, blankTexture);
 		}
 
 		/// <summary>
@@ -259,6 +266,7 @@ namespace Meteor.Rendering
 			foreach (MeshInstanceGroup instanceGroup in instancedModel.MeshInstanceGroups.Values)
 			{
 				int totalInstances = instanceGroup.instances.Count;
+				graphicsDevice.SetVertexBuffers(null);
 
 				/// Resize the vertex buffer for instances if needed
 				if (totalInstances > instanceGroup.instanceVB.VertexCount)
@@ -428,7 +436,7 @@ namespace Meteor.Rendering
 		/// Draw all visible bounding boxes
 		/// </summary>
 
-		public void DrawBoundingBoxes(Scene scene, Camera camera)
+		public void DrawBoundingVolumes(Scene scene, Camera camera)
 		{
 			if (scene.debug == true)
 			{
@@ -490,7 +498,7 @@ namespace Meteor.Rendering
 					// TODO: Update these boxes only when intances are updated
 
 					// Render the bounding box for this instance
-					if (camera.Frustum.Contains(meshInstance.BSphere) == ContainmentType.Contains)
+					if (camera.Frustum.Contains(meshInstance.BSphere) != ContainmentType.Disjoint)
 					{
 						// Add a bounding sphere to the list of shapes to draw
 						ShapeRenderer.AddBoundingSphere(meshInstance.BSphere, Color.Red);

@@ -111,6 +111,7 @@
     <Compile Include="Graphics\Rendering\SceneCuller.cs" />
     <Compile Include="Graphics\Rendering\SceneRenderer.cs" />
     <Compile Include="Graphics\Components\Core.cs" />
+    <Compile Include="Helpers\DebugDisplay.cs" />
     <Compile Include="Helpers\GaussianBlur.cs" />
     <Compile Include="Helpers\CopyShader.cs" />
     <Compile Include="Graphics\Rendering\RenderInput.cs" />
@@ -163,6 +164,7 @@
     <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\pointLight.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\renderGBuffer.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\ssao.xnb" />
+    <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\terrainGBuffer.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\Fonts\defaultFont.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\Fonts\segoeUI.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\Models\ball.xnb" />

@@ -72,6 +72,10 @@ namespace Meteor.Resources
 		public int culledMeshes = 0;
 		public int drawCalls = 0;
 
+		/// <summary>
+		/// Create a new scene to reference content with.
+		/// </summary>
+
 		public Scene(ContentManager content, GraphicsDevice graphicsDevice)
 		{
 			this.content = content;
@@ -82,9 +86,7 @@ namespace Meteor.Resources
 			skinnedModels = new Dictionary<string, InstancedModel>();
 			blendModels = new Dictionary<string, InstancedModel>();
 
-			// Set up terrain map
-			terrain = new TerrainMap(content, graphicsDevice);
-
+			// Ordered list for model sorting
 			orderedMeshes = new List<OrderedMeshData>();
 		}
 
@@ -122,6 +124,10 @@ namespace Meteor.Resources
 
 			return model;
 		}
+
+		/// <summary>
+		/// Wrapper to find the model with just the file path
+		/// </summary>
 
 		private Model FindModel(String modelPath)
 		{
@@ -229,6 +235,9 @@ namespace Meteor.Resources
 
 		public void AddTerrain(String imagePath, String texture)
 		{
+			// Set up terrain map
+			terrain = new TerrainMap(content, graphicsDevice);
+
 			terrain.GenerateFromImage(imagePath, texture);
 		}
 
@@ -251,7 +260,7 @@ namespace Meteor.Resources
 			{
 				if (skinnedModel.animationPlayer != null)
 				{
-					skinnedModel.animationPlayer.playSpeed = 2f;
+					skinnedModel.animationPlayer.playSpeed = 1f;
 					skinnedModel.animationPlayer.Update(gameTime.ElapsedGameTime, true, Matrix.Identity);					
 				}
 				// Finished updating mesh

@@ -84,9 +84,9 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
     return output;
 }
 
-float DepthBias = 0.0015f;
+float DepthBias = 0.0007f;
 
-/// Poisson disk filter currently not being used
+/// Poisson disk samples used for shadow filtering
 
 float2 poissonDisk[24] = { 
 	float2(0.5713538f, 0.7814451f),
@@ -154,8 +154,8 @@ float4 DirectionalLightPS(VertexShaderOutput input, float4 position) : COLOR0
 
 	// Get specular data
 
-	float specPower = normalData.a * 255;
-	float3 specIntensity = 0;//normalData.a;
+	float specPower = 10.f;//normalData.a * 255;
+	float3 specIntensity = 0.1f;//normalData.a;
 
 	float3 lightDir = -normalize(lightDirection);
 
@@ -221,6 +221,7 @@ float3 FindShadow(float4 shadowMapPos, float shadowIndex, float3 normal)
 float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 {
 	float depthVal = tex2D(depthSampler, input.TexCoord).r;
+
 	clip (depthVal > 0.99999f);
 	//	return float4(0.5, 0.5, 0.5, 0.15);
 
@@ -279,6 +280,10 @@ float4 PixelShaderShadowed(VertexShaderOutput input) : COLOR0
 		float3 shadow2 = FindShadow(shadowMapPos2, shadowIndex + 1, normal);
 		shadow = lerp(shadow, shadow2, relDistance);
 	}
+
+	//float4 fogColor = float4(0.7, 0.8, 0.9, 1);
+	//float mix = saturate((1 - exp(-depthVal)));
+	//lightOutput.rgb += float4(fogColor.rgb, mix);
 
 	lightOutput.rgb *= shadow;
 	return lightOutput;
