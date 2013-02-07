@@ -126,7 +126,7 @@ float3 LinearFilter4Samples(sampler smp, float3 ambient, float2 texCoord, float 
 
 	float shadow = 0;
 	float spread = 2;
-	float totalSamples = 16;
+	float totalSamples = 20;
 
 	//float blockerDistance = saturate(
 	//	ourdepth - tex2D(smp, texCoord + shadowMapPixelSize).r);

@@ -7,62 +7,6 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace Meteor.Resources
 {
-	class TriangleTreeNode 
-	{ 
-		/// <summary>
-		/// The corners (in map coordinates) of the node
-		/// </summary>
-		public Vector2[] corners;
-
-		/// <summary>
-		/// The children for this tree node
-		/// </summary>
-		public TriangleTreeNode leftChild, rightChild;
-
-		/// <summary>
-		/// The location that divides the longest edge in half
-		/// </summary>
-		private Vector2 edgeSplit;
-
-		/// <summary>
-		/// minimum length for each node
-		/// </summary>
-		public static float edgeMinimum = 8;
-
-		/// <summary>
-		/// minimum length for each node
-		/// </summary>
-		public static float heightTolerance = 5f;
-
-		/// <summary>
-		/// Create a node with corners and edge coordinates
-		/// </summary>
-		public TriangleTreeNode(float[,] heights, params Vector2[] triangleCorners)
-		{
-			// Set this node's corners
-			corners = triangleCorners;
-
-			// Split the longest edge
-			edgeSplit = (corners[0] + corners[2]) / 2;
-
-			// Calculate the averaged height value from the two corners
-			float edgeHeight =
-				(heights[(int)corners[0].X, (int)corners[0].Y] +
-				heights[(int)corners[2].X, (int)corners[2].Y]) / 2;
-
-			// If the triangle split coordinates are coarser than the threshold,
-			// add two new children. Otherwise, we have reached the final node
-			// for this tree.
-			if (edgeSplit.X % edgeMinimum == 0 || edgeSplit.Y % edgeMinimum == 0)
-			{
-				leftChild = new TriangleTreeNode(heights, corners[1], edgeSplit, corners[2]);
-				rightChild = new TriangleTreeNode(heights, corners[0], edgeSplit, corners[1]);
-			}
-
-			// Finish building this node
-		}
-	};
-
 	/// <summary>
 	/// Class that stores original terrain heightmap info and vertex patches
 	/// to visually represent it.
@@ -83,11 +27,13 @@ namespace Meteor.Resources
 		/// <summary>
 		/// Heightmap dimensions
 		/// </summary>
-		private int terrainWidth = 128;
-		private int terrainHeight = 128;
+		private int terrainWidth;
+		private int terrainHeight;
 
 		/// <summary>
-		/// Array for terrain mesh vertices
+		/// Arrays for terrain mesh vertices. VerticesToUpdate are used just
+		/// for the vertices that have changed since the last frame, for quicker
+		/// vertex buffer insertion.
 		/// </summary>
 		VertexPositionNormalTexture[] vertices;
 
@@ -99,7 +45,7 @@ namespace Meteor.Resources
 		/// <summary>
 		/// Array to store the data of each map pixel
 		/// </summary>
-		private float[,] heightData;
+		private char[,] heightData;
 
 		/// <summary>
 		/// Amount to scale heightmap by
@@ -117,19 +63,24 @@ namespace Meteor.Resources
 		private Texture2D mainTexture;
 
 		/// <summary>
+		/// Last recorded center position of the clipmap, in map coordinates
+		/// </summary>
+		private Vector2 lastMapCenter;
+
+		/// <summary>
 		/// Location to offset the position of the terrain
 		/// </summary>
 		private Vector3 heightmapPosition;
 
 		/// <summary>
-		/// Reduction factor for LOD maps
+		/// Height and width (in tiles) for each clip map
 		/// </summary>
-		private int reductionFactor = 1;
+		private int clipLevelSize = 32;
 
 		/// <summary>
 		/// Vertex buffer for terain mesh
 		/// </summary>
-		private VertexBuffer terrainVB;
+		private DynamicVertexBuffer terrainVB;
 
 		/// <summary>
 		/// Index buffer for terrain mesh
@@ -171,138 +122,124 @@ namespace Meteor.Resources
 			heightMap.GetData(heightMapColors);
 
 			// Initialize height data values
-			heightData = new float[terrainWidth, terrainHeight];
+			heightData = new char[terrainWidth, terrainHeight];
 
 			// Add the height values from the map
 			for (int x = 0; x < terrainWidth; x++)
 				for (int y = 0; y < terrainHeight; y++)
-					heightData[x, y] = heightMapColors[x + y * terrainWidth].R / 5.0f;
-					
-			// Create the terrain tree data.
-			Regenerate(TriangleTreeNode.edgeMinimum);
+					heightData[x, y] = (char)heightMapColors[x + y * terrainWidth].R;
+
+			// Create vertex buffer for clip map root
+			vertices = new VertexPositionNormalTexture[clipLevelSize * clipLevelSize];
+			terrainVB = new DynamicVertexBuffer(graphicsDevice,
+				VertexPositionNormalTexture.VertexDeclaration, vertices.Length, BufferUsage.WriteOnly);
+
+			// Create index buffer for clip map root
+			indices = new int[(clipLevelSize - 1) * (clipLevelSize - 1) * 6];
+			terrainIndices = new IndexBuffer(graphicsDevice, typeof(int), indices.Length, BufferUsage.WriteOnly);
 		}
 
 		/// <summary>
 		/// Re-create the terrain mesh with the current parameters.
 		/// </summary>
-		public void Regenerate(float terrainDetail)
+		public void Regenerate(Vector3 centerPosition)
 		{
-			TriangleTreeNode.edgeMinimum = terrainDetail;
-		
-			GenerateVertexPatches();
-
-			//SetUpVerticesLOD();
-			//SetUpIndices();
-
-			CalculateNormals();
-
-			// Set vertex and index buffers
-			terrainVB = new VertexBuffer(graphicsDevice,
-				VertexPositionNormalTexture.VertexDeclaration, vertices.Length, BufferUsage.WriteOnly);
-			terrainVB.SetData(vertices);
-
-			terrainIndices = new IndexBuffer(graphicsDevice, typeof(int), indices.Length, BufferUsage.WriteOnly);
-			terrainIndices.SetData(indices);
+			UpdateMap(centerPosition);
 		}
 
 		/// <summary>
-		/// Set the vertices for a reduced detail version of the mesh.
+		/// Update the geo clipmaps according to the center position
 		/// </summary>
 
-		private void SetUpVerticesLOD()
+		private void UpdateMap(Vector3 position)
 		{
-			int reducedWidth = terrainWidth / reductionFactor;
-			int reducedHeight = terrainHeight / reductionFactor;
+			Vector2 mapCenter = getMapPosition(position);
+			// Snap to units of 2
+			mapCenter.X -= (mapCenter.X % 2);
+			mapCenter.Y -= (mapCenter.Y % 2);
 
-			vertices = new VertexPositionNormalTexture[reducedWidth * reducedHeight];
+			// Clamp coordinates
+			if (mapCenter.X - (clipLevelSize / 2) < 0) 
+				mapCenter.X = (clipLevelSize / 2);
 
-			for (int x = 0; x < reducedWidth; x++)
+			if (mapCenter.X + (clipLevelSize / 2) > terrainWidth) 
+				mapCenter.X = terrainWidth - (clipLevelSize / 2);
+
+			if (mapCenter.Y - (clipLevelSize / 2) < 0)
+				mapCenter.Y = (clipLevelSize / 2);
+
+			if (mapCenter.Y + (clipLevelSize / 2) > terrainHeight)
+				mapCenter.Y = terrainHeight - (clipLevelSize / 2);
+
+			if (mapCenter != lastMapCenter)
 			{
-				for (int y = 0; y < reducedHeight; y++)
-				{
-					vertices[x + y * reducedWidth].Position =
-						new Vector3(x, heightData[x * reductionFactor, y * reductionFactor], -y);
+				int left = (int)mapCenter.X - (clipLevelSize / 2);
+				int top = (int)mapCenter.Y - (clipLevelSize / 2);
+				int right = (int)mapCenter.X + (clipLevelSize / 2);
+				int bottom = (int)mapCenter.Y + (clipLevelSize / 2);
 
-					vertices[x + y * reducedWidth].TextureCoordinate.X = (float)x / 20.0f;
-					vertices[x + y * reducedWidth].TextureCoordinate.Y = (float)y / 20.0f;
+				// Go through all coordinates in the clipmap and update the vertices
+				// For vertices that were already set last time, just ignore them
+
+				for (int y = top, i = 0; y < bottom; y++, i++)
+				{
+					for (int x = left, j = 0; x < right; x++, j++)
+					{
+						vertices[i * clipLevelSize + j].Position =
+							new Vector3(x, heightData[x, y] / 5.0f, -y);
+
+						vertices[i * clipLevelSize + j].TextureCoordinate.X = (float)x / 20.0f;
+						vertices[i * clipLevelSize + j].TextureCoordinate.Y = (float)y / 20.0f;
+					}
+				}
+
+				SetUpIndices();
+				CalculateNormals();
+
+				// Set vertex and index buffers
+				terrainVB.SetData(vertices);
+				terrainIndices.SetData(indices);
+			}
+
+			lastMapCenter = mapCenter;
+		}
+
+		/// <summary>
+		/// Update a higher level geo clipmap
+		/// </summary>
+
+		private void UpdateOuterClipMap(Vector3 position)
+		{
+			Vector2 mapCenter = getMapPosition(position);
+
+			// Snap to units of 4
+			mapCenter.X -= (mapCenter.X % 4);
+			mapCenter.Y -= (mapCenter.Y % 4);
+
+			int left = (int)mapCenter.X - clipLevelSize;
+			int top = (int)mapCenter.Y - clipLevelSize;
+			int right = (int)mapCenter.X + clipLevelSize;
+			int bottom = (int)mapCenter.Y + clipLevelSize;
+
+			// Clamp coordinates
+			left = (left <= 0) ? 0 : left;
+			top = (top <= 0) ? 0 : top;
+
+			left = (left > terrainWidth) ? terrainWidth : left;
+			top = (top > terrainHeight) ? terrainHeight : top;
+
+			for (int y = top, i = 0; y < bottom; y++, i++)
+			{
+				for (int x = left, j = 0; x < right; x++, j++)
+				{
+					vertices[i * clipLevelSize + j].Position =
+						new Vector3(x, heightData[x, y], -y);
+
+					vertices[i * clipLevelSize + j].TextureCoordinate.X = (float)x / 20.0f;
+					vertices[i * clipLevelSize + j].TextureCoordinate.Y = (float)y / 20.0f;
 				}
 			}
-		}
-
-		/// <summary>
-		/// Automatically generate vertex patches based on the ROAM method
-		/// </summary>
-
-		private void GenerateVertexPatches()
-		{
-			// First generate two root (level 0) tree nodes with map coordinates
-			Vector2[] bottomLeftCoords = {
-				new Vector2(0, 0),
-				new Vector2(0, terrainHeight - 1),
-				new Vector2(terrainWidth - 1, terrainHeight - 1)
-			};
-
-			Vector2[] topRightCoords = {
-				new Vector2(0, 0),
-				new Vector2(terrainWidth - 1, 0),
-				new Vector2(terrainWidth - 1, terrainHeight - 1)
-			};
-
-			TriangleTreeNode bottomLeft = new TriangleTreeNode(heightData, bottomLeftCoords);
-			TriangleTreeNode topRight = new TriangleTreeNode(heightData, topRightCoords);
-
-			// Get the vertex locations for all tree node patches.
-			List<Vector2> patchVertices = new List<Vector2>();
-			
-			patchVertices.AddRange(GetVerticesFromPatches(bottomLeft));
-			patchVertices.AddRange(GetVerticesFromPatches(topRight));
-
-			// Create an array of vertices from the tree patch structure,
-			// and set the data.
-			vertices = new VertexPositionNormalTexture[patchVertices.Count];
-
-			for (int i = 0; i < patchVertices.Count; i++)
-			{
-				vertices[i].Position = new Vector3(
-					patchVertices[i].X,
-					heightData[(int)patchVertices[i].X, (int)patchVertices[i].Y], 
-					-patchVertices[i].Y);
-
-				vertices[i].TextureCoordinate.X = (float)patchVertices[i].X / 20.0f;
-				vertices[i].TextureCoordinate.Y = (float)patchVertices[i].Y / 20.0f;
-
-				vertices[i].Normal = Vector3.Up;
-			}
-
-			// Create the indices
-			indices = new int[patchVertices.Count];
-			for (int i = 0; i < patchVertices.Count; i++)
-				indices[i] = i;
-
-			patchVertices.Clear();
-		}
-
-		/// <summary>
-		/// Get the vertex locations for all the patches recursively down the tree.
-		/// </summary>
-
-		List<Vector2> GetVerticesFromPatches(TriangleTreeNode node)
-		{
-			List<Vector2> vertices = new List<Vector2>();
-
-			// First traverse through child nodes if they are valid.
-			if (node.leftChild != null)
-				vertices.AddRange(GetVerticesFromPatches(node.leftChild));
-
-			if (node.rightChild != null)
-				vertices.AddRange(GetVerticesFromPatches(node.rightChild));
-
-			// Finally, if its child nodes aren't valid, we have reached the lowest
-			// level node, so add its vertices instead.
-			if (node.leftChild == null && node.rightChild == null)
-				vertices.AddRange(node.corners);
-
-			return vertices;
+			// Finish updating vertices
 		}
 
 		/// <summary>
@@ -311,20 +248,16 @@ namespace Meteor.Resources
 
 		private void SetUpIndices()
 		{
-			int reducedWidth = terrainWidth / reductionFactor;
-			int reducedHeight = terrainHeight / reductionFactor;
-
-			indices = new int[(reducedWidth - 1) * (reducedHeight - 1) * 6];
 			int counter = 0;
 
-			for (int y = 0; y < reducedWidth - 1; y++)
+			for (int y = 0; y < clipLevelSize - 1; y++)
 			{
-				for (int x = 0; x < reducedHeight - 1; x++)
+				for (int x = 0; x < clipLevelSize - 1; x++)
 				{
-					int lowerLeft	= x + y * reducedWidth;
-					int lowerRight	= (x + 1) + y * reducedWidth;
-					int topLeft		= x + (y + 1) * reducedWidth;
-					int topRight	= (x + 1) + (y + 1) * reducedWidth;
+					int lowerLeft =	x + y * clipLevelSize;
+					int lowerRight = (x + 1) + y * clipLevelSize;
+					int topLeft = x + (y + 1) * clipLevelSize;
+					int topRight = (x + 1) + (y + 1) * clipLevelSize;
 
 					indices[counter++] = topLeft;
 					indices[counter++] = lowerRight;
@@ -366,6 +299,28 @@ namespace Meteor.Resources
 		}
 
 		/// <summary>
+		/// Get the position in map coordinates according to the world location
+		/// </summary>
+		/// <param name="position"></param>
+		/// <returns></returns>
+
+		public Vector2 getMapPosition(Vector3 position)
+		{
+			Vector3 positionOnMap = position - heightmapPosition;
+			positionOnMap.Z = -positionOnMap.Z;
+
+			int left, top;
+			left = (int)(positionOnMap.X / scale);
+			top = (int)(positionOnMap.Z / scale);
+
+			// Clamp coordinates
+			left = (left <= 0) ? 0 : left;
+			top = (top <= 0) ? 0 : top;
+
+			return new Vector2(left, top);
+		}
+
+		/// <summary>
 		/// Get the interpolated height at a particular location in the map
 		/// </summary>
 
@@ -381,6 +336,8 @@ namespace Meteor.Resources
 			// Clamp coordinates
 			left = (left <= 0) ? 0 : left;
 			top = (top <= 0) ? 0 : top;
+			left = (left > terrainWidth - 2) ? terrainWidth - 2 : left;
+			top = (top > terrainHeight - 2) ? terrainHeight - 2 : top;
 
 			// Use modulus to find out how far away we are from the upper
 			// left corner of the cell, then normalize it with the scale.
@@ -389,10 +346,10 @@ namespace Meteor.Resources
 
 			// nrmalize the height positions and interpolate them.
 			float topHeight = MathHelper.Lerp(
-				heightData[left, top], heightData[left + 1, top], xNormalized);
+				heightData[left, top] / 5.0f, heightData[left + 1, top] / 5.0f, xNormalized);
 
 			float bottomHeight = MathHelper.Lerp(
-				heightData[left, top + 1], heightData[left + 1, top + 1], xNormalized);
+				heightData[left, top + 1] / 5.0f, heightData[left + 1, top + 1] / 5.0f, xNormalized);
 
 			float height = MathHelper.Lerp(topHeight, bottomHeight, zNormalized);
 
@@ -406,14 +363,12 @@ namespace Meteor.Resources
 
 		public int Draw(Camera camera, Effect effect, Texture2D texture)
 		{
-			Vector3 reduction = new Vector3(reductionFactor, 1, reductionFactor);
-
-			Matrix worldMatrix = Matrix.CreateScale(reduction * scale);
+			Matrix worldMatrix = Matrix.CreateScale(scale);
 			worldMatrix *= Matrix.CreateTranslation(heightmapPosition);
 
 			RasterizerState rWireframeState = new RasterizerState();
 			rWireframeState.FillMode = FillMode.WireFrame;
-			graphicsDevice.RasterizerState = rWireframeState;
+			//graphicsDevice.RasterizerState = rWireframeState;
 
 			// Set vertex and index buffers
 			graphicsDevice.Indices = terrainIndices;

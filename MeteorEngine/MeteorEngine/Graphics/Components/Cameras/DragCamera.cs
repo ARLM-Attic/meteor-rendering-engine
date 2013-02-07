@@ -78,6 +78,10 @@ namespace Meteor.Resources
 			float time = (float)gameTime.ElapsedGameTime.TotalMilliseconds;
 			MouseState mouseState = Mouse.GetState();
 
+			// Check right mouse button for a speed boost
+			float selectedMoveSpeed = (mouseState.RightButton == ButtonState.Pressed) ? 
+				moveSpeed * 5f : moveSpeed;
+
 			if (mouseState.LeftButton == ButtonState.Pressed)
 			{
 				if (mouseLeftHeld == false)
@@ -109,12 +113,12 @@ namespace Meteor.Resources
 			// Check for input to move the camera forward and back
 			if (currentKeyboardState.IsKeyDown(Keys.W))
 			{
-				position += worldTransform.Forward * time * moveSpeed;
+				position += worldTransform.Forward * time * selectedMoveSpeed;
 			}
 
 			if (currentKeyboardState.IsKeyDown(Keys.S))
 			{
-				position -= worldTransform.Forward * time * moveSpeed;
+				position -= worldTransform.Forward * time * selectedMoveSpeed;
 			}
 
 			cameraArc += currentGamePadState.ThumbSticks.Right.Y * time;
@@ -129,12 +133,12 @@ namespace Meteor.Resources
 			// Check for input to move the camera sideways
 			if (currentKeyboardState.IsKeyDown(Keys.D))
 			{
-				position += worldTransform.Right * time * moveSpeed;
+				position += worldTransform.Right * time * selectedMoveSpeed;
 			}
 
 			if (currentKeyboardState.IsKeyDown(Keys.A))
 			{
-				position += worldTransform.Left * time * moveSpeed;
+				position += worldTransform.Left * time * selectedMoveSpeed;
 			}
 
 			cameraRotation += currentGamePadState.ThumbSticks.Right.X * time;
