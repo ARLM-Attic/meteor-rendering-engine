@@ -151,13 +151,19 @@ namespace DeferredRenderingPipeline
             MeshContent mesh = node as MeshContent;
             if (mesh != null)
             {
+				// Look up textures individually to see if they exist, and if not,
+				// use a default backup for a texture.
+
 				string pathToNormalMap = LookUpTexture(mesh, normalMapTexture, 
 					NormalMapKey, "../../null_normal.tga");
 
 				string pathToSpecularMap = LookUpTexture(mesh, specularMapTexture,
 					SpecularMapKey, "../../null_specular.tga");
 
-				// Specular map stuff
+				string pathToDiffuseMap = LookUpTexture(mesh, diffuseMapTexture,
+					SpecularMapKey, "../../null_diffuse.tga");
+
+				// Specular and normal map stuff
 
                 foreach (GeometryContent geometry in mesh.Geometry)
                 {
@@ -168,16 +174,20 @@ namespace DeferredRenderingPipeline
 						geometry.Material.Textures.Remove(DiffuseMapKey);
 						geometry.Material.Textures.Add("Texture", texRef);
 					}
+					else 
+					{
+						geometry.Material.Textures.Add(DiffuseMapKey,
+							new ExternalReference<TextureContent>(pathToDiffuseMap));
+					}
 
                     // Add normal map textures
                     if (geometry.Material.Textures.ContainsKey(NormalMapKey))
                     {
                         ExternalReference<TextureContent> texRef = geometry.Material.Textures[NormalMapKey];
-
                         geometry.Material.Textures.Remove(NormalMapKey);
-                        geometry.Material.Textures.Add("NormalMap", texRef);
-                    }
-                    else
+						geometry.Material.Textures.Add("NormalMap", texRef);
+					}                
+                    else 
                     {
                         geometry.Material.Textures.Add(NormalMapKey,
 							new ExternalReference<TextureContent>(pathToNormalMap));
@@ -283,15 +293,6 @@ namespace DeferredRenderingPipeline
                 in material.Textures)
             {
                 normalMappingMaterial.Textures.Add(texture.Key, texture.Value);
-				/*
-				if (texture.Key.ToLower().Equals("diffusemap") || texture.Key.ToLower().Equals("texture"))
-				{
-					if (normalMappingMaterial.Textures.ContainsKey("diffusemap") || normalMappingMaterial.Textures.ContainsKey("texture"))
-					{
-						normalMappingMaterial.Textures.Remove("diffusemap");
-						normalMappingMaterial.Textures.Add("Texture", texture.Value);
-					}
-				} */
             }
 
             // and convert the material using the NormalMappingMaterialProcessor,

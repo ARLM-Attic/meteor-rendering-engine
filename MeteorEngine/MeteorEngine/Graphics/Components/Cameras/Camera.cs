@@ -210,6 +210,18 @@ namespace Meteor.Resources
 			UpdateMatrices();
 		}
 
+		/// <summary>
+		/// Pass matrices from an external source
+		/// </summary>
+		public virtual void SetMatrices(Matrix world, Matrix view, Matrix projection)
+		{
+			this.worldTransform = world;
+			this.view = view;
+			this.projection = projection;
+
+			UpdateMatrices();
+		}
+
         /// <summary>
         /// Set the camera's matrix transformations
         /// </summary>

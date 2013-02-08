@@ -54,9 +54,6 @@ namespace Meteor
 
 		Texture2D nullTexture;
 
-		float targetWidth;
-		float targetHeight;
-
 		/// Used to draw scenes
 		SceneRenderer sceneRenderer;
 
@@ -127,7 +124,7 @@ namespace Meteor
 			cameras.Add(camera);
 
 			currentCamera = cameras[cameras.Count - 1];
-			currentCamera.Initialize(targetWidth, targetHeight);
+			currentCamera.Initialize(graphicsDevice.Viewport.Width, graphicsDevice.Viewport.Height);
 
 			return currentCamera;
 		}
@@ -151,38 +148,35 @@ namespace Meteor
 		/// Update viewport and rendertarget profiles for when window has been resized
 		/// </summary>
 
-		public void SetViewportSize(int viewportWidth, int viewportHeight)
+		public void SetViewportSize(GraphicsDeviceManager graphics, int viewportWidth, int viewportHeight)
 		{
-			Viewport v = graphicsDevice.Viewport;
+			Viewport viewport = graphicsDevice.Viewport;
 
-			v.Width = viewportWidth;
-			v.Height = viewportHeight;
+			viewport.Width = viewportWidth;
+			viewport.Height = viewportHeight;
 
-			graphicsDevice.Viewport = v;
+			graphicsDevice.Viewport = viewport;
+			graphics.ApplyChanges();
 
-			targetWidth = (float)graphicsDevice.Viewport.Width;
-			targetHeight = (float)graphicsDevice.Viewport.Height;
+			// Reset the camera and render profile
+			currentCamera.Initialize(viewportWidth, viewportHeight);
+			currentRenderProfile.Initialize();
 
-			// Restart the render profile
-			//currentCamera.Initialize(targetWidth, targetHeight);
-			//currentRenderProfile.Initialize();
-
-			// Reset the inputs
-			//currentRenderProfile.MapInputs(currentScene, currentCamera);
+			// Reset the profile inputs
+			currentRenderProfile.MapInputs(currentScene, currentCamera);
 		}
+
+		/// <summary>
+		/// Load debug resources used by the high-level renderer
+		/// </summary>
 
         protected override void LoadContent()
         {
-            // Load debug font
+            // Load debug resources
             font = resxContent.Load<SpriteFont>("defaultFont");
-
-            // Miscellaneous stuff
             spriteBatch = new SpriteBatch(graphicsDevice);
 
-			targetWidth = graphicsDevice.Viewport.Width;
-			targetHeight = graphicsDevice.Viewport.Height;
-
-			// Load up all available render profiles
+			// Load up all resource renderers
 			sceneRenderer = new SceneRenderer(graphicsDevice, resxContent);
 			quadRenderer = new QuadRenderComponent(graphicsDevice);
 
@@ -266,7 +260,7 @@ namespace Meteor
 			foreach (RenderTarget2D output in outputs)
 			{
 				spriteBatch.Draw(output, new Rectangle(0, 0,
-					(int)targetWidth, (int)targetHeight), Color.White);
+					graphicsDevice.Viewport.Width, graphicsDevice.Viewport.Height), Color.White);
 			}
 
 			spriteBatch.End();

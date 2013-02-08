@@ -14,3 +14,6 @@ MeteorEngine.Content\null_normal.xnb
 MeteorEngine.Content\Fonts\defaultFont.xnb
 MeteorEngine.Content\Models\ball.xnb
 MeteorEngine.Content\Fonts\segoeUI.xnb
+MeteorEngine.Content\Effects\terrainGBuffer.xnb
+MeteorEngine.Content\seattle.xnb
+MeteorEngine.Content\skyblue_cube.xnb

@@ -29,7 +29,7 @@ namespace Meteor.Resources
         /// <summary>
         /// Desired camera position in the chased object's coordinate system.
         /// </summary>
-		public Vector3 desiredPositionOffset = new Vector3(-110.0f, 50.0f, 0.0f);
+		public Vector3 desiredPositionOffset = new Vector3(-20.0f, 20.0f, 0.0f);
 
         /// <summary>
         /// Desired camera position in world space.
@@ -48,7 +48,7 @@ namespace Meteor.Resources
         /// <summary>
         /// Look at point in the chased object's coordinate system.
         /// </summary>
-        public Vector3 lookAtOffset = new Vector3(0, 40.8f, 0);
+        public Vector3 lookAtOffset = new Vector3(0, 10f, 0);
 
         /// <summary>
         /// Look at point in world space.
@@ -124,9 +124,9 @@ namespace Meteor.Resources
         /// </summary>
         protected override void UpdateMatrices()
         {
-			worldTransform = Matrix.CreateTranslation(position);
+			//worldTransform = Matrix.CreateTranslation(position);
             view = Matrix.CreateLookAt(position, LookAt, up);
-            projection = Matrix.CreatePerspectiveFieldOfView(fieldOfView,
+            projection = Matrix.CreatePerspectiveFieldOfView(viewAngle,
                 aspectRatio, nearPlaneDistance, farPlaneDistance);
 
 			cameraFrustum.Matrix = view * projection;
@@ -140,13 +140,13 @@ namespace Meteor.Resources
         /// </summary>
         public void Reset()
         {
-            UpdateWorldPositions();
+            //UpdateWorldPositions();
 
             // Stop motion
-            velocity = Vector3.Zero;
+            //velocity = Vector3.Zero;
 
             // Force desired position
-            position = desiredPosition;
+            //position = desiredPosition;
             UpdateMatrices();
         }
 
@@ -171,7 +171,7 @@ namespace Meteor.Resources
         /// </summary>
         public override void Update(GameTime gameTime)
         {
-            UpdateWorldPositions();
+            //UpdateWorldPositions();
 
             float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
 

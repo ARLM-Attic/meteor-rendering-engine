@@ -97,6 +97,7 @@
     <Compile Include="Graphics\Components\Cameras\DragCamera.cs" />
     <Compile Include="Graphics\Components\Cameras\FreeCamera.cs" />
     <Compile Include="Graphics\Components\DrawableComponent.cs" />
+    <Compile Include="Graphics\Components\Drawables\Clipmap.cs" />
     <Compile Include="Graphics\Components\Drawables\MeshInstance.cs">
       <SubType>Code</SubType>
     </Compile>

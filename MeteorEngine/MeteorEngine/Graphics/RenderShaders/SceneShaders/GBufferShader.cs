@@ -159,6 +159,8 @@ namespace Meteor.Rendering
 			// Reset the sampler states after SpriteBatch
 			graphicsDevice.SamplerStates[0] = SamplerState.PointWrap;
 			graphicsDevice.SamplerStates[1] = SamplerState.PointWrap;
+			// HDR render target
+			graphicsDevice.SamplerStates[4] = SamplerState.PointWrap;
 
 			// Clear the small GBuffer
 			clearBufferEffect.CurrentTechnique = clearBufferEffect.Techniques["ClearSmall"];

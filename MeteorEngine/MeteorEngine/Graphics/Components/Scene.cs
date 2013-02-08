@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -109,19 +110,12 @@ namespace Meteor.Resources
 		private Model FindModel(String directory, String modelPath)
 		{
 			Model model = null;
+			String path = "Models\\" + modelPath;
 
-			try
-			{
-				String path = "Models\\" + directory + "\\" + modelPath;
-				model = content.Load<Model>(path);
-			}
-			catch (Exception e)
-			{
-				String message = e.Message;
-				String path = "Models\\" + modelPath;
-				model = content.Load<Model>(path);
-			}
+			if (Directory.Exists(content.RootDirectory + "\\Models\\" + directory))
+				path = "Models\\" + directory + "\\" + modelPath;
 
+			model = content.Load<Model>(path);
 			return model;
 		}
 
