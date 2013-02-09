@@ -37,7 +37,7 @@ namespace Meteor.Rendering
 		Camera lightCamera;
 
 		/// Texture dimensions for individual shadow cascade
-		const int shadowMapSize = 1024;
+		const int shadowMapSize = 1280;
 
 		/// Total number of cascades for CSM
 		const int numCascades = 4;

@@ -11,39 +11,25 @@ namespace Meteor.Resources
 	/// and related vertex buffer for instancing
 	public class MeshInstanceGroup
 	{
-		/// <summary>
 		/// List of all instances present for this mesh
-		/// </summary>
 		public List<MeshInstance> instances;
 
-		/// <summary>
 		/// List of all visible instances after culling
-		/// </summary>
 		public List<MeshInstance> visibleInstances;
 
-		/// <summary>
 		/// Number of visible instances after culling
-		/// </summary>
 		public int totalVisible = 0;
 
-		/// <summary>
 		/// Temporary transforms for copying
-		/// </summary>
 		public Matrix[] tempTransforms;
 
-		/// <summary>
 		/// Tightest bounding box that fits this mesh
-		/// </summary>
 		public BoundingBox boundingBox;
 
-		/// <summary>
 		/// Vertex buffer for all mesh instances
-		/// </summary>
 		public DynamicVertexBuffer instanceVB;
 
-		/// <summary>
 		/// Name take from the mesh
-		/// </summary>
 		public string meshName;
 
 		/// <summary>
@@ -87,10 +73,7 @@ namespace Meteor.Resources
 			0, 4, 1, 5, 2, 6, 3, 7
 		};
 
-		/// <summary>
 		/// Vertex declaration for mesh instancing, storing a 4x4 world transformation matrix
-		/// </summary>
-
 		public static VertexDeclaration instanceVertexDec = new VertexDeclaration
 		(
 			new VertexElement(0, VertexElementFormat.Vector4, VertexElementUsage.TextureCoordinate, 0),

@@ -1,8 +1,5 @@
 using System;
-using System.Collections.Generic;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
-using Microsoft.Xna.Framework.Graphics;
 
 namespace Meteor.Resources
 {
@@ -92,7 +89,7 @@ namespace Meteor.Resources
 		}
 
         public float nearPlaneDistance = 2f;
-        public float farPlaneDistance = 2000f;
+        public float farPlaneDistance = 5000f;
 		public float nearSplitPlaneDistance;
 		public float farSplitPlaneDistance;
 

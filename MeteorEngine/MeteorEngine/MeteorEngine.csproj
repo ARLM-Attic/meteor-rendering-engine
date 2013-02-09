@@ -97,13 +97,14 @@
     <Compile Include="Graphics\Components\Cameras\DragCamera.cs" />
     <Compile Include="Graphics\Components\Cameras\FreeCamera.cs" />
     <Compile Include="Graphics\Components\DrawableComponent.cs" />
-    <Compile Include="Graphics\Components\Drawables\Clipmap.cs" />
+    <Compile Include="Graphics\Components\Drawables\InnerClipmap.cs" />
+    <Compile Include="Graphics\Components\Drawables\OuterClipmap.cs" />
     <Compile Include="Graphics\Components\Drawables\MeshInstance.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Graphics\Components\Drawables\InstancedModel.cs" />
     <Compile Include="Graphics\Rendering\ShapeRenderer.cs" />
-    <Compile Include="Graphics\Components\Drawables\TerrainMap.cs" />
+    <Compile Include="Graphics\Components\Drawables\Terrain.cs" />
     <Compile Include="Graphics\Components\Lights\DirectionalLight.cs" />
     <Compile Include="Graphics\Components\Lights\PointLight.cs" />
     <Compile Include="Graphics\Components\MeteorComponent.cs" />

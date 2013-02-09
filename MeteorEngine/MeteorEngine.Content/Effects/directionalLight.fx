@@ -155,7 +155,7 @@ float4 DirectionalLightPS(VertexShaderOutput input, float4 position) : COLOR0
 	// Get specular data
 
 	float specPower = 10.f;//normalData.a * 255;
-	float3 specIntensity = 0.1f;//normalData.a;
+	float3 specIntensity = 0;//0.1f;//normalData.a;
 
 	float3 lightDir = -normalize(lightDirection);
 

@@ -148,15 +148,18 @@ namespace Meteor
 		/// Update viewport and rendertarget profiles for when window has been resized
 		/// </summary>
 
-		public void SetViewportSize(GraphicsDeviceManager graphics, int viewportWidth, int viewportHeight)
+		public void SetViewportSize(int viewportWidth, int viewportHeight)
 		{
 			Viewport viewport = graphicsDevice.Viewport;
 
 			viewport.Width = viewportWidth;
 			viewport.Height = viewportHeight;
 
+			// Resize the viewport for newer render targets
 			graphicsDevice.Viewport = viewport;
-			graphics.ApplyChanges();
+			//graphicsDevice.PresentationParameters.BackBufferHeight = viewportWidth;
+			//graphicsDevice.PresentationParameters.BackBufferWidth = viewportHeight;
+			//graphicsDevice.Reset(graphicsDevice.PresentationParameters);
 
 			// Reset the camera and render profile
 			currentCamera.Initialize(viewportWidth, viewportHeight);
@@ -226,7 +229,6 @@ namespace Meteor
 				scene.Update(gameTime);
 
 			currentCamera.Update(gameTime);
-			
 
 			base.Update(gameTime);
         }
@@ -338,9 +340,12 @@ namespace Meteor
 			debugString.Concat(currentScene.totalPolys).Append(" triangles ");
 			debugString.Concat(currentScene.totalLights).Append(" lights");
 
+			// Draw camera position
 			spriteBatch.DrawString(font, debugString,
 				new Vector2(4, font.LineSpacing * 3 + height), Color.White);
 			debugString.Clear();
+
+			debugString.Concat(this.graphicsDevice.Viewport.Width).Append(", ");
 
 			debugString.Concat(currentCamera.Position.X).Append(", ");
 			debugString.Concat(currentCamera.Position.Y).Append(", ");

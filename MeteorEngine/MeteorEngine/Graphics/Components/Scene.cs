@@ -37,7 +37,7 @@ namespace Meteor.Resources
 		/// <summary>
 		/// Terrain height map generator
 		/// </summary>
-		public TerrainMap terrain;
+		public Terrain terrain;
 
 		public List<PointLight> VisiblePointLights
 		{
@@ -230,7 +230,7 @@ namespace Meteor.Resources
 		public void AddTerrain(String imagePath, String texture)
 		{
 			// Set up terrain map
-			terrain = new TerrainMap(content, graphicsDevice);
+			terrain = new Terrain(content, graphicsDevice);
 
 			terrain.GenerateFromImage(imagePath, texture);
 		}
@@ -239,7 +239,7 @@ namespace Meteor.Resources
 		/// Return the terrain mesh for this scene
 		/// </summary>
 
-		public TerrainMap Terrain()
+		public Terrain Terrain()
 		{
 			return terrain;
 		}

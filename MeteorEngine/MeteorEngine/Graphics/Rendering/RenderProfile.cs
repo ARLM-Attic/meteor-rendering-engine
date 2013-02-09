@@ -79,10 +79,14 @@ namespace Meteor.Rendering
 		}
 
 		/// <summary>
-		/// Initialize the SceneRenderer and call LoadContent.
+		/// Clear the render target pools
 		/// </summary> 
 
-		public abstract void Initialize();
+		public virtual void Initialize()
+		{
+			debugRenderTargets.Clear();
+			renderTaskTargets.Clear();
+		}
 
 		/// <summary>
 		/// Mapping input and output of scenes, cameras and render targets.

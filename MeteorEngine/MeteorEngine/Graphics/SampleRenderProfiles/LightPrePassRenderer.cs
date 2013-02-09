@@ -54,6 +54,8 @@ namespace Meteor.Rendering
 
 		public override void Initialize()
 		{
+			base.Initialize();
+
 			smallGBuffer = new SmallGBufferShader(this, resxContent);
 			lights = new LightShader(this, resxContent);
 			diffuse = new DiffuseShader(this, resxContent);
