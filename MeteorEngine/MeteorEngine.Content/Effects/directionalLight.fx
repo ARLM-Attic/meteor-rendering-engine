@@ -9,7 +9,7 @@ float3 camPosition;
 
 // Cascaded shadow map settings
 
-#define NUM_CASCADES 4
+#define NUM_CASCADES 3
 #define MAPS_PER_ROW 2
 #define MAPS_PER_COL 2
 
@@ -126,7 +126,7 @@ float3 LinearFilter4Samples(sampler smp, float3 ambient, float2 texCoord, float 
 
 	float shadow = 0;
 	float spread = 2;
-	float totalSamples = 20;
+	float totalSamples = 12;
 
 	//float blockerDistance = saturate(
 	//	ourdepth - tex2D(smp, texCoord + shadowMapPixelSize).r);
@@ -155,7 +155,7 @@ float4 DirectionalLightPS(VertexShaderOutput input, float4 position) : COLOR0
 	// Get specular data
 
 	float specPower = 10.f;//normalData.a * 255;
-	float3 specIntensity = 0;//0.1f;//normalData.a;
+	float3 specIntensity = 0;//normalData.a;
 
 	float3 lightDir = -normalize(lightDirection);
 
@@ -222,12 +222,16 @@ float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 {
 	float depthVal = tex2D(depthSampler, input.TexCoord).r;
 
-	clip (depthVal > 0.99999f);
-	//	return float4(0.5, 0.5, 0.5, 0.15);
+	if (depthVal > 0.99999f)
+		return float4(1, 1, 1, 0);
 
+	// Convert position to world space
 	float4 position = CalculateWorldPosition(input.TexCoord, depthVal);
 
-	return DirectionalLightPS(input, position);
+	// Calculate light color
+	float4 lightOutput = DirectionalLightPS(input, position);
+
+	return lightOutput;
 }
 
 float4 PixelShaderShadowed(VertexShaderOutput input) : COLOR0
@@ -242,7 +246,7 @@ float4 PixelShaderShadowed(VertexShaderOutput input) : COLOR0
 
 	// Calculate light color
 	float4 lightOutput = DirectionalLightPS(input, position);
-
+	
 	// Get linear depth space from viewport distance
 	float camNear = 0.001f;
 	float camFar = 1.f;
@@ -280,11 +284,7 @@ float4 PixelShaderShadowed(VertexShaderOutput input) : COLOR0
 		float3 shadow2 = FindShadow(shadowMapPos2, shadowIndex + 1, normal);
 		shadow = lerp(shadow, shadow2, relDistance);
 	}
-
-	//float4 fogColor = float4(0.7, 0.8, 0.9, 1);
-	//float mix = saturate((1 - exp(-depthVal)));
-	//lightOutput.rgb += float4(fogColor.rgb, mix);
-
+	
 	lightOutput.rgb *= shadow;
 	return lightOutput;
 }
@@ -309,8 +309,8 @@ technique NoShadow
 {
     pass Pass1
     {
-        VertexShader = compile vs_2_0 VertexShaderFunction();
-        PixelShader = compile ps_2_0 PixelShaderFunction();
+        VertexShader = compile vs_3_0 VertexShaderFunction();
+        PixelShader = compile ps_3_0 PixelShaderFunction();
     }
 }
 

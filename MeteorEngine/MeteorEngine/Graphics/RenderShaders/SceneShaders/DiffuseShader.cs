@@ -59,11 +59,11 @@ namespace Meteor.Rendering
 			sceneRenderer.CullModelMeshes(scene, camera);
 
             // Forward render the scene
-			sceneRenderer.UseTechnique("DiffuseRender");
-			sceneRenderer.Draw(scene, camera);
-
 			sceneRenderer.UseTechnique("DiffuseRenderTerrain");
 			sceneRenderer.DrawTerrain(scene, camera, terrainGBufferEffect);
+
+			sceneRenderer.UseTechnique("DiffuseRender");
+			sceneRenderer.Draw(scene, camera);
 			
 			// Render the skybox and update sampler state
 			graphicsDevice.SamplerStates[0] = SamplerState.LinearClamp;

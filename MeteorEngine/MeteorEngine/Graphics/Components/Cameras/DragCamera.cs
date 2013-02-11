@@ -16,10 +16,8 @@ namespace Meteor.Resources
 		/// Adjust smoothing to create a more fluid moving camera.
 		/// Too much smoothing will cause a disorienting feel.
 		/// </summary>
-		/// 
-		float smoothing = 1.5f;
-
-		float moveSpeed = 0.0625f;
+		public float smoothing = 1.5f;
+		public float moveSpeed = 0.0625f;
 
 		KeyboardState currentKeyboardState = new KeyboardState();
 		GamePadState currentGamePadState = new GamePadState();
@@ -80,7 +78,7 @@ namespace Meteor.Resources
 
 			// Check right mouse button for a speed boost
 			float selectedMoveSpeed = (mouseState.RightButton == ButtonState.Pressed) ? 
-				moveSpeed * 5f : moveSpeed;
+				moveSpeed * 8f : moveSpeed;
 
 			if (mouseState.LeftButton == ButtonState.Pressed)
 			{

@@ -23,6 +23,7 @@ namespace Meteor.Rendering
 
 		/// Create shadow maps
 		Effect depthEffect;
+		Effect terrainDepthEffect;
 
 		/// Sphere used for point lighting
 		Model sphereModel;
@@ -40,7 +41,7 @@ namespace Meteor.Rendering
 		const int shadowMapSize = 1280;
 
 		/// Total number of cascades for CSM
-		const int numCascades = 4;
+		const int numCascades = 3;
 
 		/// Arrangement of depth maps in atlas
 		const int mapsPerRow = 2;
@@ -118,6 +119,7 @@ namespace Meteor.Rendering
 
 			// Load shadow mapping shader effects
 			depthEffect = content.Load<Effect>("depth");
+			terrainDepthEffect = content.Load<Effect>("terrainDepth");
 
 			// Set constant parameters
 			directionalLightEffect.Parameters["halfPixel"].SetValue(halfPixel);
@@ -302,7 +304,7 @@ namespace Meteor.Rendering
 						sceneRenderer.Draw(scene, depthEffect);
 
 						// Draw the terrain here
-						//sceneRenderer.DrawTerrainDefault(scene, lightCamera, depthEffect);
+						//sceneRenderer.DrawTerrainDefault(scene, lightCamera, terrainDepthEffect);
 					}
 					lightID++;
 				}
@@ -350,7 +352,6 @@ namespace Meteor.Rendering
 				// The camera will snap along texel-sized increments
 
 				float diagonalLength = (camera.frustumCorners[0] - camera.frustumCorners[6]).Length();
-				//diagonalLength += 2; //Without this, the shadow map isn't big enough in the world.
 				float worldsUnitsPerTexel = diagonalLength / (float)shadowMapSize;
 
 				Vector3 vBorderOffset = (new Vector3(diagonalLength, diagonalLength, diagonalLength) -

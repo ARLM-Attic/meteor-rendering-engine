@@ -54,8 +54,10 @@ namespace Meteor.Resources
 		/// </summary>
 		/// <param name="graphicsDevice"></param>
 
-		public InnerClipmap(GraphicsDevice graphicsDevice)
+		public InnerClipmap(int levelSize, GraphicsDevice graphicsDevice)
 		{
+			clipLevelSize = levelSize;
+
 			// Create vertex buffer for clip map root
 			vertices = new VertexPositionNormalTexture[(clipLevelSize + 1) * (clipLevelSize + 1)];
 			clipmapVB = new DynamicVertexBuffer(graphicsDevice,
@@ -70,7 +72,7 @@ namespace Meteor.Resources
 		/// Update the geo clipmaps according to the center position.
 		/// </summary>
 
-		public void UpdateMap(Vector2 terrainSize, Vector2 mapCenter, char[,] heightData)
+		public void UpdateMap(Vector2 terrainSize, Vector2 mapCenter, byte[,] heightData)
 		{
 			// Snap to units of 2
 			mapCenter.X += 2 - (mapCenter.X % 2);
@@ -78,41 +80,8 @@ namespace Meteor.Resources
 
 			if (mapCenter != lastMapCenter)
 			{
-				int left = (int)mapCenter.X - (clipLevelSize / 2);
-				int top = (int)mapCenter.Y - (clipLevelSize / 2);
-				int right = (int)mapCenter.X + (clipLevelSize / 2);
-				int bottom = (int)mapCenter.Y + (clipLevelSize / 2);
-
-				// Clamp coordinates
-				left = Math.Max(0, left);
-				right = Math.Min((int)terrainSize.X - 1, right);
-				top = Math.Max(0, top);
-				bottom = Math.Min((int)terrainSize.Y - 1, bottom);
-
-				// Get total span of vertices to be drawn, since it won't always be
-				// the full dimensions of the clipmap
-				int spanWidth = right - left + 1;
-				int spanHeight = bottom - top + 1;
-
-				// Go through all coordinates in the clipmap and update the vertices
-				// For vertices that were already set last time, just ignore them
-
-				updatedVertices = 0;
-
-				for (int y = top, i = 0; y <= bottom; y++, i++)
-				{
-					for (int x = left, j = 0; x <= right; x++, j++)
-					{
-						vertices[i * spanWidth + j].Position =
-							new Vector3(x, heightData[x, y] / 5.0f, -y);
-
-						vertices[i * spanWidth + j].TextureCoordinate.X = (float)x / 20.0f;
-						vertices[i * spanWidth + j].TextureCoordinate.Y = (float)y / 20.0f;
-						updatedVertices++;
-					}
-				}
-
-				SetUpIndices(spanWidth, spanHeight);
+				Vector2 spans = SetUpVertices(mapCenter, terrainSize, heightData);
+				SetUpIndices((int)spans.X, (int)spans.Y);
 				CalculateNormals();
 
 				// Set vertex and index buffers
@@ -124,6 +93,99 @@ namespace Meteor.Resources
 			}
 
 			lastMapCenter = mapCenter;
+		}
+
+		/// <summary>
+		/// Force an update on this clipmap in case data gets lost.
+		/// </summary>
+
+		public void ForceUpdate(Vector2 terrainSize, Vector2 mapCenter, byte[,] heightData)
+		{
+			// Force a change in the last map center registered
+			lastMapCenter += new Vector2(0.5f);
+
+			// Repopulate the map data
+			UpdateMap(terrainSize, mapCenter, heightData);
+		}
+
+		/// <summary>
+		/// Calculate the vertex positions that need to be updated.
+		/// </summary>
+
+		private Vector2 SetUpVertices(Vector2 mapCenter, Vector2 terrainSize, byte[,] heightData)
+		{
+			int left = (int)mapCenter.X - (clipLevelSize / 2);
+			int top = (int)mapCenter.Y - (clipLevelSize / 2);
+			int right = (int)mapCenter.X + (clipLevelSize / 2);
+			int bottom = (int)mapCenter.Y + (clipLevelSize / 2);
+
+			// Clamp coordinates
+			left = Math.Max(0, left);
+			right = Math.Min((int)terrainSize.X - 1, right);
+			top = Math.Max(0, top);
+			bottom = Math.Min((int)terrainSize.Y - 1, bottom);
+
+			// Get total span of vertices to be drawn, since it won't always be
+			// the full dimensions of the clipmap
+			int spanWidth = right - left + 1;
+			int spanHeight = bottom - top + 1;
+
+			// Go through all coordinates in the clipmap and update the vertices
+			// For vertices that were already set last time, just ignore them
+
+			updatedVertices = 0;
+
+			for (int y = top, i = 0; y <= bottom; y++, i++)
+			{
+				for (int x = left, j = 0; x <= right; x++, j++)
+				{
+					int index = i * spanWidth + j;
+
+					vertices[index].Position =
+						new Vector3(x, heightData[x, y] / 5.0f, -y);
+
+					vertices[index].TextureCoordinate.X = (float)x / 20.0f;
+					vertices[index].TextureCoordinate.Y = (float)y / 20.0f;
+
+					updatedVertices++;
+				}
+			}
+
+			// Patch up the gaps left at the seams/edges of the clipmap by pushing together
+			// some edge vertices. Remove the gaps at the top and bottom, then the sides.
+
+			for (int y = top, i = 0; y <= bottom; y++, i++)
+			{
+				if (i == 0 || i == spanHeight - 1)
+				{
+					for (int x = left + 1, j = 1; x <= right; x += 2, j += 2)
+					{
+						int index = i * spanWidth + j;
+
+						vertices[index].Position.Y =
+							(vertices[index - 1].Position.Y + vertices[index + 1].Position.Y) / 2f;
+					}
+				}
+			}
+
+			for (int y = top + 1, i = 1; y <= bottom; y += 2, i += 2)
+			{
+				for (int x = left, j = 0; x <= right; x++, j++)
+				{
+					if (j == 0 || j == spanWidth - 1)
+					{
+						int index = i * spanWidth + j;
+						int prev = ((i - 1) * spanWidth) + j;
+						int next = ((i + 1) * spanWidth) + j;
+
+						vertices[index].Position.Y = 
+							(vertices[prev].Position.Y + vertices[next].Position.Y) / 2f;
+					}
+				}
+			}
+
+			Vector2 span = new Vector2((int)spanWidth, (int)spanHeight);
+			return span;
 		}
 
 		/// <summary>

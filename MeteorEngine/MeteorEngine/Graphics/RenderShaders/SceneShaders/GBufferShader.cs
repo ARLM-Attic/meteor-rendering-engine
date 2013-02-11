@@ -70,11 +70,11 @@ namespace Meteor.Rendering
 			sceneRenderer.CullModelMeshes(scene, camera);
 
 			// Render the scene
-			sceneRenderer.UseTechnique("GBuffer");
-			sceneRenderer.Draw(scene, camera);
-
 			sceneRenderer.UseTechnique("GBufferTerrain");
 			sceneRenderer.DrawTerrain(scene, camera, terrainGBufferEffect);
+
+			sceneRenderer.UseTechnique("GBuffer");
+			sceneRenderer.Draw(scene, camera);
 
 			// Render the skybox
 			// Update the sampler state
@@ -172,11 +172,11 @@ namespace Meteor.Rendering
 			sceneRenderer.CullModelMeshes(scene, camera);
 
 			// Render the scene
-			sceneRenderer.UseTechnique("SmallGBuffer");
-			sceneRenderer.Draw(scene, camera);
-
 			sceneRenderer.UseTechnique("SmallGBufferTerrain");
 			sceneRenderer.DrawTerrain(scene, camera, terrainGBufferEffect);
+
+			sceneRenderer.UseTechnique("SmallGBuffer");
+			sceneRenderer.Draw(scene, camera);
 
 			renderStopWatch.Stop();
 			return outputTargets;

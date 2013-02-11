@@ -152,8 +152,8 @@ namespace Meteor
 		{
 			Viewport viewport = graphicsDevice.Viewport;
 
-			viewport.Width = viewportWidth;
-			viewport.Height = viewportHeight;
+			viewport.Width = Math.Max(1, viewportWidth);
+			viewport.Height = Math.Max(1, viewportHeight);
 
 			// Resize the viewport for newer render targets
 			graphicsDevice.Viewport = viewport;
@@ -313,7 +313,7 @@ namespace Meteor
 			int height = 0;
 
 			spriteBatch.Begin();		
-			spriteBatch.Draw(nullTexture, new Rectangle(0, 0, 240, font.LineSpacing * 7 + 4), 
+			spriteBatch.Draw(nullTexture, new Rectangle(0, 0, 260, font.LineSpacing * 8 + 4), 
 				new Color(0, 0, 0, 120));
 			
 			spriteBatch.DrawString(font, debugString.Append("FPS: ").Concat(frameRate),
@@ -323,9 +323,7 @@ namespace Meteor
 				new Vector2(4, font.LineSpacing + height), Color.White);
 			debugString.Clear();
 
-			//Color color = (renderMethod == 0) ? Color.LawnGreen : Color.Orange;
-            //String rendering = (renderMethod == RenderMethod.deferred) ?
-             //   "Using deferred rendering" : "Using light pre-pass rendering";
+			// Draw GPU ms counter
 			debugString.Append("GPU: ").Concat((float)renderStats.GpuTime, 2);
 			debugString.Append("ms");
 
@@ -340,12 +338,11 @@ namespace Meteor
 			debugString.Concat(currentScene.totalPolys).Append(" triangles ");
 			debugString.Concat(currentScene.totalLights).Append(" lights");
 
-			// Draw camera position
 			spriteBatch.DrawString(font, debugString,
 				new Vector2(4, font.LineSpacing * 3 + height), Color.White);
 			debugString.Clear();
 
-			debugString.Concat(this.graphicsDevice.Viewport.Width).Append(", ");
+			// Draw camera position
 
 			debugString.Concat(currentCamera.Position.X).Append(", ");
 			debugString.Concat(currentCamera.Position.Y).Append(", ");
@@ -355,13 +352,23 @@ namespace Meteor
 				new Vector2(4, font.LineSpacing * 4 + height), Color.White);
 			debugString.Clear();
 
-			spriteBatch.DrawString(font, debugString.Append("Visible meshes: ").Concat(currentScene.visibleMeshes),
+			// Draw map position
+			debugString.Append("Map X: ");
+			debugString.Concat(currentScene.terrain.getMapPosition(currentCamera.Position).X).Append(", ");
+			debugString.Append("Map Y: ");
+			debugString.Concat(currentScene.terrain.getMapPosition(currentCamera.Position).Y);
+
+			spriteBatch.DrawString(font, debugString,
 				new Vector2(4, font.LineSpacing * 5 + height), Color.White);
+			debugString.Clear();
+
+			spriteBatch.DrawString(font, debugString.Append("Visible meshes: ").Concat(currentScene.visibleMeshes),
+				new Vector2(4, font.LineSpacing * 6 + height), Color.White);
 			debugString.Clear();
 
 			long totalMemory = GC.GetTotalMemory(false);
 			spriteBatch.DrawString(font, debugString.Append("Total memory: ").Concat(totalMemory, 0),
-				new Vector2(4, font.LineSpacing * 6 + height), Color.White);
+				new Vector2(4, font.LineSpacing * 7 + height), Color.White);
 			debugString.Clear();
 
 			spriteBatch.End();

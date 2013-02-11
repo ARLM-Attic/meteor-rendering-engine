@@ -57,9 +57,10 @@ namespace Meteor.Resources
 		/// </summary>
 		/// <param name="graphicsDevice"></param>
 
-		public OuterClipmap(int level, GraphicsDevice graphicsDevice)
+		public OuterClipmap(int level, int levelSize, GraphicsDevice graphicsDevice)
 		{
 			gridUnitSize = (int)Math.Pow(2, level);
+			clipLevelSize = levelSize;
 
 			// Create vertex buffer for clip map root
 			vertices = new VertexPositionNormalTexture[(clipLevelSize + 1) * (clipLevelSize + 1)];
@@ -75,24 +76,31 @@ namespace Meteor.Resources
 		/// Update the geo clipmaps according to the center position.
 		/// </summary>
 
-		public void UpdateMap(Vector2 terrainSize, Vector2 mapCenter, char[,] heightData)
+		public void UpdateMap(Vector2 terrainSize, Vector2 mapCenter, byte[,] heightData)
 		{
 			int gridSnap = gridUnitSize * 2;
 
-			// Snap to units according to the grid unit size
-			mapCenter.X += gridSnap - (mapCenter.X % gridSnap);
-			mapCenter.Y += gridSnap - (mapCenter.Y % gridSnap);
+			Vector2 originalMapCenter = mapCenter;
+			Vector2 snappedDistance = mapCenter;
+
+			// Outer boundary shifts by (gridUnitSize * 2) units
+			snappedDistance.X += gridSnap - (mapCenter.X % gridSnap);
+			snappedDistance.Y += gridSnap - (mapCenter.Y % gridSnap);
+
+			// Inner boundary snaps to the grid units
+			mapCenter.X += gridUnitSize - (mapCenter.X % gridUnitSize);
+			mapCenter.Y += gridUnitSize - (mapCenter.Y % gridUnitSize);
 
 			// If the change in position is large enough compared to the last change,
 			// then the grid should be shifted and the vertices updated.
 
-			if (Math.Abs(mapCenter.X - lastMapCenter.X) >= gridSnap ||
-				Math.Abs(mapCenter.Y - lastMapCenter.Y) >= gridSnap)
+			if (Math.Abs(mapCenter.X - lastMapCenter.X) >= gridUnitSize ||
+				Math.Abs(mapCenter.Y - lastMapCenter.Y) >= gridUnitSize)
 			{
-				int left = (int)mapCenter.X - (clipLevelSize * gridUnitSize / 2);
-				int top = (int)mapCenter.Y - (clipLevelSize * gridUnitSize / 2);
-				int right = (int)mapCenter.X + (clipLevelSize * gridUnitSize / 2);
-				int bottom = (int)mapCenter.Y + (clipLevelSize * gridUnitSize / 2);
+				int left = (int)snappedDistance.X - (clipLevelSize * gridUnitSize / 2);
+				int top = (int)snappedDistance.Y - (clipLevelSize * gridUnitSize / 2);
+				int right = (int)snappedDistance.X + (clipLevelSize * gridUnitSize / 2);
+				int bottom = (int)snappedDistance.Y + (clipLevelSize * gridUnitSize / 2);
 
 				// Clamp coordinates
 				left = Math.Max(0, left);
@@ -116,15 +124,48 @@ namespace Meteor.Resources
 					for (int x = left, j = 0; x <= right; x += gridUnitSize, j++)
 					{
 						vertices[i * verticesPerRow + j].Position =
-							new Vector3(x, heightData[x, y] / 5.0f, -y);
+							new Vector3(x, heightData[x, y] / 5.0f - (gridUnitSize / 10), -y);
 
 						vertices[i * verticesPerRow + j].TextureCoordinate.X = (float)x / 20.0f;
 						vertices[i * verticesPerRow + j].TextureCoordinate.Y = (float)y / 20.0f;
 						updatedVertices++;
 					}
 				}
+				/*
+				// Patch up the gaps left at the seams/edges of the clipmap by pushing together
+				// some edge vertices. Remove the gaps at the top and bottom, then the sides.
 
-				SetUpIndices(verticesPerRow, verticesPerColumn);
+				for (int y = top, i = 0; y <= bottom; y++, i++)
+				{
+					if (i == 0 || i == verticesPerColumn - 1)
+					{
+						for (int x = left + 1, j = 1; x < right; x += 2, j += 2)
+						{
+							int index = i * verticesPerRow + j;
+
+							vertices[index].Position.Y =
+								(vertices[index - 1].Position.Y + vertices[index + 1].Position.Y) / 2f;
+						}
+					}
+				}
+
+				for (int y = top + 1, i = 1; y <= bottom; y += 2, i += 2)
+				{
+					for (int x = left, j = 0; x <= right; x++, j++)
+					{
+						if (j == 0 || j == verticesPerRow - 1)
+						{
+							int index = i * verticesPerRow + j;
+							int prev = ((i - 1) * verticesPerRow) + j;
+							int next = ((i + 1) * verticesPerRow) + j;
+
+							vertices[index].Position.Y =
+								(vertices[prev].Position.Y + vertices[next].Position.Y) / 2f;
+						}
+					}
+				}*/
+		
+				SetUpIndices(mapCenter, verticesPerRow, verticesPerColumn);
 				CalculateNormals();
 
 				// Set vertex and index buffers
@@ -142,9 +183,35 @@ namespace Meteor.Resources
 		/// Get the vertex indices for the terrain mesh
 		/// </summary>
 
-		private void SetUpIndices(int vertsPerRow, int vertsPerColumn)
+		private void SetUpIndices(Vector2 mapCenter, int vertsPerRow, int vertsPerColumn)
 		{
 			updatedIndices = 0;
+
+			// Determine the iterior region bounds. The region shifts according to the position 
+			// of the clip map contained in it. Inner vertices can be skipped for rendering and
+			// won't be added to the indices list.
+
+			// First, define default interior borders at 1/4th and 3/4ths the span distance.
+
+			int interiorLeft = clipLevelSize / 4;
+			int interiorRight = clipLevelSize * 3 / 4;
+			int interiorTop = clipLevelSize / 4;
+			int interiorBottom = clipLevelSize * 3 / 4;
+
+			// Use the original center position of the map. It must be off by at least
+			// mod GridUnitSize to shift the left and top interiors in those respective axes.
+
+			if ((int)(mapCenter.X / gridUnitSize) % 2 == 1)
+			{
+				interiorLeft -= 1;
+				interiorRight -= 1;
+			}
+
+			if ((int)(mapCenter.Y / gridUnitSize) % 2 == 1)
+			{
+				interiorTop -= 1;
+				interiorBottom -= 1;
+			}
 
 			for (int y = 0; y < vertsPerColumn - 1; y++)
 			{
@@ -155,25 +222,16 @@ namespace Meteor.Resources
 					int topLeft = x + (y + 1) * vertsPerRow;
 					int topRight = (x + 1) + (y + 1) * vertsPerRow;
 
-					// Determine the iterior region bounds. The region shifts according to the position 
-					// of the clip map contained in it. Inner vertices can be skipped for rendering and
-					// won't be added to the indices list.
-
-					int interiorLeft = clipLevelSize / 4;
-					int interiorRight = clipLevelSize * 3 / 4;
-					int interiorTop = clipLevelSize / 4;
-					int interiorBottom = clipLevelSize * 3 / 4;
-
-					if ((y < interiorLeft || y >= interiorRight) ||
-						(x < interiorTop || x >= interiorBottom))
+					if ((x < interiorLeft || x >= interiorRight) ||
+						(y < interiorTop || y >= interiorBottom))
 					{
-						// First, find the diagonal with the smallest height difference.
+						// Find the diagonal with the smallest height difference (the less steep one).
 						// This is where the split between two vertices will occur.
 
 						float diff1 = Math.Abs(vertices[lowerLeft].Position.Y - vertices[topRight].Position.Y); 
 						float diff2 = Math.Abs(vertices[lowerRight].Position.Y - vertices[topLeft].Position.Y);
 					
-						// Determine the triangle order according to the height differences
+						// Determine the vertex order according to the split diagonal
 
 						if (diff2 < diff1)
 						{

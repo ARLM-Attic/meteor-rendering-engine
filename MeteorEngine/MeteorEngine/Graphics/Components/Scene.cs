@@ -194,10 +194,10 @@ namespace Meteor.Resources
 		/// Return a model from the list given the same key
 		/// </summary>
 		/// 
-		public InstancedModel SkinnedModel(String modelKey)
+		public InstancedModel SkinnedModel(String modelKey, String take = "Take 001")
 		{
 			return (skinnedModels.ContainsKey(modelKey)) ?
-				skinnedModels[modelKey] : AddSkinnedModel(modelKey);
+				skinnedModels[modelKey] : AddSkinnedModel(modelKey, take);
 		}
 
 		/// <summary>
@@ -233,15 +233,6 @@ namespace Meteor.Resources
 			terrain = new Terrain(content, graphicsDevice);
 
 			terrain.GenerateFromImage(imagePath, texture);
-		}
-
-		/// <summary>
-		/// Return the terrain mesh for this scene
-		/// </summary>
-
-		public Terrain Terrain()
-		{
-			return terrain;
 		}
 
 		/// <summary>

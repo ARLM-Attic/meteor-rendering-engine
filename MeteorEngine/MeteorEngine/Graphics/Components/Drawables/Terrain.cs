@@ -23,7 +23,7 @@ namespace Meteor.Resources
 		private int terrainHeight;
 
 		/// Array to store the data of each map pixel
-		private char[,] heightData;
+		private byte[,] heightData;
 
 		/// Amount to scale heightmap by
 		private float scale;
@@ -54,7 +54,7 @@ namespace Meteor.Resources
 			this.content = content;
 			this.graphicsDevice = device;
 
-			scale = 10f;
+			scale = 8f;
 		}
 
 		/// <summary>
@@ -78,19 +78,21 @@ namespace Meteor.Resources
 			heightMap.GetData(heightMapColors);
 
 			// Initialize height data values
-			heightData = new char[terrainWidth, terrainHeight];
+			heightData = new byte[terrainWidth, terrainHeight];
 
 			// Add the height values from the map
 			for (int x = 0; x < terrainWidth; x++)
 				for (int y = 0; y < terrainHeight; y++)
-					heightData[x, y] = (char)heightMapColors[x + y * terrainWidth].R;
+					heightData[x, y] = (byte)(heightMapColors[x + y * terrainWidth].R);
 
 			// Setup the clip maps
-			innerClipMap = new InnerClipmap(graphicsDevice);
+			int clipMapSize = 96;
+
+			innerClipMap = new InnerClipmap(clipMapSize, graphicsDevice);
 			outerClipMaps = new OuterClipmap[4];
 
 			for (int i = 0; i < outerClipMaps.Length; i++)
-				outerClipMaps[i] = new OuterClipmap(i + 1, graphicsDevice);
+				outerClipMaps[i] = new OuterClipmap(i + 1, clipMapSize, graphicsDevice);
 		}
 
 		/// <summary>
@@ -107,10 +109,17 @@ namespace Meteor.Resources
 		}
 
 		/// <summary>
+		/// Force an update in case the mesh data needs to be recovered.
+		/// </summary>
+		public void ForceUpdate(Vector3 centerPosition)
+		{
+			Vector2 mapCenter = getMapPosition(centerPosition);
+			innerClipMap.ForceUpdate(new Vector2(terrainWidth, terrainHeight), mapCenter, heightData);
+		}
+
+		/// <summary>
 		/// Get the position in map coordinates according to the world location
 		/// </summary>
-		/// <param name="position"></param>
-		/// <returns></returns>
 
 		public Vector2 getMapPosition(Vector3 position)
 		{
@@ -164,6 +173,8 @@ namespace Meteor.Resources
 			height *= scale;
 			return height + heightmapPosition.Y;
 		}
+
+		public bool textureToggle = false;
 		
 		/// <summary>
 		/// Draw the terrain mesh with the desired effect
@@ -175,6 +186,10 @@ namespace Meteor.Resources
 			if (innerClipMap.UpdatedIndices == 0)
 				return 0;
 
+			foreach (OuterClipmap outerMap in outerClipMaps)
+				if (outerMap.UpdatedIndices == 0)
+					return 0;
+
 			Matrix worldMatrix = Matrix.CreateScale(scale);
 			worldMatrix *= Matrix.CreateTranslation(heightmapPosition);
 
@@ -183,11 +198,13 @@ namespace Meteor.Resources
 			//graphicsDevice.RasterizerState = rWireframeState;
 
 			effect.Parameters["Texture"].SetValue(mainTexture);
+
+			// Special texture effects
 			effect.Parameters["TextureScale"].SetValue(textureScale);
+			effect.Parameters["ClipLevel"].SetValue(0);
 
 			// Set world transformation for the map
 			effect.Parameters["World"].SetValue(worldMatrix);
-			effect.Parameters["ClipLevel"].SetValue(0);
 
 			if (effect.CurrentTechnique != effect.Techniques["Default"])
 			{

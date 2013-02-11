@@ -79,7 +79,8 @@ namespace Meteor.Rendering
 			diffuse.SetInputs(scene, camera, null);
 			lights.SetInputs(scene, camera, smallGBuffer.outputs);
 			ssao.SetInputs(scene, camera, smallGBuffer.outputs);
-			composite.SetInputs(scene, camera, diffuse.outputs[0], lights.outputs[0], ssao.outputs[0]);
+			composite.SetInputs(scene, camera, 
+				diffuse.outputs[0], lights.outputs[0], ssao.outputs[0], smallGBuffer.outputs[1]);
 			fxaa.SetInputs(composite.outputs);
 			blur.SetInputs(composite.outputs);
 			copy.SetInputs(composite.outputs);

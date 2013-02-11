@@ -17,3 +17,4 @@ MeteorEngine.Content\Models\ball.xnb
 MeteorEngine.Content\seattle.xnb
 MeteorEngine.Content\skyblue_cube.xnb
 MeteorEngine.Content\Effects\terrainGBuffer.xnb
+MeteorEngine.Content\Effects\terrainDepth.xnb

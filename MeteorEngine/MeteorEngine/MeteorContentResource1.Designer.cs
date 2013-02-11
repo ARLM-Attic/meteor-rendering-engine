@@ -172,6 +172,13 @@ namespace MeteorEngine {
             }
         }
         
+        internal static byte[] terrainDepth {
+            get {
+                object obj = ResourceManager.GetObject("terrainDepth", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
         internal static byte[] terrainGBuffer {
             get {
                 object obj = ResourceManager.GetObject("terrainGBuffer", resourceCulture);

@@ -8,9 +8,11 @@ float3 ambientTerm;
 float flicker;
 float includeSSAO;
 
+// Combined textures
 texture diffuseMap;
 texture ssaoMap;
 texture lightMap;
+texture depthMap;
 
 sampler diffuseSampler : register(s0) = sampler_state
 {
@@ -18,6 +20,14 @@ sampler diffuseSampler : register(s0) = sampler_state
 	AddressU = Wrap;
 	AddressV = Wrap;
 	Texture = <diffuseMap>;
+};
+
+sampler depthSampler : register(s1) = sampler_state
+{
+	Filter = MIN_MAG_MIP_POINT;
+	AddressU = Wrap;
+	AddressV = Wrap;
+	Texture = <depthMap>;
 };
 
 sampler lightSampler : register(s4) = sampler_state
@@ -107,6 +117,13 @@ float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 	light *= ssao;
 
 	float4 finalColor = float4(light.rgb * diffuse + specular, diffuse.a);
+
+	// Add fog based on exponential depth
+	float4 fogColor = float4(0.3, 0.5, 0.92, 1);
+
+	float depth = tex2D(depthSampler, input.TexCoord);
+	if (depth < 0.999999f)
+		finalColor.rgb = lerp(finalColor.rgb, fogColor, pow(depth, 1000));
 
 	// Gamma correct inverse
 	finalColor.rgb = pow(finalColor.rgb, 1 / 2.f);

@@ -22,50 +22,32 @@ namespace Meteor.Rendering
 
 	public class SceneRenderer
 	{
-		/// <summary>
 		/// Basic effect for bounding box drawing
-		/// </summary>
 		BasicEffect basicEffect;
 
-		/// </summary>
 		/// Effect technique used by the scene
-		/// </summary>
 		String shaderTechnique;
 
-		/// </summary>
 		/// Scene stats used in rendering
-		/// </summary>
 		public int totalPolys;
 
-		/// <summary>
 		/// Farthest depth value to render scene from.
-		/// </summary>
-		const float farDepth = 0.999999f;
+		const float farDepth = 0.999995f;
 
-		/// </summary>
 		/// Resources used for loading and rendering scene content
-		/// </summary>
 		ContentManager content;
 		GraphicsDevice graphicsDevice;
 
-		/// <summary>
 		/// Dummy textures to use in case they are missing in the model.
-		/// </summary>
 		Texture2D blankNormal, blankTexture, blankSpecular;
 
-		/// <summary>
 		/// Function to sort meshes by priority level (combination of size and distance)
-		/// </summary>
 		MeshPrioritySort meshPrioritySort;
 
-		/// <summary>
 		/// Used for culling objects before rendering.
-		/// </summary>
 		//SceneCuller sceneCuller;
 
-		/// </summary>
 		/// Containers for temp data, to avoid calling the GC
-		/// </summary>
 		Vector3[] boxCorners;
 		Matrix[] tempBones;
 
@@ -142,16 +124,20 @@ namespace Meteor.Rendering
 			graphicsDevice.Viewport = viewport;
 			graphicsDevice.RasterizerState = RasterizerState.CullNone;
 
+			RasterizerState rWireframeState = new RasterizerState();
+			rWireframeState.FillMode = FillMode.WireFrame;
+			//graphicsDevice.RasterizerState = rWireframeState;
+
 			totalPolys = 0;
 			scene.totalPolys = 0;
 
 			// Update the viewport for proper rendering order
 
 			foreach (InstancedModel instancedModel in scene.staticModels.Values)
-				DrawModel(instancedModel, camera, this.shaderTechnique);
+				scene.visibleMeshes += DrawModel(instancedModel, camera, this.shaderTechnique);
 
 			foreach (InstancedModel skinnedModel in scene.skinnedModels.Values)
-				DrawModel(skinnedModel, camera, this.shaderTechnique + "Animated");
+				scene.visibleMeshes += DrawModel(skinnedModel, camera, this.shaderTechnique + "Animated");
 
 			scene.totalPolys = totalPolys;
 
@@ -173,10 +159,10 @@ namespace Meteor.Rendering
 			graphicsDevice.SetVertexBuffer(null);
 
 			foreach (InstancedModel instancedModel in scene.staticModels.Values)
-				DrawModel(instancedModel, effect, "Default");
+				scene.visibleMeshes += DrawModel(instancedModel, effect, "Default");
 
 			foreach (InstancedModel skinnedModel in scene.skinnedModels.Values)
-				DrawModel(skinnedModel, effect, "DefaultAnimated");
+				scene.visibleMeshes += DrawModel(skinnedModel, effect, "DefaultAnimated");
 
 			// Finished drawing visible meshes
 		}
@@ -258,10 +244,12 @@ namespace Meteor.Rendering
 		/// Draw all visible meshes for this model with its default effect.
 		/// </summary>
 
-		private void DrawModel(InstancedModel instancedModel, Camera camera, string tech)
+		private int DrawModel(InstancedModel instancedModel, Camera camera, string tech)
 		{
 			TrimBoneTransforms(instancedModel);
+
 			int meshIndex = 0;
+			int visibleInstances = 0;
 
 			foreach (MeshInstanceGroup instanceGroup in instancedModel.MeshInstanceGroups.Values)
 			{
@@ -332,18 +320,22 @@ namespace Meteor.Rendering
 
 				// Finished drawing mesh parts
 				meshIndex++;
+				visibleInstances += instanceGroup.totalVisible;
 			}
-			// End model rendering
+			// Finished model rendering
+			return visibleInstances;
 		}
 
 		/// <summary>
 		/// Draw instanced model with a custom effect
 		/// </summary>	
 
-		public void DrawModel(InstancedModel instancedModel, Effect effect, String tech = "Default")
+		public int DrawModel(InstancedModel instancedModel, Effect effect, String tech = "Default")
 		{			
 			TrimBoneTransforms(instancedModel);
+
 			int meshIndex = 0;
+			int visibleInstances = 0;
 
 			foreach (MeshInstanceGroup instanceGroup in instancedModel.MeshInstanceGroups.Values)
 			{
@@ -402,7 +394,10 @@ namespace Meteor.Rendering
 
 				// Finished drawing mesh parts
 				meshIndex++;
+				visibleInstances += instanceGroup.totalVisible;
 			}
+			// Finished model rendering
+			return visibleInstances;
 		}
 
 		/// <summary>

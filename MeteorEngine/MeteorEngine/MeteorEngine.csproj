@@ -166,6 +166,7 @@
     <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\pointLight.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\renderGBuffer.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\ssao.xnb" />
+    <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\terrainDepth.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\terrainGBuffer.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\Fonts\defaultFont.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\Fonts\segoeUI.xnb" />

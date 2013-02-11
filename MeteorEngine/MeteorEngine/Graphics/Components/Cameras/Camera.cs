@@ -88,7 +88,7 @@ namespace Meteor.Resources
 			get { return (float)viewAspect.X / (float)viewAspect.Y; }
 		}
 
-        public float nearPlaneDistance = 2f;
+        public float nearPlaneDistance = 2.5f;
         public float farPlaneDistance = 5000f;
 		public float nearSplitPlaneDistance;
 		public float farSplitPlaneDistance;
@@ -164,6 +164,15 @@ namespace Meteor.Resources
 
 			nearSplitPlaneDistance = nearPlaneDistance;
 			farSplitPlaneDistance = farPlaneDistance;
+		}
+
+		/// <summary>
+		/// Force repositioning of the camera
+		/// </summary>
+
+		public void Reposition(Vector3 pos)
+		{
+			position = pos;
 		}
 
         /// <summary>

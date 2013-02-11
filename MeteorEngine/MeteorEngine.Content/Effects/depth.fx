@@ -31,7 +31,7 @@ struct VertexShaderOutput
 {
 	float4 position : POSITION;
 	float2 texCoord : TEXCOORD0;
-	float depth : TEXCOORD2;
+	float depth : TEXCOORD1;
 };
 
 struct InstanceInput
@@ -96,8 +96,8 @@ VertexShaderOutput DepthMapSkinnedAnimation(VertexShaderInput input, InstanceInp
 float4 DepthMapPS (VertexShaderOutput IN) : COLOR0
 {
 	float mask = tex2D(diffuseSampler, IN.texCoord).a;
-	if (mask < 0.5)
-		discard;
+	if (mask < 0.9)
+		return 1;
 	
     return IN.depth;
 }

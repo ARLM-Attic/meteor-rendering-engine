@@ -78,13 +78,14 @@ namespace Meteor.Rendering
 			// Map the renderer inputs to outputs
 			gBuffer.SetInputs(scene, camera, null);
 			lights.SetInputs(scene, camera, gBuffer.outputs);
-			composite.SetInputs(scene, camera, gBuffer.outputs[2], lights.outputs[0], ssao.outputs[0]);
+			composite.SetInputs(scene, camera, 
+				gBuffer.outputs[2], lights.outputs[0], ssao.outputs[0], gBuffer.outputs[1]);
 			fxaa.SetInputs(composite.outputs);
-			copy.SetInputs(composite.outputs);
-			blur.SetInputs(composite.outputs);
+			copy.SetInputs(bloom.outputs);
+			blur.SetInputs(bloom.outputs);
 			ssao.SetInputs(scene, camera, gBuffer.outputs[0], gBuffer.outputs[1],
 				lights.outputs[1]);
-			dof.SetInputs(composite.outputs[0], copy.outputs[0], gBuffer.outputs[1]);
+			dof.SetInputs(bloom.outputs[0], copy.outputs[0], gBuffer.outputs[1]);
 			bloom.SetInputs(composite.outputs);
 
 			composite.includeSSAO = false;
@@ -104,13 +105,14 @@ namespace Meteor.Rendering
 
 			// Composite drawing
 			composite.Draw();
+			bloom.Draw();
 
 			// Post effects
-			//copy.Draw();
-			//blur.Draw();
+			copy.Draw();
+			blur.Draw();
 
 			//dof.Draw();
-			output = bloom.Draw()[0];
+			output = dof.Draw()[0];
 		}
 	}
 }
