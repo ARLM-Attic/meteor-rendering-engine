@@ -5,21 +5,26 @@ using Meteor.Resources;
 
 namespace Meteor.Rendering
 {
+	class MeshPrioritySort : IComparer<Scene.OrderedInstancedMeshData>
+	{
+		public int Compare(Scene.OrderedInstancedMeshData rp1,
+			Scene.OrderedInstancedMeshData rp2)
+		{
+			int returnValue = 1;
+			returnValue = rp2.priority.CompareTo(rp1.priority);
+
+			return returnValue;
+		}
+	}
+
 	static class SceneCuller
 	{
-		/// <summary>
 		/// Cached list of instances from last model culling.
-		/// </summary>
 		static List<MeshInstance> visibleInstances = new List<MeshInstance>();
-		/*
-		/// <summary>
-		/// Constructor to initialize cached lists
-		/// </summary>
-		public SceneCuller()
-		{
-			List<MeshInstance> visibleInstances = new List<MeshInstance>();
-		}
-		*/
+
+		/// Function to sort meshes by priority level (combination of size and distance)
+		static MeshPrioritySort meshPrioritySort;
+
 		/// <summary>
 		/// Cull an InstancedModel and its mesh groups.
 		/// </summary>
@@ -34,17 +39,14 @@ namespace Meteor.Rendering
 				foreach (MeshInstance meshInstance in instanceGroup.instances)
 				{
 					// Add mesh and instances to visible list if they're contained in the frustum
-
 					if (camera.Frustum.Contains(meshInstance.BSphere) != ContainmentType.Disjoint)
 					{
 						instanceGroup.visibleInstances[instanceGroup.totalVisible] = meshInstance;
 						instanceGroup.totalVisible++;
-
-						// Add instance to list cache.
-						//visibleInstances.Add(meshInstance);
 					}
 					else
 					{
+						// Add instance to list cache.
 						visibleInstances.Add(meshInstance);
 					}
 				}

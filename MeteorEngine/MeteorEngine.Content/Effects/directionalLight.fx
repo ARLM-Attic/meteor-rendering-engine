@@ -9,7 +9,7 @@ float3 camPosition;
 
 // Cascaded shadow map settings
 
-#define NUM_CASCADES 3
+#define NUM_CASCADES 4
 #define MAPS_PER_ROW 2
 #define MAPS_PER_COL 2
 
@@ -84,7 +84,7 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
     return output;
 }
 
-float DepthBias = 0.0007f;
+float DepthBias = 0.001f;
 
 /// Poisson disk samples used for shadow filtering
 
@@ -115,18 +115,14 @@ float2 poissonDisk[24] = {
 	float2(-0.9310728f, 0.3289311f)
 };
 
-// Linear filter with 4 samples
-// Source by XNA Info
-// http://www.xnainfo.com/content.php?content=36
-
-float3 LinearFilter4Samples(sampler smp, float3 ambient, float2 texCoord, float ourdepth)
+float3 PoissonDiscFilter(sampler smp, float3 ambient, float2 texCoord, float ourdepth)
 {	
 	// Get the current depth stored in the shadow map
 	float4 samples[24]; 
 
 	float shadow = 0;
-	float spread = 2;
-	float totalSamples = 12;
+	float spread = 1.7f;
+	float totalSamples = 10;
 
 	//float blockerDistance = saturate(
 	//	ourdepth - tex2D(smp, texCoord + shadowMapPixelSize).r);
@@ -214,7 +210,7 @@ float3 FindShadow(float4 shadowMapPos, float shadowIndex, float3 normal)
 
 	// Shadow calculation
 	float3 shadow = 
-		LinearFilter4Samples(shadowMapSampler, ambientTerm, shadowTexCoord, ourdepth);
+		PoissonDiscFilter(shadowMapSampler, ambientTerm, shadowTexCoord, ourdepth);
 	return shadow;
 }
 
@@ -248,8 +244,8 @@ float4 PixelShaderShadowed(VertexShaderOutput input) : COLOR0
 	float4 lightOutput = DirectionalLightPS(input, position);
 	
 	// Get linear depth space from viewport distance
-	float camNear = 0.001f;
-	float camFar = 1.f;
+	float camNear = 0.0025f;
+	float camFar = 8.f;
 	float linearZ = (2 * camNear) / (camFar +  camNear - depthVal * (camFar - camNear));
 
 	// Get the light projection for the first available frustum split	

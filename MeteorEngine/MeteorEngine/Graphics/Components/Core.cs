@@ -313,7 +313,7 @@ namespace Meteor
 			int height = 0;
 
 			spriteBatch.Begin();		
-			spriteBatch.Draw(nullTexture, new Rectangle(0, 0, 260, font.LineSpacing * 8 + 4), 
+			spriteBatch.Draw(nullTexture, new Rectangle(0, 0, 250, font.LineSpacing * 7 + 4), 
 				new Color(0, 0, 0, 120));
 			
 			spriteBatch.DrawString(font, debugString.Append("FPS: ").Concat(frameRate),
@@ -342,7 +342,7 @@ namespace Meteor
 				new Vector2(4, font.LineSpacing * 3 + height), Color.White);
 			debugString.Clear();
 
-			// Draw camera position
+			// Display camera position
 
 			debugString.Concat(currentCamera.Position.X).Append(", ");
 			debugString.Concat(currentCamera.Position.Y).Append(", ");
@@ -352,23 +352,15 @@ namespace Meteor
 				new Vector2(4, font.LineSpacing * 4 + height), Color.White);
 			debugString.Clear();
 
-			// Draw map position
-			debugString.Append("Map X: ");
-			debugString.Concat(currentScene.terrain.getMapPosition(currentCamera.Position).X).Append(", ");
-			debugString.Append("Map Y: ");
-			debugString.Concat(currentScene.terrain.getMapPosition(currentCamera.Position).Y);
-
-			spriteBatch.DrawString(font, debugString,
-				new Vector2(4, font.LineSpacing * 5 + height), Color.White);
-			debugString.Clear();
+			// Display mesh and memory data
 
 			spriteBatch.DrawString(font, debugString.Append("Visible meshes: ").Concat(currentScene.visibleMeshes),
-				new Vector2(4, font.LineSpacing * 6 + height), Color.White);
+				new Vector2(4, font.LineSpacing * 5 + height), Color.White);
 			debugString.Clear();
 
 			long totalMemory = GC.GetTotalMemory(false);
 			spriteBatch.DrawString(font, debugString.Append("Total memory: ").Concat(totalMemory, 0),
-				new Vector2(4, font.LineSpacing * 7 + height), Color.White);
+				new Vector2(4, font.LineSpacing * 6 + height), Color.White);
 			debugString.Clear();
 
 			spriteBatch.End();

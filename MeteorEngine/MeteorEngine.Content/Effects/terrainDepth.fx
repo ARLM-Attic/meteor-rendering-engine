@@ -6,8 +6,9 @@
 
 float4x4 World;
 float4x4 LightViewProj;
-float TextureScale;
-float ClipLevel;
+float textureScale;
+float mapScale;
+float clipLevel;
 
 texture Texture;
 

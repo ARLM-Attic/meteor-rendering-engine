@@ -44,7 +44,7 @@ namespace Meteor.Resources
 			get { return desiredPositionOffset; }
 			set { desiredPositionOffset = value; }
 		}
-		private Vector3 desiredPositionOffset = new Vector3(-30, 20.0f, 0f);
+		private Vector3 desiredPositionOffset = new Vector3(0, 2.0f, 2.0f);
 
 		/// <summary>
 		/// Desired camera position in world space.
@@ -69,7 +69,7 @@ namespace Meteor.Resources
 			get { return lookAtOffset; }
 			set { lookAtOffset = value; }
 		}
-		private Vector3 lookAtOffset = new Vector3(50, 2.8f, 0);
+		private Vector3 lookAtOffset = new Vector3(0, 2.8f, 0);
 
 		/// <summary>
 		/// Look at point in world space.
@@ -96,7 +96,7 @@ namespace Meteor.Resources
 			get { return stiffness; }
 			set { stiffness = value; }
 		}
-		private float stiffness = 1800.0f;
+		private float stiffness = 18000.0f;
 
 		/// <summary>
 		/// Physics coefficient which approximates internal friction of the spring.
@@ -107,7 +107,7 @@ namespace Meteor.Resources
 			get { return damping; }
 			set { damping = value; }
 		}
-		private float damping = 600.0f;
+		private float damping = 6000.0f;
 
 		/// <summary>
 		/// Mass of the camera body. Heaver objects require stiffer springs with less
@@ -118,7 +118,7 @@ namespace Meteor.Resources
 			get { return mass; }
 			set { mass = value; }
 		}
-		private float mass = 50.0f;
+		private float mass = 500.0f;
 
 		/// <summary>
 		/// Velocity of camera.
@@ -164,8 +164,8 @@ namespace Meteor.Resources
 		/// </summary>
 		protected override void UpdateMatrices()
 		{
-			view = Matrix.CreateLookAt(position, position + worldTransform.Forward, worldTransform.Up);
-			//view = Matrix.CreateLookAt(this.Position, this.LookAt, this.Up);
+			//view = Matrix.CreateLookAt(position, position + worldTransform.Forward, worldTransform.Up);
+			view = Matrix.CreateLookAt(this.Position, this.LookAt, this.Up);
 			projection = Matrix.CreatePerspectiveFieldOfView(FieldOfView,
 				AspectRatio, nearPlaneDistance, farPlaneDistance);
 
@@ -217,14 +217,7 @@ namespace Meteor.Resources
 
 			// Calculate spring force
 			Vector3 stretch = position - desiredPosition;
-			Vector3 force = -stiffness * stretch - damping * velocity;
-
-			// Apply acceleration
-			Vector3 acceleration = force / mass;
-			velocity += acceleration * elapsed;
-
-			// Apply velocity
-			position += velocity * elapsed;
+			position -= stretch * elapsed * 10f;
 
 			UpdateMatrices();
 		}

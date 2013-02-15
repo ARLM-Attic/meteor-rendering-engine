@@ -103,6 +103,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Graphics\Components\Drawables\InstancedModel.cs" />
+    <Compile Include="Graphics\Rendering\Imposter.cs" />
     <Compile Include="Graphics\Rendering\ShapeRenderer.cs" />
     <Compile Include="Graphics\Components\Drawables\Terrain.cs" />
     <Compile Include="Graphics\Components\Lights\DirectionalLight.cs" />
@@ -129,7 +130,7 @@
     <Compile Include="Graphics\RenderShaders\SceneShaders\DiffuseShader.cs" />
     <Compile Include="Graphics\RenderShaders\SceneShaders\GBufferShader.cs" />
     <Compile Include="Graphics\RenderShaders\SceneShaders\LightShader.cs" />
-    <Compile Include="Graphics\RenderShaders\SceneShaders\ShadowMapper.cs" />
+    <Compile Include="Graphics\RenderShaders\SceneShaders\DepthShader.cs" />
     <Compile Include="Helpers\RenderStats.cs" />
     <Compile Include="Graphics\SampleRenderProfiles\DeferredRenderer.cs">
       <SubType>Code</SubType>

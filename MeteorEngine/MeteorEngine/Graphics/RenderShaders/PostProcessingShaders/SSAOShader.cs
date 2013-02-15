@@ -17,7 +17,7 @@ namespace Meteor.Rendering
 		public float radius = 0.5f;
 		public float intensity = 1f;
 		public float scale = 1f;
-		public float bias = 0.0001f;
+		public float bias = 0.01f;
 		public bool applyBlur = false;
 
 		/// Final combined pass

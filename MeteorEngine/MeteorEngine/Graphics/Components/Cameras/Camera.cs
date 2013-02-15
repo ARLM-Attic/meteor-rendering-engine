@@ -89,7 +89,7 @@ namespace Meteor.Resources
 		}
 
         public float nearPlaneDistance = 2.5f;
-        public float farPlaneDistance = 5000f;
+        public float farPlaneDistance = 8000f;
 		public float nearSplitPlaneDistance;
 		public float farSplitPlaneDistance;
 
@@ -278,14 +278,14 @@ namespace Meteor.Resources
 			// Calculate the frustum corners by adding/subtracting the extents
 			// Starting clockwise and from the near plane first
 			camera.frustumCorners[0] = nearPlaneCenter + nearExtentY - nearExtentX;
-			camera.frustumCorners[1] = nearPlaneCenter + nearExtentY + nearExtentX;
+			camera.frustumCorners[1] = nearPlaneCenter + nearExtentY + nearExtentX; // min
 			camera.frustumCorners[2] = nearPlaneCenter - nearExtentY + nearExtentX;
 			camera.frustumCorners[3] = nearPlaneCenter - nearExtentY - nearExtentX;
 
 			camera.frustumCorners[4] = farPlaneCenter + farExtentY - farExtentX;
 			camera.frustumCorners[5] = farPlaneCenter + farExtentY + farExtentX;
 			camera.frustumCorners[6] = farPlaneCenter - farExtentY + farExtentX;
-			camera.frustumCorners[7] = farPlaneCenter - farExtentY - farExtentX;
+			camera.frustumCorners[7] = farPlaneCenter - farExtentY - farExtentX; // max
 
 			return camera.frustumCorners;
 		}

@@ -89,6 +89,9 @@ namespace Meteor.Resources
 		public AnimationPlayer animationPlayer;
 		public Matrix[] boneMatrices;
 
+		/// Indicates whether or not to use imposters for faraway objects
+		public bool useImposters;
+
 		/// <summary>
 		/// Load a model from the ContentManager from a file
 		/// </summary>
@@ -278,6 +281,28 @@ namespace Meteor.Resources
 				}
 				return position;
 			}
+		}
+
+		/// <summary>
+		/// Helper to transform model and chain to another method
+		/// </summary>
+
+		public InstancedModel Transform(Matrix transform)
+		{
+			Vector3 scale, translation;
+			Quaternion rotation;
+			transform.Decompose(out scale, out rotation, out translation);
+
+			foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups.Values)
+			{
+				int last = instanceGroup.instances.Count - 1;
+
+				instanceGroup.instances[last].position = translation;
+				instanceGroup.instances[last].rotation = rotation;
+				instanceGroup.instances[last].UpdateMatrix();
+			}
+
+			return this;
 		}
 
 		/// <summary>

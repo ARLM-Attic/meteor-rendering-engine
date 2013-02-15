@@ -76,7 +76,7 @@ namespace Meteor.Resources
 		/// Update the geo clipmaps according to the center position.
 		/// </summary>
 
-		public void UpdateMap(Vector2 terrainSize, Vector2 mapCenter, byte[,] heightData)
+		public void UpdateMap(Vector2 terrainSize, Vector2 mapCenter, short[,] heightData)
 		{
 			int gridSnap = gridUnitSize * 2;
 
@@ -111,8 +111,8 @@ namespace Meteor.Resources
 				// Get total span of vertices to be drawn, since it won't always be the full 
 				// dimensions of the clipmap. Span is in grid units (not heightmap units)
 
-				int verticesPerRow = (right - left) / gridUnitSize + 1;
-				int verticesPerColumn = (bottom - top) / gridUnitSize + 1;
+				int verticesPerRow = ((right - left) / gridUnitSize) + 1;
+				int verticesPerColumn = ((bottom - top) / gridUnitSize) + 1;
 
 				// Go through all coordinates in the clipmap and update the vertices
 				// For vertices that were already set last time, just ignore them
@@ -123,49 +123,13 @@ namespace Meteor.Resources
 				{
 					for (int x = left, j = 0; x <= right; x += gridUnitSize, j++)
 					{
-						vertices[i * verticesPerRow + j].Position =
-							new Vector3(x, heightData[x, y] / 5.0f - (gridUnitSize / 10), -y);
-
-						vertices[i * verticesPerRow + j].TextureCoordinate.X = (float)x / 20.0f;
-						vertices[i * verticesPerRow + j].TextureCoordinate.Y = (float)y / 20.0f;
+						vertices[i * clipLevelSize + j].Position = new Vector3(x, heightData[x, y] / 5.0f, -y);
+						vertices[i * clipLevelSize + j].TextureCoordinate = new Vector2(x, y) / 20.0f;
 						updatedVertices++;
 					}
 				}
-				/*
-				// Patch up the gaps left at the seams/edges of the clipmap by pushing together
-				// some edge vertices. Remove the gaps at the top and bottom, then the sides.
 
-				for (int y = top, i = 0; y <= bottom; y++, i++)
-				{
-					if (i == 0 || i == verticesPerColumn - 1)
-					{
-						for (int x = left + 1, j = 1; x < right; x += 2, j += 2)
-						{
-							int index = i * verticesPerRow + j;
-
-							vertices[index].Position.Y =
-								(vertices[index - 1].Position.Y + vertices[index + 1].Position.Y) / 2f;
-						}
-					}
-				}
-
-				for (int y = top + 1, i = 1; y <= bottom; y += 2, i += 2)
-				{
-					for (int x = left, j = 0; x <= right; x++, j++)
-					{
-						if (j == 0 || j == verticesPerRow - 1)
-						{
-							int index = i * verticesPerRow + j;
-							int prev = ((i - 1) * verticesPerRow) + j;
-							int next = ((i + 1) * verticesPerRow) + j;
-
-							vertices[index].Position.Y =
-								(vertices[prev].Position.Y + vertices[next].Position.Y) / 2f;
-						}
-					}
-				}*/
-		
-				SetUpIndices(mapCenter, verticesPerRow, verticesPerColumn);
+				SetUpIndices(mapCenter, clipLevelSize, clipLevelSize);
 				CalculateNormals();
 
 				// Set vertex and index buffers
@@ -212,6 +176,10 @@ namespace Meteor.Resources
 				interiorTop -= 1;
 				interiorBottom -= 1;
 			}
+
+			// Add additional interior vertices when the rows or columns become shorter
+			interiorRight += (vertsPerRow - clipLevelSize) - 1;
+			interiorBottom += (vertsPerColumn - clipLevelSize) - 1;
 
 			for (int y = 0; y < vertsPerColumn - 1; y++)
 			{

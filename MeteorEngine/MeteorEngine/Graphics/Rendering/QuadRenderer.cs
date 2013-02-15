@@ -9,6 +9,8 @@ namespace Meteor.Resources
 		/// Rendering data
         VertexDeclaration vertexDecl = null;
         VertexPositionTexture[] verts = null;
+		VertexPositionColor[] coloredVerts = null;
+
         short[] ib = null;
 
 		/// Graphics device passed to the object at construction
@@ -37,6 +39,7 @@ namespace Meteor.Resources
                     new Vector3(0,0,1),
                     new Vector2(1,0))
             };
+			coloredVerts = new VertexPositionColor[4];
 
             ib = new short[] { 0, 1, 2, 2, 3, 0 };
 
@@ -119,7 +122,37 @@ namespace Meteor.Resources
 		}
 
 		/// <summary>
-		/// Use instanced rendering if you need it for some reason
+		/// Draw a quad in any orientation
+		/// </summary>
+
+		public void Render(Vector3 v1, Vector3 v2)
+		{
+			verts[0].Position = v1;
+			verts[1].Position = new Vector3(v2.X, v1.Y, v2.Z);
+			verts[2].Position = v2;
+			verts[3].Position = new Vector3(v1.X, v2.Y, v1.Z);
+
+			device.DrawUserIndexedPrimitives<VertexPositionTexture>
+				(PrimitiveType.TriangleList, verts, 0, 4, ib, 0, 2);
+		}
+
+		/// <summary>
+		/// Draw a quad in any orientation with color
+		/// </summary>
+
+		public void Render(Vector3 v1, Vector3 v2, Color color)
+		{
+			coloredVerts[0].Position = v1;
+			coloredVerts[1].Position = new Vector3(v2.X, v1.Y, v2.Z);
+			coloredVerts[2].Position = v2;
+			coloredVerts[3].Position = new Vector3(v1.X, v2.Y, v1.Z);
+
+			device.DrawUserIndexedPrimitives<VertexPositionColor>
+				(PrimitiveType.TriangleList, coloredVerts, 0, 4, ib, 0, 2);
+		}
+
+		/// <summary>
+		/// Use instanced rendering
 		/// </summary>
 
 		public void RenderInstanced(DynamicVertexBuffer dynamicVertexBuffer, int totalInstances)

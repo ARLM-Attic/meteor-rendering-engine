@@ -66,7 +66,7 @@ namespace Meteor.Rendering
 			blurMap = blurEffect.Parameters["blurMap"];
 
 			threshold.SetValue(0.75f);
-			bloomIntensity.SetValue(1.0f);
+			bloomIntensity.SetValue(0.0f);
 			saturation.SetValue(1.25f);
 			contrast.SetValue(1.05f);
 		}

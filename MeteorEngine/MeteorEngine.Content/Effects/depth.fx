@@ -96,8 +96,7 @@ VertexShaderOutput DepthMapSkinnedAnimation(VertexShaderInput input, InstanceInp
 float4 DepthMapPS (VertexShaderOutput IN) : COLOR0
 {
 	float mask = tex2D(diffuseSampler, IN.texCoord).a;
-	if (mask < 0.9)
-		return 1;
+	clip (mask - 0.01);
 	
     return IN.depth;
 }

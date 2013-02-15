@@ -2,15 +2,24 @@
 float4x4 World;
 float4x4 View;
 float4x4 Projection;
-float TextureScale;
-float ClipLevel;
+float textureScale;
+float mapScale;
+float clipLevel;
 
-texture Texture;
+texture Texture, heightMapTexture;
 texture NormalMap;
 
 sampler diffuseSampler : register(s0) = sampler_state
 {
     Texture = <Texture>;
+	Filter = MIN_MAG_MIP_LINEAR;
+	AddressU = Wrap;
+	AddressV = Wrap;
+};
+
+sampler heightSampler : register(s0) = sampler_state
+{
+    Texture = <heightMapTexture>;
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Wrap;
 	AddressV = Wrap;
@@ -55,7 +64,6 @@ VertexTerrainOutput VertexShaderTerrain(VertexTerrainInput input)
 	//pass the texture coordinates further
     output.TexCoord = input.TexCoord;
 
-	//get normal into world space
     input.Normal = normalize(mul(input.Normal, World));
 	output.Normal = input.Normal;
 
@@ -98,9 +106,9 @@ float4 TriplanarMapping(VertexTerrainOutput input, float scale = 1)
 	mXZ /= total;
 	mYZ /= total;
 
-	float4 cXY = tex2D(diffuseSampler, input.NewPosition.xy / TextureScale * scale);
-	float4 cXZ = tex2D(diffuseSampler, input.NewPosition.xz / TextureScale * scale);
-	float4 cYZ = tex2D(diffuseSampler, input.NewPosition.yz / TextureScale * scale);
+	float4 cXY = tex2D(diffuseSampler, input.NewPosition.xy / textureScale * scale);
+	float4 cXZ = tex2D(diffuseSampler, input.NewPosition.xz / textureScale * scale);
+	float4 cYZ = tex2D(diffuseSampler, input.NewPosition.yz / textureScale * scale);
 
 	float4 diffuse = cXY * mXY + cXZ * mXZ + cYZ * mYZ;
 	return diffuse;
@@ -122,6 +130,7 @@ PixelShaderOutput1 PixelTerrainGBuffer(VertexTerrainOutput input)
     // Output the normal, in [0,1] space
     float3 normalFromMap = tex2D(normalMapSampler, input.TexCoord);
 
+	//get normal into world space
     normalFromMap = input.Normal;	
     normalFromMap = normalize(mul(normalFromMap, View));
     output.Normal.rgb = 0.5f * (normalFromMap + 1.0f);

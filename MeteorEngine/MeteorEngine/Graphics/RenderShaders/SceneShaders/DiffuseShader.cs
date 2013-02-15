@@ -45,6 +45,9 @@ namespace Meteor.Rendering
 
         public override RenderTarget2D[] Draw()
         {
+			renderStopWatch.Reset();
+			renderStopWatch.Restart();
+
             // Prepare the forward rendering
             graphicsDevice.SetRenderTarget(diffuseRT);
 			graphicsDevice.Clear(Color.Transparent);
@@ -56,7 +59,7 @@ namespace Meteor.Rendering
 			graphicsDevice.SamplerStates[1] = SamplerState.PointWrap;
 
 			// Cull the objects
-			sceneRenderer.CullModelMeshes(scene, camera);
+			//sceneRenderer.CullModelMeshes(scene, camera);
 
             // Forward render the scene
 			sceneRenderer.UseTechnique("DiffuseRenderTerrain");
@@ -69,6 +72,8 @@ namespace Meteor.Rendering
 			graphicsDevice.SamplerStates[0] = SamplerState.LinearClamp;
 			sceneRenderer.UseTechnique("Skybox");
 			sceneRenderer.DrawSkybox(scene, camera);
+
+			renderStopWatch.Stop();
 			
 			return outputs;
         }

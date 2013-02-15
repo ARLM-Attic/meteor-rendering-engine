@@ -49,14 +49,14 @@ namespace Meteor.Resources
 			get { return visibleLights.Count; }
 		}
 
-		public class OrderedMeshData
+		public class OrderedInstancedMeshData
 		{
 			public string modelName;
 			public int meshID;
 			public float priority;
 		};
 
-		public List<OrderedMeshData> orderedMeshes;
+		public List<OrderedInstancedMeshData> orderedInstancedMeshes;
 
 		/// Skybox mesh
 		InstancedModel skyboxModel;
@@ -88,7 +88,7 @@ namespace Meteor.Resources
 			blendModels = new Dictionary<string, InstancedModel>();
 
 			// Ordered list for model sorting
-			orderedMeshes = new List<OrderedMeshData>();
+			orderedInstancedMeshes = new List<OrderedInstancedMeshData>();
 		}
 
 		/// <summary>
@@ -139,7 +139,7 @@ namespace Meteor.Resources
 
 			for (int i = 0; i < staticModels[modelPath].model.Meshes.Count; i++)
 			{
-				orderedMeshes.Add(new OrderedMeshData());
+				orderedInstancedMeshes.Add(new OrderedInstancedMeshData());
 			}
 
 			return staticModels[modelPath];

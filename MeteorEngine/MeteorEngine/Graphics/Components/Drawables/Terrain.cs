@@ -23,7 +23,7 @@ namespace Meteor.Resources
 		private int terrainHeight;
 
 		/// Array to store the data of each map pixel
-		private byte[,] heightData;
+		private short[,] heightData;
 
 		/// Amount to scale heightmap by
 		private float scale;
@@ -32,7 +32,7 @@ namespace Meteor.Resources
 		private float textureScale = 10f;
 
 		/// Primary texture to apply to the terrain mesh
-		private Texture2D mainTexture;
+		private Texture2D mainTexture, heightMapTexture;
 
 		/// The innermost (level 0) geo clipmap to render the terrain with
 		private InnerClipmap innerClipMap;
@@ -63,11 +63,11 @@ namespace Meteor.Resources
 		
 		public void GenerateFromImage(string image, string texture)
 		{
-			Texture2D heightMap = content.Load<Texture2D>(image);
+			heightMapTexture = content.Load<Texture2D>(image);
 			mainTexture = content.Load<Texture2D>(texture);
 
-			terrainWidth = heightMap.Width;
-			terrainHeight = heightMap.Height;
+			terrainWidth = heightMapTexture.Width;
+			terrainHeight = heightMapTexture.Height;
 
 			// Calculate heightmap position
 			heightmapPosition.X = -(terrainWidth * scale) / 2;
@@ -75,21 +75,28 @@ namespace Meteor.Resources
 			heightmapPosition.Z = (terrainHeight * scale) / 2;
 
 			Color[] heightMapColors = new Color[terrainWidth * terrainHeight];
-			heightMap.GetData(heightMapColors);
+			heightMapTexture.GetData(heightMapColors);
 
 			// Initialize height data values
-			heightData = new byte[terrainWidth, terrainHeight];
+			heightData = new short[terrainWidth, terrainHeight];
 
 			// Add the height values from the map
 			for (int x = 0; x < terrainWidth; x++)
+			{
 				for (int y = 0; y < terrainHeight; y++)
-					heightData[x, y] = (byte)(heightMapColors[x + y * terrainWidth].R);
+				{
+					heightData[x, y] = (short)(heightMapColors[x + y * terrainWidth].R);
+				}
+			}
+
+			// Setup other data values
+			//SetUpIndices();
 
 			// Setup the clip maps
 			int clipMapSize = 96;
 
 			innerClipMap = new InnerClipmap(clipMapSize, graphicsDevice);
-			outerClipMaps = new OuterClipmap[4];
+			outerClipMaps = new OuterClipmap[5];
 
 			for (int i = 0; i < outerClipMaps.Length; i++)
 				outerClipMaps[i] = new OuterClipmap(i + 1, clipMapSize, graphicsDevice);
@@ -161,12 +168,14 @@ namespace Meteor.Resources
 			float xNormalized = (positionOnMap.X % scale) / scale;
 			float zNormalized = (positionOnMap.Z % scale) / scale;
 
-			// nrmalize the height positions and interpolate them.
+			// normalize the height positions and interpolate them.
 			float topHeight = MathHelper.Lerp(
-				heightData[left, top] / 5.0f, heightData[left + 1, top] / 5.0f, xNormalized);
+				heightData[left, top] / 5.0f, 
+				heightData[left + 1, top] / 5.0f, xNormalized);
 
 			float bottomHeight = MathHelper.Lerp(
-				heightData[left, top + 1] / 5.0f, heightData[left + 1, top + 1] / 5.0f, xNormalized);
+				heightData[left, top + 1] / 5.0f, 
+				heightData[left + 1, top + 1] / 5.0f, xNormalized);
 
 			float height = MathHelper.Lerp(topHeight, bottomHeight, zNormalized);
 
@@ -193,15 +202,17 @@ namespace Meteor.Resources
 			Matrix worldMatrix = Matrix.CreateScale(scale);
 			worldMatrix *= Matrix.CreateTranslation(heightmapPosition);
 
-			RasterizerState rWireframeState = new RasterizerState();
-			rWireframeState.FillMode = FillMode.WireFrame;
+			//RasterizerState rWireframeState = new RasterizerState();
+			//rWireframeState.FillMode = FillMode.WireFrame;
 			//graphicsDevice.RasterizerState = rWireframeState;
 
 			effect.Parameters["Texture"].SetValue(mainTexture);
+			effect.Parameters["heightMapTexture"].SetValue(heightMapTexture);
 
 			// Special texture effects
-			effect.Parameters["TextureScale"].SetValue(textureScale);
-			effect.Parameters["ClipLevel"].SetValue(0);
+			effect.Parameters["textureScale"].SetValue(textureScale);
+			effect.Parameters["mapScale"].SetValue(scale);
+			effect.Parameters["clipLevel"].SetValue(0);
 
 			// Set world transformation for the map
 			effect.Parameters["World"].SetValue(worldMatrix);
@@ -214,6 +225,27 @@ namespace Meteor.Resources
 			}
 
 			int polycount = 0;
+			int clipLevel = 1;
+
+			// Set buffers for outer clip maps and draw them
+			for (int i = outerClipMaps.Length - 1; i >= 0; i-- )
+			{
+				// Color code the clip maps
+				effect.Parameters["clipLevel"].SetValue(clipLevel++);
+
+				graphicsDevice.Indices = outerClipMaps[i].Indices;
+				graphicsDevice.SetVertexBuffer(outerClipMaps[i].Vertices);
+
+				foreach (EffectPass pass in effect.CurrentTechnique.Passes)
+				{
+					pass.Apply();
+					graphicsDevice.DrawIndexedPrimitives(
+						PrimitiveType.TriangleList, 0, 0,
+						outerClipMaps[i].UpdatedVertices, 0, outerClipMaps[i].UpdatedIndices / 3);
+				}
+				// Add to the total number of polygons drawn
+				polycount += (outerClipMaps[i].UpdatedIndices / 3);
+			}
 
 			foreach (EffectPass pass in effect.CurrentTechnique.Passes)
 			{
@@ -230,28 +262,6 @@ namespace Meteor.Resources
 
 			// Add to the total number of polygons drawn;
 			polycount += (innerClipMap.UpdatedIndices / 3);
-
-			int clipLevel = 1;
-
-			// Set buffers for outer clip maps and draw them
-			foreach (OuterClipmap outerMap in outerClipMaps)
-			{
-				// Color code the clip maps
-				effect.Parameters["ClipLevel"].SetValue(clipLevel++);
-
-				graphicsDevice.Indices = outerMap.Indices;
-				graphicsDevice.SetVertexBuffer(outerMap.Vertices);
-
-				foreach (EffectPass pass in effect.CurrentTechnique.Passes)
-				{
-					pass.Apply();
-					graphicsDevice.DrawIndexedPrimitives(
-						PrimitiveType.TriangleList, 0, 0,
-						outerMap.UpdatedVertices, 0, outerMap.UpdatedIndices / 3);
-				}
-				// Add to the total number of polygons drawn
-				polycount += (outerMap.UpdatedIndices / 3);
-			}
 
 			// End rendering clipmaps
 			return polycount;

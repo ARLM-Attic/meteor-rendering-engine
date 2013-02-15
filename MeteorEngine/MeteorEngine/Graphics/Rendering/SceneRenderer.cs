@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Diagnostics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -8,22 +9,13 @@ using Meteor.Resources;
 
 namespace Meteor.Rendering
 {
-	class MeshPrioritySort : IComparer<Scene.OrderedMeshData>
-	{
-		public int Compare(Scene.OrderedMeshData rp1,
-			Scene.OrderedMeshData rp2)
-		{
-			int returnValue = 1;
-			returnValue = rp2.priority.CompareTo(rp1.priority);
-
-			return returnValue;
-		}
-	}
-
 	public class SceneRenderer
 	{
 		/// Basic effect for bounding box drawing
 		BasicEffect basicEffect;
+
+		/// Effect that's currently used by the scene
+		Effect currentEffect;
 
 		/// Effect technique used by the scene
 		String shaderTechnique;
@@ -38,21 +30,21 @@ namespace Meteor.Rendering
 		ContentManager content;
 		GraphicsDevice graphicsDevice;
 
+		/// Spritebatch to draw debug data on screen
+		SpriteBatch spriteBatch;
+
 		/// Dummy textures to use in case they are missing in the model.
 		Texture2D blankNormal, blankTexture, blankSpecular;
 
-		/// Function to sort meshes by priority level (combination of size and distance)
-		MeshPrioritySort meshPrioritySort;
-
-		/// Used for culling objects before rendering.
-		//SceneCuller sceneCuller;
+		/// Rendering imposters for the scenes
+		Imposter imposter;
 
 		/// Containers for temp data, to avoid calling the GC
 		Vector3[] boxCorners;
 		Matrix[] tempBones;
 
 		/// Swap space for vertex buffer bindings
-		VertexBufferBinding[] bindings;
+		VertexBufferBinding[] vertexBufferBindings;
 
 		/// <summary>
 		/// Create a SceneRenderer with graphics device and content manager.
@@ -62,9 +54,12 @@ namespace Meteor.Rendering
         {
 			this.graphicsDevice = device; 
 			this.content = content;
+			spriteBatch = new SpriteBatch(graphicsDevice);
+			imposter = new Imposter(graphicsDevice, content);
 
             // Use standard GBuffer as a default
             shaderTechnique = "GBuffer";
+			currentEffect = null;
 
 			blankNormal = content.Load<Texture2D>("null_normal");
 			blankTexture = content.Load<Texture2D>("null_color");
@@ -72,9 +67,6 @@ namespace Meteor.Rendering
 
 			// Helper for drawing debug shapes
 			ShapeRenderer.Initialize(graphicsDevice);
-
-			// Helpers for sorting and culling objects
-			meshPrioritySort = new MeshPrioritySort();
 
 			// Effect for bounding box drawing
 			basicEffect = new BasicEffect(device);
@@ -86,7 +78,7 @@ namespace Meteor.Rendering
 			tempBones = new Matrix[60];
 
 			// Create the instance data vertex buffer.
-			bindings = new VertexBufferBinding[2];
+			vertexBufferBindings = new VertexBufferBinding[2];
 		}
 
 		/// <summary>
@@ -116,17 +108,14 @@ namespace Meteor.Rendering
 		/// </summary>
 		/// <param name="camera"></param>
 
-		public void Draw(Scene scene, Camera camera)
+		public void Draw(Scene scene, Camera camera, BlendState blendState)
 		{
 			Viewport viewport = graphicsDevice.Viewport;
 			viewport.MinDepth = 0.0f;
 			viewport.MaxDepth = farDepth;
 			graphicsDevice.Viewport = viewport;
+			graphicsDevice.BlendState = blendState;
 			graphicsDevice.RasterizerState = RasterizerState.CullNone;
-
-			RasterizerState rWireframeState = new RasterizerState();
-			rWireframeState.FillMode = FillMode.WireFrame;
-			//graphicsDevice.RasterizerState = rWireframeState;
 
 			totalPolys = 0;
 			scene.totalPolys = 0;
@@ -146,17 +135,29 @@ namespace Meteor.Rendering
 		}
 
 		/// <summary>
+		/// Overloads for drawing to the GBuffer
+		/// </summary>	
+
+		public void Draw(Scene scene, Camera camera)
+		{
+			Draw(scene, camera, BlendState.Opaque);
+		}
+
+		/// <summary>
 		/// Draw with a custom effect
 		/// </summary>
 
 		public void Draw(Scene scene, Effect effect, BlendState blendState,
 			RasterizerState rasterizerState)
 		{
-			graphicsDevice.DepthStencilState = DepthStencilState.Default; 
-			graphicsDevice.RasterizerState = rasterizerState;
-			graphicsDevice.BlendState = blendState;
+			Viewport viewport = graphicsDevice.Viewport;
+			viewport.MinDepth = 0.0f;
+			viewport.MaxDepth = farDepth;
+			graphicsDevice.Viewport = viewport;
+			graphicsDevice.RasterizerState = RasterizerState.CullNone;
 
 			graphicsDevice.SetVertexBuffer(null);
+			currentEffect = effect;
 
 			foreach (InstancedModel instancedModel in scene.staticModels.Values)
 				scene.visibleMeshes += DrawModel(instancedModel, effect, "Default");
@@ -168,7 +169,21 @@ namespace Meteor.Rendering
 		}
 
 		/// <summary>
-		/// Wrapper to just draw the terrain with the desired effect
+		/// Overloads for drawing custom effects
+		/// </summary>	
+
+		public void Draw(Scene scene, Effect effect)
+		{
+			Draw(scene, effect, BlendState.Opaque, RasterizerState.CullNone);
+		}
+
+		public void Draw(Scene scene, Effect effect, BlendState blendState)
+		{
+			Draw(scene, effect, blendState, RasterizerState.CullNone);
+		}
+
+		/// <summary>
+		/// Wrapper to draw the terrain with a specified effect and technique
 		/// </summary>
 
 		public void DrawTerrain(Scene scene, Camera camera, Effect effect)
@@ -189,37 +204,6 @@ namespace Meteor.Rendering
 			if (scene.terrain != null)
 				scene.totalPolys += scene.terrain.Draw(camera, effect, blankTexture);
 		}
-
-		/// <summary>
-		/// Overloads for drawing custom effects
-		/// </summary>	
-
-		public void Draw(Scene scene, Effect effect)
-		{
-			Draw(scene, effect, BlendState.Opaque, RasterizerState.CullNone);
-		}
-
-		public void Draw(Scene scene, Effect effect, BlendState blendState)
-		{
-			Draw(scene, effect, blendState, RasterizerState.CullNone);
-		}
-
-		public void Draw(Scene scene, Effect effect, RasterizerState rasterizerState)
-		{
-			Draw(scene, effect, BlendState.Opaque, rasterizerState);
-		}
-
-		/// <summary>
-		/// Vertex declaration for mesh instancing, storing a 4x4 world transformation matrix
-		/// </summary>
-
-		VertexDeclaration instanceVertexDec = new VertexDeclaration
-		(
-			new VertexElement(0, VertexElementFormat.Vector4, VertexElementUsage.TextureCoordinate, 0),
-			new VertexElement(16, VertexElementFormat.Vector4, VertexElementUsage.TextureCoordinate, 1),
-			new VertexElement(32, VertexElementFormat.Vector4, VertexElementUsage.TextureCoordinate, 2),
-			new VertexElement(48, VertexElementFormat.Vector4, VertexElementUsage.TextureCoordinate, 3)
-		);	
 
 		/// <summary>
 		/// A bit hacky way to limit bone transforms. Will fix soon.
@@ -244,8 +228,9 @@ namespace Meteor.Rendering
 		/// Draw all visible meshes for this model with its default effect.
 		/// </summary>
 
-		private int DrawModel(InstancedModel instancedModel, Camera camera, string tech)
+		private int DrawModel(InstancedModel instancedModel, Camera camera, string technique)
 		{
+			UseTechnique(technique);
 			TrimBoneTransforms(instancedModel);
 
 			int meshIndex = 0;
@@ -269,57 +254,32 @@ namespace Meteor.Rendering
 
 				// Retrieve the current mesh from the mesh list
 				ModelMesh mesh = instancedModel.model.Meshes[meshIndex];
+				Matrix world = instancedModel.boneMatrices[mesh.ParentBone.Index];
 
 				foreach (ModelMeshPart meshPart in mesh.MeshParts)
 				{
-					// Skip rendering the mesh parts if they aren't visible
-					if (instanceGroup.totalVisible == 0)
-						continue;
+					// Assign effect (all mesh parts use the same one)
+					currentEffect = meshPart.Effect;
 
-					VertexBuffer meshInstanceVB = instanceGroup.instanceVB;
-
-					bindings[0] = new VertexBufferBinding(meshPart.VertexBuffer, meshPart.VertexOffset, 0);
-					bindings[1] = new VertexBufferBinding(meshInstanceVB, 0, 1);
-
-					// Bind both mesh vertex buffer and per-instance matrix data
-					graphicsDevice.SetVertexBuffers(bindings);
-					graphicsDevice.Indices = meshPart.IndexBuffer;
-
-					// Assign effect and curent technique
-					Effect effect = meshPart.Effect;
-					effect.CurrentTechnique = effect.Techniques[tech];
-
-					Matrix world = instancedModel.boneMatrices[mesh.ParentBone.Index];
-					effect.Parameters["World"].SetValue(world);
+					// Set GBuffer parameters
+					currentEffect.Parameters["World"].SetValue(world);
+					currentEffect.Parameters["View"].SetValue(camera.View);
+					currentEffect.Parameters["Projection"].SetValue(camera.Projection);
+					currentEffect.Parameters["WorldInverseTranspose"].SetValue(
+						Matrix.Transpose(Matrix.Invert(world * mesh.ParentBone.Transform)));
+					currentEffect.Parameters["CameraPosition"].SetValue(camera.Position);
 
 					// Set bones if the model is animated
 					if (instancedModel.animationPlayer != null)
-						effect.Parameters["bones"].SetValue(tempBones);
+						currentEffect.Parameters["bones"].SetValue(tempBones);
 
-					if (instancedModel.Textures[meshIndex] == null)
-						effect.Parameters["Texture"].SetValue(blankTexture);
+					if (instancedModel.Textures[meshIndex] != null)
+						currentEffect.Parameters["Texture"].SetValue(instancedModel.Textures[meshIndex]);
 
-					effect.Parameters["View"].SetValue(camera.View);
-					effect.Parameters["Projection"].SetValue(camera.Projection);
-					effect.Parameters["WorldInverseTranspose"].SetValue(
-						Matrix.Transpose(Matrix.Invert(world * mesh.ParentBone.Transform)));
-					effect.Parameters["CameraPosition"].SetValue(camera.Position);
-
-					for (int i = 0; i < effect.CurrentTechnique.Passes.Count; i++)
-					{
-						effect.CurrentTechnique.Passes[i].Apply();
-						
-						graphicsDevice.DrawInstancedPrimitives(
-							PrimitiveType.TriangleList, 0, 0,
-							meshPart.NumVertices, meshPart.StartIndex,
-							meshPart.PrimitiveCount, instanceGroup.totalVisible);
-					}
-
-					totalPolys += meshPart.PrimitiveCount * instanceGroup.totalVisible;
+					DrawInstancedMeshPart(meshPart, instanceGroup);
+					meshIndex++;
 				}
-
 				// Finished drawing mesh parts
-				meshIndex++;
 				visibleInstances += instanceGroup.totalVisible;
 			}
 			// Finished model rendering
@@ -330,16 +290,18 @@ namespace Meteor.Rendering
 		/// Draw instanced model with a custom effect
 		/// </summary>	
 
-		public int DrawModel(InstancedModel instancedModel, Effect effect, String tech = "Default")
-		{			
+		public int DrawModel(InstancedModel instancedModel, Effect effect, String technique = "Default")
+		{
 			TrimBoneTransforms(instancedModel);
+			UseTechnique(technique);
 
 			int meshIndex = 0;
 			int visibleInstances = 0;
 
 			foreach (MeshInstanceGroup instanceGroup in instancedModel.MeshInstanceGroups.Values)
 			{
-				int totalInstances = instanceGroup.instances.Count;			
+				int totalInstances = instanceGroup.instances.Count;
+				graphicsDevice.SetVertexBuffers(null);
 
 				/// Resize the vertex buffer for instances if needed
 				if (totalInstances > instanceGroup.instanceVB.VertexCount)
@@ -354,52 +316,61 @@ namespace Meteor.Rendering
 
 				// Retrieve the current mesh from the mesh list
 				ModelMesh mesh = instancedModel.model.Meshes[meshIndex];
+				Matrix world = instancedModel.boneMatrices[mesh.ParentBone.Index];
+
+				// Set world matrix for all mesh parts
+				effect.Parameters["World"].SetValue(instancedModel.boneMatrices[mesh.ParentBone.Index]);
 
 				foreach (ModelMeshPart meshPart in mesh.MeshParts)
 				{
-					// Skip rendering the mesh parts if they aren't visible
-					if (instanceGroup.totalVisible == 0)
-						continue;
-
-					VertexBuffer meshInstanceVB = instanceGroup.instanceVB;
-
-					bindings[0] = new VertexBufferBinding(meshPart.VertexBuffer, meshPart.VertexOffset, 0);
-					bindings[1] = new VertexBufferBinding(meshInstanceVB, 0, 1);
-
-					// Bind both mesh vertex buffer and per-instance matrix data
-					graphicsDevice.SetVertexBuffers(bindings);
-					graphicsDevice.Indices = meshPart.IndexBuffer;
-
-					// Assign effect technique
-					effect.CurrentTechnique = effect.Techniques[tech];
-
-					Matrix world = instancedModel.boneMatrices[mesh.ParentBone.Index];
-					effect.Parameters["World"].SetValue(world);
-					effect.Parameters["Texture"].SetValue(instancedModel.Textures[meshIndex]);
-
 					// Set bones if the model is animated
 					if (instancedModel.animationPlayer != null)
 						effect.Parameters["bones"].SetValue(tempBones);
 
-					for (int i = 0; i < effect.CurrentTechnique.Passes.Count; i++)
-					{
-						effect.CurrentTechnique.Passes[i].Apply();
+					if (instancedModel.Textures[meshIndex] != null)
+						effect.Parameters["Texture"].SetValue(instancedModel.Textures[meshIndex]);
 
-						graphicsDevice.DrawInstancedPrimitives(
-							PrimitiveType.TriangleList, 0, 0,
-							meshPart.NumVertices, meshPart.StartIndex,
-							meshPart.PrimitiveCount, instanceGroup.totalVisible);
-					}
+					DrawInstancedMeshPart(meshPart, instanceGroup);
+					meshIndex++;
 				}
-
 				// Finished drawing mesh parts
-				meshIndex++;
 				visibleInstances += instanceGroup.totalVisible;
-			}
+			}	
 			// Finished model rendering
 			return visibleInstances;
 		}
 
+		/// <summary>
+		/// Draw a mesh part with the given effect and from a specific index
+		/// </summary>
+		
+		private void DrawInstancedMeshPart(ModelMeshPart meshPart, MeshInstanceGroup instanceGroup)
+		{
+			// Skip rendering the mesh parts if they aren't visible
+			if (instanceGroup.totalVisible == 0)
+				return;
+
+			vertexBufferBindings[0] = new VertexBufferBinding(meshPart.VertexBuffer, meshPart.VertexOffset, 0);
+			vertexBufferBindings[1] = new VertexBufferBinding(instanceGroup.instanceVB, 0, 1);
+
+			// Bind both mesh vertex buffer and per-instance matrix data
+			graphicsDevice.SetVertexBuffers(vertexBufferBindings);
+			graphicsDevice.Indices = meshPart.IndexBuffer;
+
+			// Assign effect technique
+			currentEffect.CurrentTechnique = currentEffect.Techniques[shaderTechnique];
+
+			for (int i = 0; i < currentEffect.CurrentTechnique.Passes.Count; i++)
+			{
+				currentEffect.CurrentTechnique.Passes[i].Apply();
+
+				graphicsDevice.DrawInstancedPrimitives(
+					PrimitiveType.TriangleList, 0, 0,
+					meshPart.NumVertices, meshPart.StartIndex,
+					meshPart.PrimitiveCount, instanceGroup.totalVisible);
+			}
+		}
+		
 		/// <summary>
 		/// Draw the scene's skybox
 		/// </summary>
@@ -435,7 +406,7 @@ namespace Meteor.Rendering
 		{
 			if (scene.debug == true)
 			{
-				//CullModelMeshes(scene, camera);
+				CullModelMeshes(scene, camera);
 
 				basicEffect.View = camera.View;
 				basicEffect.Projection = camera.Projection;
@@ -453,14 +424,18 @@ namespace Meteor.Rendering
 		}
 
 		/// <summary>
-		/// Draw debug bounding box
+		/// Draw debug bounding boxes
 		/// </summary>
-		/// <param name="model"></param>
-		/// <param name="camera"></param>
-
+		[Conditional("DEBUG")]
 		private void DrawBoundingBoxes(InstancedModel model, Camera camera)
 		{
 			int meshIndex = 0;
+			Viewport v = graphicsDevice.Viewport;
+			float farDistance = camera.farPlaneDistance;
+
+			// Matrices to project into screen space
+			Matrix worldViewProjection = camera.View * camera.Projection;
+			Matrix invClient = Matrix.Invert(Matrix.CreateOrthographicOffCenter(0, v.Width, v.Height, 0, -1, 1));
 
 			foreach (MeshInstanceGroup instancedGroup in model.MeshInstanceGroups.Values)
 			{
@@ -479,15 +454,50 @@ namespace Meteor.Rendering
 				//Color[] colors = { Color.Cyan, Color.White, Color.Magenta, Color.Blue,
 				//	Color.Green, Color.Yellow, Color.Red, Color.Black };XZ
 
-				foreach (MeshInstance meshInstance in instancedGroup.instances)
+				spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
+				int visible = 0;
+
+				foreach (MeshInstance meshInstance in instancedGroup.visibleInstances)
 				{
+					if (meshInstance == null)
+						continue;
+
+					// If we have exceeded the visible count, we have already rendered
+					// all visible instances
+					if (visible >= instancedGroup.totalVisible)
+						break;
+
 					Matrix modelTransform = meshInstance.Transform;
 
-					for (int i = boxCorners.Length; i-- > 0; )
+					Vector2 rectMin = new Vector2(v.Width, v.Height);
+					Vector2 rectMax = Vector2.Zero;
+					float minDistance = camera.farPlaneDistance;
+
+					for (int i = 0; i < boxCorners.Length; i++)
 					{
 						model.boxVertices[i].Position = Vector3.Transform(boxCorners[i], modelTransform);
 						model.boxVertices[i].Color = Color.Cyan;
+						
+						// Determin the closest distance point in the bounding box
+						float camDistance = Vector3.Distance(model.boxVertices[i].Position, camera.Position);
+						minDistance = Math.Min(camDistance, minDistance);
+
+						// Project the corners of the bounding box onto screen space
+						
+						Vector4 position = new Vector4(model.boxVertices[i].Position, 1);
+						Vector4.Transform(ref position, ref worldViewProjection, out position);
+						position /= position.W;
+
+						Vector2 clientResult = Vector2.Transform(new Vector2(position.X, position.Y), invClient);
+
+						rectMin.X = (int)Math.Min((float)clientResult.X, (float)rectMin.X);
+						rectMin.Y = (int)Math.Min((float)clientResult.Y, (float)rectMin.Y);
+						rectMax.X = (int)Math.Max((float)clientResult.X, (float)rectMax.X);
+						rectMax.Y = (int)Math.Max((float)clientResult.Y, (float)rectMax.Y);
 					}
+
+					Vector3 topLeft = v.Unproject(new Vector3(rectMin, minDistance), camera.Projection, camera.View, camera.WorldMatrix);
+					Vector3 bottomRight = v.Unproject(new Vector3(rectMax, minDistance), camera.Projection, camera.View, camera.WorldMatrix);
 
 					// Transform the temporary bounding boxes with the model instance's world matrix
 					// TODO: Update these boxes only when intances are updated
@@ -497,19 +507,24 @@ namespace Meteor.Rendering
 					{
 						// Add a bounding sphere to the list of shapes to draw
 						ShapeRenderer.AddBoundingSphere(meshInstance.BSphere, Color.Red);
-
+						
 						for (int i = 0; i < basicEffect.CurrentTechnique.Passes.Count; i++)
 						{
 							basicEffect.CurrentTechnique.Passes[i].Apply();
 							graphicsDevice.DrawUserIndexedPrimitives<VertexPositionColor>(
 								PrimitiveType.LineList, model.boxVertices, 0, 8,
 								InstancedModel.bBoxIndices, 0, 12);
-						}
+						} 
 					}
 
 					// Render our shapes now
-					ShapeRenderer.Draw(camera.View, camera.Projection);
+					//ShapeRenderer.Draw(camera.View, camera.Projection);
+
+					// Add to the total visible
+					visible++;
 				}			
+				spriteBatch.End();
+
 				meshIndex++;
 			}
 			

@@ -47,7 +47,7 @@ namespace Meteor.Rendering
 
 		// How much to upscale some rendertargets
 		// and downscale to the render buffer
-		protected float bufferScaling = 1f;
+		protected float bufferScaling = 1.5f;
 
 		public virtual RenderTarget2D[] outputs
 		{

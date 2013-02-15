@@ -72,7 +72,7 @@ namespace Meteor.Resources
 		/// Update the geo clipmaps according to the center position.
 		/// </summary>
 
-		public void UpdateMap(Vector2 terrainSize, Vector2 mapCenter, byte[,] heightData)
+		public void UpdateMap(Vector2 terrainSize, Vector2 mapCenter, short[,] heightData)
 		{
 			// Snap to units of 2
 			mapCenter.X += 2 - (mapCenter.X % 2);
@@ -99,7 +99,7 @@ namespace Meteor.Resources
 		/// Force an update on this clipmap in case data gets lost.
 		/// </summary>
 
-		public void ForceUpdate(Vector2 terrainSize, Vector2 mapCenter, byte[,] heightData)
+		public void ForceUpdate(Vector2 terrainSize, Vector2 mapCenter, short[,] heightData)
 		{
 			// Force a change in the last map center registered
 			lastMapCenter += new Vector2(0.5f);
@@ -112,7 +112,7 @@ namespace Meteor.Resources
 		/// Calculate the vertex positions that need to be updated.
 		/// </summary>
 
-		private Vector2 SetUpVertices(Vector2 mapCenter, Vector2 terrainSize, byte[,] heightData)
+		private Vector2 SetUpVertices(Vector2 mapCenter, Vector2 terrainSize, short[,] heightData)
 		{
 			int left = (int)mapCenter.X - (clipLevelSize / 2);
 			int top = (int)mapCenter.Y - (clipLevelSize / 2);

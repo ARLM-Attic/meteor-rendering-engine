@@ -41,7 +41,7 @@ namespace Meteor.Rendering
 		const int shadowMapSize = 1280;
 
 		/// Total number of cascades for CSM
-		const int numCascades = 3;
+		const int numCascades = 4;
 
 		/// Arrangement of depth maps in atlas
 		const int mapsPerRow = 2;
@@ -50,6 +50,7 @@ namespace Meteor.Rendering
 		/// Ambient light irradiance
 		Vector3 ambientTerm;
 
+		/// Ratio of linear to logarithmic split in view cascades
 		public float splitLambda = 0.75f;
 
 		Matrix[] lightViewProj;
@@ -107,7 +108,7 @@ namespace Meteor.Rendering
 			};
 
 			lightCamera = new Camera();
-			lightCamera.farPlaneDistance = 2000f;
+			lightCamera.farPlaneDistance = 1000f;
 			lightCamera.Initialize(shadowMapSize, shadowMapSize);
 
 			lightViewProj = new Matrix[numCascades];
@@ -272,14 +273,14 @@ namespace Meteor.Rendering
 
 					graphicsDevice.SetRenderTarget(depthRT);
 					graphicsDevice.Clear(Color.White);
+					graphicsDevice.BlendState = BlendState.Opaque;
+					graphicsDevice.DepthStencilState = DepthStencilState.Default;
 
 					for (int cascade = 0; cascade < numCascades; cascade++)
 					{	
 						// Skip update of far shadow cascades in intervals
 						//if (cascade >= 1 && shadowUpdateTimer == 0)
 						//	break;
-
-						graphicsDevice.DepthStencilState = DepthStencilState.Default;
 
 						// Set camera's near and far view distance
 						camera.GetFrustumSplit(cascade, numCascades, splitLambda);
@@ -295,6 +296,10 @@ namespace Meteor.Rendering
 
 						// Update view matrices
 						CreateLightViewProjMatrix(light.direction, lightCamera);
+						terrainDepthEffect.Parameters["LightViewProj"].SetValue(lightCamera.View * lightCamera.Projection);
+
+						// Draw the terrain here
+						//sceneRenderer.DrawTerrainDefault(scene, lightCamera, terrainDepthEffect);
 
 						depthEffect.Parameters["LightViewProj"].SetValue(lightCamera.View * lightCamera.Projection);
 						depthEffect.Parameters["nearClip"].SetValue(lightCamera.nearPlaneDistance);
@@ -302,9 +307,6 @@ namespace Meteor.Rendering
 						// Cull models from this point of view
 						sceneRenderer.CullModelMeshes(scene, lightCamera);
 						sceneRenderer.Draw(scene, depthEffect);
-
-						// Draw the terrain here
-						//sceneRenderer.DrawTerrainDefault(scene, lightCamera, terrainDepthEffect);
 					}
 					lightID++;
 				}
@@ -351,7 +353,8 @@ namespace Meteor.Rendering
 				// This is a matter of integer dividing by the world space size of a texel
 				// The camera will snap along texel-sized increments
 
-				float diagonalLength = (camera.frustumCorners[0] - camera.frustumCorners[6]).Length();
+				float diagonalLength = (camera.frustumCorners[1] - camera.frustumCorners[7]).Length();
+				//diagonalLength *= 1.1f;
 				float worldsUnitsPerTexel = diagonalLength / (float)shadowMapSize;
 
 				Vector3 vBorderOffset = (new Vector3(diagonalLength, diagonalLength, diagonalLength) -
@@ -389,7 +392,7 @@ namespace Meteor.Rendering
 			// Create the projection matrix for the light
 			// The projection is orthographic since we are using a directional light
 			float nearScale = 2.5f;
-			lightCamera.Projection = 
+			lightCamera.Projection =
 				Matrix.CreateOrthographic(boxSize.X, boxSize.Y, -boxSize.Z * nearScale, boxSize.Z / 2f);
 
 			// Finally, update the view frustum's matrix

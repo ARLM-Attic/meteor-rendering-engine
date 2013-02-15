@@ -58,24 +58,7 @@ struct VertexShaderOutput
 	float2 TexCoord : TEXCOORD0;
 };
 
-float g_fMiddleGrey = 0.6f; 
-float g_fMaxLuminance = 16.0f; 
-
 static const float3 LUM_CONVERT = float3(0.299f, 0.587f, 0.114f); 
-
-float3 ToneMap(float3 vColor) 
-{
-	// Get the calculated average luminance 
-	float fLumAvg = 0.03f;//tex2D(diffuseSampler, float2(0.5f, 0.5f)).r;     
-
-	// Calculate the luminance of the current pixel 
-	float fLumPixel = dot(vColor, LUM_CONVERT);     
-
-	// Apply the modified operator (Eq. 4) 
-	float fLumScaled = (fLumPixel * g_fMiddleGrey) / fLumAvg;     
-	float fLumCompressed = (fLumScaled * (1 + (fLumScaled / (g_fMaxLuminance * g_fMaxLuminance)))) / (1 + fLumScaled); 
-	return fLumCompressed * vColor; 
-} 
 
 VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 {
@@ -114,7 +97,7 @@ float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 	if (includeSSAO >= 1)
 		ssao = tex2D(ssaoSampler, input.TexCoord);
 
-	light *= ssao;
+	light *= ssao + float4(ambientTerm, 1);
 
 	float4 finalColor = float4(light.rgb * diffuse + specular, diffuse.a);
 
@@ -122,7 +105,7 @@ float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 	float4 fogColor = float4(0.3, 0.5, 0.92, 1);
 
 	float depth = tex2D(depthSampler, input.TexCoord);
-	if (depth < 0.999999f)
+	if (diffuse.a > 0.999f)
 		finalColor.rgb = lerp(finalColor.rgb, fogColor, pow(depth, 1000));
 
 	// Gamma correct inverse
@@ -190,7 +173,7 @@ technique Technique2
 {
     pass Pass0
     {
-        VertexShader = compile vs_2_0 VertexShaderFunction();
-        PixelShader = compile ps_2_0 PixelShaderStippled();
+        VertexShader = compile vs_3_0 VertexShaderFunction();
+        PixelShader = compile ps_3_0 PixelShaderStippled();
     }
 }
