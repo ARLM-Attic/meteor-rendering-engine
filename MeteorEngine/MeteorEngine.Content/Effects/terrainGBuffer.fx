@@ -6,8 +6,8 @@ float textureScale;
 float mapScale;
 float clipLevel;
 
-texture Texture, heightMapTexture;
-texture NormalMap;
+texture Texture, NormalMap;
+texture heightMapTexture;
 
 sampler diffuseSampler : register(s0) = sampler_state
 {
@@ -17,7 +17,7 @@ sampler diffuseSampler : register(s0) = sampler_state
 	AddressV = Wrap;
 };
 
-sampler heightSampler : register(s0) = sampler_state
+sampler heightSampler : register(s1) = sampler_state
 {
     Texture = <heightMapTexture>;
 	Filter = MIN_MAG_MIP_LINEAR;
@@ -38,6 +38,8 @@ struct VertexTerrainInput
     float4 Position : POSITION0;
     float3 Normal : NORMAL0;
     float2 TexCoord : TEXCOORD0;
+	float3 binormal : BINORMAL0;
+    float3 tangent : TANGENT0;
 };
 
 struct VertexTerrainOutput
@@ -47,6 +49,8 @@ struct VertexTerrainOutput
     float3 Depth : TEXCOORD1;
 	float3 Normal : TEXCOORD2;
 	float4 NewPosition : TEXCOORD3;
+    float3 P : TEXCOORD4;
+    float3 N : TEXCOORD5;
 };
 
 //--- VertexShaders ---//
@@ -70,6 +74,9 @@ VertexTerrainOutput VertexShaderTerrain(VertexTerrainInput input)
     output.Depth.x = output.Position.z;// - 100.f; // Subtract to make color more visible
     output.Depth.y = output.Position.w;
 	output.Depth.z = output.Position.z;
+
+    output.P = mul(input.Position, World);
+	output.N = mul(input.Normal, (float3x3)World);
 
     return output;
 }
@@ -114,6 +121,22 @@ float4 TriplanarMapping(VertexTerrainOutput input, float scale = 1)
 	return diffuse;
 }
 
+float3x3 ComputeTangentFrame(float3 normal, float3 position, float2 texCoord)
+{
+	float3 dp1 = ddx(position);
+	float3 dp2 = ddy(position);
+	float2 duv1 = ddx(texCoord);
+	float2 duv2 = ddy(texCoord);
+
+	float3x3 M = float3x3(dp1, dp2, cross(dp1, dp2));
+	float2x3 inverseM = float2x3( cross( M[1], M[2] ), cross(M[2], M[0]));
+
+	float3 T = mul(float2(duv1.x, duv2.x), inverseM);
+	float3 B = mul(float2(duv1.y, duv2.y), inverseM);
+
+	return float3x3(normalize(T), normalize(B), normal);
+}
+
 PixelShaderOutput1 PixelTerrainGBuffer(VertexTerrainOutput input)
 {
     PixelShaderOutput1 output = (PixelShaderOutput1)1;
@@ -127,11 +150,21 @@ PixelShaderOutput1 PixelTerrainGBuffer(VertexTerrainOutput input)
 	output.Color = lerp(color, blendedColor, depth);
 	output.Color.a = 1;
 
+    // calculate tangent space to world space matrix using the world space tangent,
+    // binormal, and normal as basis vectors.
+
+	float3x3 tbn = ComputeTangentFrame(input.N, input.P, input.TexCoord);
+    float3x3 tangentToWorld;
+
+    tangentToWorld[0] = mul(tbn[0], World);
+    tangentToWorld[1] = mul(tbn[1], World);
+    tangentToWorld[2] = mul(tbn[2], World);
+
     // Output the normal, in [0,1] space
     float3 normalFromMap = tex2D(normalMapSampler, input.TexCoord);
 
 	//get normal into world space
-    normalFromMap = input.Normal;	
+    normalFromMap = mul(normalFromMap, tangentToWorld);	
     normalFromMap = normalize(mul(normalFromMap, View));
     output.Normal.rgb = 0.5f * (normalFromMap + 1.0f);
 

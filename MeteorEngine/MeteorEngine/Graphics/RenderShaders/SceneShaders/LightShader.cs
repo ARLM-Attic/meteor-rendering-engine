@@ -12,27 +12,17 @@ namespace Meteor.Rendering
 		/// Light pass
 		RenderTarget2D lightRT;
 
-		/// Shadow pass
-		RenderTarget2D depthRT;
-
 		/// Handles directional lights
 		Effect directionalLightEffect;
 
 		/// Handles point lights
-		Effect pointLightEffect;
-
-		/// Create shadow maps
-		Effect depthEffect;
-		Effect terrainDepthEffect;
+		Effect pointLightEffect;	
 
 		/// Sphere used for point lighting
 		Model sphereModel;
 
 		/// Debug point lights
 		public bool stippled = false;
-			
-		/// Measures the next time to update some shadow maps
-		int shadowUpdateTimer = 0;	
 
 		/// Camera to represent viewpoint of light
 		Camera lightCamera;
@@ -51,7 +41,7 @@ namespace Meteor.Rendering
 		Vector3 ambientTerm;
 
 		/// Ratio of linear to logarithmic split in view cascades
-		public float splitLambda = 0.75f;
+		public float splitLambda = 0.9f;
 
 		Matrix[] lightViewProj;
 		Matrix[] lightProjection;
@@ -98,15 +88,9 @@ namespace Meteor.Rendering
 			halfPixel.X = 0.5f / (float)(backBufferWidth * bufferScaling);
 			halfPixel.Y = 0.5f / (float)(backBufferHeight * bufferScaling);
 
-			// Light and combined effect targets
-			depthRT = profile.AddRenderTarget(shadowMapSize * mapsPerRow, shadowMapSize * mapsPerCol,
-				SurfaceFormat.Single, DepthFormat.Depth24);
+			outputTargets = new RenderTarget2D[] { lightRT };
 
-			outputTargets = new RenderTarget2D[]
-			{
-				lightRT, depthRT
-			};
-
+			// Configure camera for directional light
 			lightCamera = new Camera();
 			lightCamera.farPlaneDistance = 1000f;
 			lightCamera.Initialize(shadowMapSize, shadowMapSize);
@@ -118,9 +102,6 @@ namespace Meteor.Rendering
 			directionalLightEffect = content.Load<Effect>("directionalLight");
 			pointLightEffect = content.Load<Effect>("pointLight");
 
-			// Load shadow mapping shader effects
-			depthEffect = content.Load<Effect>("depth");
-			terrainDepthEffect = content.Load<Effect>("terrainDepth");
 
 			// Set constant parameters
 			directionalLightEffect.Parameters["halfPixel"].SetValue(halfPixel);
@@ -136,14 +117,10 @@ namespace Meteor.Rendering
 
 		public override RenderTarget2D[] Draw()
 		{
-			renderStopWatch.Reset();
-			renderStopWatch.Restart();	
+			renderStopWatch.Start();	
 
 			if (inputTargets != null)
 			{
-				// Draw the shadow maps
-				DrawDirectionalLightShadows(scene, camera);
-
 				// Set render states for light mapping
 				graphicsDevice.BlendState = additiveBlendState;
 				graphicsDevice.SetRenderTarget(lightRT);
@@ -153,14 +130,9 @@ namespace Meteor.Rendering
 				// Make some lights
 				DrawDirectionalLights(scene, camera, inputTargets);
 
-				graphicsDevice.BlendState = BlendState.AlphaBlend;
-
 				if (scene.totalLights > 0)
 					DrawPointLights(scene, camera, inputTargets);
 			}
-			
-			// Increment the shadow update time
-			shadowUpdateTimer = 1 - shadowUpdateTimer;
 
 			renderStopWatch.Stop();
 			return outputs;
@@ -197,7 +169,6 @@ namespace Meteor.Rendering
 
 			ambientTerm = scene.ambientLight;
 			directionalLightEffect.Parameters["ambientTerm"].SetValue(ambientTerm);
-			int j = 0;
 
 			foreach (DirectionLight light in scene.directionalLights)
 			{
@@ -217,9 +188,9 @@ namespace Meteor.Rendering
 					directionalLightEffect.Parameters["shadowMapPixelSize"].SetValue(shadowMapPixelSize);
 					directionalLightEffect.Parameters["shadowMapSize"].SetValue(shadowMapSize);
 
-					// Calculate view projection matrices for shadow map views
 					float[] splitNearFar = new float[numCascades];
 
+					// Calculate view projection matrices for each shadow map cascade
 					for (int i = 0; i < numCascades; i++)
 					{
 						// Set shadow distance limit scale
@@ -236,8 +207,7 @@ namespace Meteor.Rendering
 					directionalLightEffect.Parameters["cascadeSplits"].SetValue(splitNearFar);
 					directionalLightEffect.Parameters["lightViewProj"].SetValue(lightViewProj);
 					directionalLightEffect.Parameters["lightProjection"].SetValue(lightProjection);
-					directionalLightEffect.Parameters["shadowMap"].SetValue(depthRT);
-					j++;
+					directionalLightEffect.Parameters["shadowMap"].SetValue(targets[3]);
 				}
 				else
 				{
@@ -248,68 +218,6 @@ namespace Meteor.Rendering
 
 				pass.Apply();
 				quadRenderer.Render(Vector2.One * -1, Vector2.One);
-			}
-		}
-
-		/// <summary>
-		/// Draw the shadow maps for directional lights
-		/// </summary>
-
-		private void DrawDirectionalLightShadows(Scene scene, Camera camera)
-		{
-			int lightID = 0;
-
-			foreach (DirectionLight light in scene.directionalLights)
-			{
-				if (light.castsShadows)
-				{
-					float yaw = (float)Math.Atan2(light.direction.X, light.direction.Y);
-					float pitch = (float)Math.Atan2(light.direction.Z,
-						Math.Sqrt((light.direction.X * light.direction.X) +
-								  (light.direction.Y * light.direction.Y)));
-
-					lightCamera.SetOrientation(new Vector2(yaw, pitch));
-					lightCamera.Update();
-
-					graphicsDevice.SetRenderTarget(depthRT);
-					graphicsDevice.Clear(Color.White);
-					graphicsDevice.BlendState = BlendState.Opaque;
-					graphicsDevice.DepthStencilState = DepthStencilState.Default;
-
-					for (int cascade = 0; cascade < numCascades; cascade++)
-					{	
-						// Skip update of far shadow cascades in intervals
-						//if (cascade >= 1 && shadowUpdateTimer == 0)
-						//	break;
-
-						// Set camera's near and far view distance
-						camera.GetFrustumSplit(cascade, numCascades, splitLambda);
-
-						// Adjust viewport settings to draw to the correct portion
-						// of the render target
-						Viewport viewport = graphicsDevice.Viewport;
-						viewport.Width = shadowMapSize;
-						viewport.Height = shadowMapSize;
-						viewport.X = shadowMapSize * (cascade % mapsPerRow);
-						viewport.Y = shadowMapSize * (cascade / mapsPerRow);
-						graphicsDevice.Viewport = viewport;
-
-						// Update view matrices
-						CreateLightViewProjMatrix(light.direction, lightCamera);
-						terrainDepthEffect.Parameters["LightViewProj"].SetValue(lightCamera.View * lightCamera.Projection);
-
-						// Draw the terrain here
-						//sceneRenderer.DrawTerrainDefault(scene, lightCamera, terrainDepthEffect);
-
-						depthEffect.Parameters["LightViewProj"].SetValue(lightCamera.View * lightCamera.Projection);
-						depthEffect.Parameters["nearClip"].SetValue(lightCamera.nearPlaneDistance);
-
-						// Cull models from this point of view
-						sceneRenderer.CullModelMeshes(scene, lightCamera);
-						sceneRenderer.Draw(scene, depthEffect);
-					}
-					lightID++;
-				}
 			}
 		}
 
@@ -391,7 +299,7 @@ namespace Meteor.Rendering
 
 			// Create the projection matrix for the light
 			// The projection is orthographic since we are using a directional light
-			float nearScale = 2.5f;
+			float nearScale = 5f;
 			lightCamera.Projection =
 				Matrix.CreateOrthographic(boxSize.X, boxSize.Y, -boxSize.Z * nearScale, boxSize.Z / 2f);
 

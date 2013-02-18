@@ -116,27 +116,6 @@ namespace MeteorEngine {
             }
         }
         
-        internal static byte[] null_color {
-            get {
-                object obj = ResourceManager.GetObject("null_color", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        internal static byte[] null_normal {
-            get {
-                object obj = ResourceManager.GetObject("null_normal", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        internal static byte[] null_specular {
-            get {
-                object obj = ResourceManager.GetObject("null_specular", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
         internal static byte[] pointLight {
             get {
                 object obj = ResourceManager.GetObject("pointLight", resourceCulture);

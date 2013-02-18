@@ -134,7 +134,6 @@ float4 LightingFunction(VertexShaderOutput input, half2 texCoord) : COLOR0
 	float3 diffuse = ndl * input.Color.rgb;
 
 	float4 output = float4(diffuse, specLight) * attenuation * lightIntensity;
-
 	return output;
 }	
 

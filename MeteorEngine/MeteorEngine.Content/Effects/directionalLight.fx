@@ -48,7 +48,7 @@ sampler specularSampler : register(s2) = sampler_state
 
 sampler depthSampler : register(s4) = sampler_state
 {
-	Filter = MIN_MAG_MIP_LINEAR;
+	Filter = MIN_MAG_MIP_POINT;
 	AddressU = Clamp;
 	AddressV = Clamp;
 	Texture = <depthMap>;
@@ -84,7 +84,7 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
     return output;
 }
 
-float DepthBias = 0.001f;
+float DepthBias = 0.0005f;
 
 /// Poisson disk samples used for shadow filtering
 
@@ -115,29 +115,27 @@ float2 poissonDisk[24] = {
 	float2(-0.9310728f, 0.3289311f)
 };
 
+#define TOTAL_SAMPLES 16
+
 float3 PoissonDiscFilter(sampler smp, float3 ambient, float2 texCoord, float ourdepth)
 {	
 	// Get the current depth stored in the shadow map
-	float4 samples[24]; 
+	float4 samples[TOTAL_SAMPLES]; 
 
 	float shadow = 0;
-	float spread = 1.7f;
-	float totalSamples = 10;
+	float sampleDiscSize = 1.7f;
+	float2 pixelSize = shadowMapPixelSize * sampleDiscSize;
 
-	//float blockerDistance = saturate(
-	//	ourdepth - tex2D(smp, texCoord + shadowMapPixelSize).r);
-	//blockerDistance = pow(blockerDistance * 5.f, 2) * 100.f;
-
-	float2 pixelSize = shadowMapPixelSize * spread;
+	// Pseudo-random number to dither the maps
 
 	[unroll]
-	for (int i = 0; i < totalSamples; i++)
+	for (int i = 0; i < TOTAL_SAMPLES; i++)
 	{
 		samples[i] = tex2D(smp, texCoord + poissonDisk[i] * pixelSize).r > ourdepth;
 		shadow += samples[i];
 	}
 
-	shadow /= (totalSamples + 1);
+	shadow /= (TOTAL_SAMPLES + 1);
 	return shadow + ambientTerm;
 }
 
@@ -150,26 +148,27 @@ float4 DirectionalLightPS(VertexShaderOutput input, float4 position) : COLOR0
 
 	// Get specular data
 
-	float specPower = 10.f;//normalData.a * 255;
-	float3 specIntensity = 0;//normalData.a;
+	float specPower = 20.f;//normalData.a * 255;
+	float3 specIntensity = normalData.a;
 
 	float3 lightDir = -normalize(lightDirection);
 
 	// Reflection data
 
-	//float selfShadow = saturate(dot(lightDir, normal));
 	float3 reflection = normalize(reflect(-lightDir, normal)); 
 	float3 directionToCamera = normalize(camPosition - position);
 
 	// Compute the final specular factor
 	// Compute diffuse light
 	
+	float3 halfAngle = normalize(lightDir + directionToCamera);
+	float ndh = saturate(dot(normal, halfAngle));
 	float ndl = saturate(dot(normal, lightDir));
-	ndl = ambientTerm + (ndl * (1 - ambientTerm));
-	float3 diffuse = ndl * lightColor;
 
-	float specLight = specIntensity * 
-		pow(saturate(dot(directionToCamera, reflection)), specPower);
+	//ndl = ambientTerm + ndl; // (ndl * (1 - ambientTerm));
+
+	float3 diffuse = ambientTerm + ndl * lightColor;
+	float specLight = specIntensity * pow(ndh, specPower) * ((specPower + 8.0f) / (8.0f * 3.14159265f));
 
 	return float4(diffuse * lightIntensity, specLight * lightIntensity);
 }
@@ -269,7 +268,7 @@ float4 PixelShaderShadowed(VertexShaderOutput input) : COLOR0
 	// from the next cascade for a smoother transition. This reduces the
 	// 'pop' or seam visible where the cascades are split.
 	float minDistance = cascadeSplits[shadowIndex] * 0.8f;
-	
+
 	if (linearZ > minDistance)
 	{
 		// Get second shadow map position projected in light view
@@ -278,6 +277,7 @@ float4 PixelShaderShadowed(VertexShaderOutput input) : COLOR0
 
 		// Get shadow value from next cascade and blend the results
 		float3 shadow2 = FindShadow(shadowMapPos2, shadowIndex + 1, normal);
+
 		shadow = lerp(shadow, shadow2, relDistance);
 	}
 	

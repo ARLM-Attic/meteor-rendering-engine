@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Content;
@@ -11,16 +10,17 @@ namespace Meteor.Rendering
         /// Final combined pass
         RenderTarget2D dofRT;
 
+		/// The blurred image to blend with the original
 		RenderTarget2D blurFactorRT;
 
-        /// Combines lights with diffuse color
+        /// DOF effect shader
         Effect blurEffect;
 
 		/// Focal distance
 		public float focalDistance = 0.01f;
 
 		/// Range of focus
-		public float focalRange = 0.85f;
+		public float focalRange = 0.5f;
 
 		public DepthOfFieldShader(RenderProfile profile, ResourceContentManager content)
             : base(profile, content)

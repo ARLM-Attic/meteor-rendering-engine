@@ -142,15 +142,6 @@
   <data name="fxaa" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>bin\x86\Debug\MeteorEngine.Content\Effects\fxaa.xnb;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="null_color" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>bin\x86\Debug\MeteorEngine.Content\null_color.xnb;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="null_normal" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>bin\x86\Debug\MeteorEngine.Content\null_normal.xnb;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="null_specular" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>bin\x86\Debug\MeteorEngine.Content\null_specular.xnb;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
   <data name="pointLight" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>bin\x86\Debug\MeteorEngine.Content\Effects\pointLight.xnb;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>

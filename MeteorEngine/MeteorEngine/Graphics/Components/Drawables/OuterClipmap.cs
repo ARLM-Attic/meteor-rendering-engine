@@ -7,13 +7,16 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace Meteor.Resources
 {
+	/// <summary>
+	/// Creates and updates the outer level geo clipmaps
+	/// </summary>
 	class OuterClipmap
 	{
 		/// Last recorded center position of the clipmap, in map coordinates
 		private Vector2 lastMapCenter;
 
 		/// Height and width (in tiles) for each clip map
-		private int clipLevelSize = 48;
+		private int clipLevelSize = 64;
 
 		/// Size of heightmap units to scale and snap the grid to
 		private int gridUnitSize;
@@ -37,7 +40,7 @@ namespace Meteor.Resources
 		/// the vertices that have changed since the last frame, for quicker
 		/// vertex buffer insertion.
 		/// </summary>
-		private VertexPositionNormalTexture[] vertices;
+		private VertexPositionTangentToWorld[] vertices;
 		private int updatedVertices;
 		public int UpdatedVertices
 		{
@@ -63,9 +66,9 @@ namespace Meteor.Resources
 			clipLevelSize = levelSize;
 
 			// Create vertex buffer for clip map root
-			vertices = new VertexPositionNormalTexture[(clipLevelSize + 1) * (clipLevelSize + 1)];
+			vertices = new VertexPositionTangentToWorld[(clipLevelSize + 1) * (clipLevelSize + 1)];
 			clipmapVB = new DynamicVertexBuffer(graphicsDevice,
-				VertexPositionNormalTexture.VertexDeclaration, vertices.Length, BufferUsage.WriteOnly);
+				VertexPositionTangentToWorld.terrainVertexDeclaration, vertices.Length, BufferUsage.WriteOnly);
 
 			// Create index buffer for clip map root
 			indices = new int[clipLevelSize * clipLevelSize * 6];

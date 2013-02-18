@@ -15,6 +15,9 @@ namespace Meteor.Rendering
 
 		/// Used to draw scenes
 		protected SceneRenderer sceneRenderer;
+		
+		/// Used to cull scenes
+		protected SceneCuller sceneCuller;
 
 		// Backbuffer size for render targets
 		protected int backBufferWidth;
@@ -47,14 +50,11 @@ namespace Meteor.Rendering
 
 		// How much to upscale some rendertargets
 		// and downscale to the render buffer
-		protected float bufferScaling = 1.5f;
+		protected float bufferScaling = 1f;
 
 		public virtual RenderTarget2D[] outputs
 		{
-			get
-			{
-				return outputTargets;
-			}
+			get { return outputTargets; }
 		}
 
 		// Texture pixel offset
@@ -90,6 +90,8 @@ namespace Meteor.Rendering
 			// Setup rendering components
 			quadRenderer = new QuadRenderComponent(graphicsDevice);
 			sceneRenderer = new SceneRenderer(graphicsDevice, content);
+			sceneCuller = new SceneCuller();
+
 			LoadContent();
 		}
 

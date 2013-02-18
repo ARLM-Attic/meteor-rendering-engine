@@ -13,7 +13,9 @@ texture EnvironmentMap;
 sampler diffuseSampler : register(s0) = sampler_state
 {
     Texture = <Texture>;
-	Filter = MIN_MAG_MIP_LINEAR;
+	MinFilter = Anisotropic;
+	MagFilter = Anisotropic;
+	MipFilter = Linear;
 	AddressU = Wrap;
 	AddressV = Wrap;
 };

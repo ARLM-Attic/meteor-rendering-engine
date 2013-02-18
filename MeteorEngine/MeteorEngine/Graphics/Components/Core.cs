@@ -183,7 +183,9 @@ namespace Meteor
 			sceneRenderer = new SceneRenderer(graphicsDevice, resxContent);
 			quadRenderer = new QuadRenderComponent(graphicsDevice);
 
-			nullTexture = resxContent.Load<Texture2D>("null_color");
+			Color[] whitePixel = { Color.White };
+			nullTexture = new Texture2D(graphicsDevice, 1, 1);
+			nullTexture.SetData<Color>(whitePixel);
         }
 
 		/// <summary>

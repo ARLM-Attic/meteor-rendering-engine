@@ -6,6 +6,40 @@ using Microsoft.Xna.Framework.Graphics;
 namespace Meteor.Resources
 {
 	/// <summary>
+	/// Vertex structure for normal mapped terrain
+	/// </summary>
+
+	public struct VertexPositionTangentToWorld
+	{
+		public Vector3 Position;
+		public Vector3 Normal;
+		public Vector2 TextureCoordinate;
+		public Vector3 Tangent;
+		public Vector3 Binormal;
+
+		public static VertexDeclaration terrainVertexDeclaration = new VertexDeclaration
+		(
+			new VertexElement(0, VertexElementFormat.Vector3, VertexElementUsage.Position, 0),
+			new VertexElement(sizeof(float) * 3, VertexElementFormat.Vector3, VertexElementUsage.Normal, 0),
+			new VertexElement(sizeof(float) * 6, VertexElementFormat.Vector2, VertexElementUsage.TextureCoordinate, 0),
+			new VertexElement(sizeof(float) * 8, VertexElementFormat.Vector3, VertexElementUsage.Tangent, 0),
+			new VertexElement(sizeof(float) * 11, VertexElementFormat.Vector3, VertexElementUsage.Binormal, 0)
+		);
+
+		public VertexPositionTangentToWorld(Vector3 position, Vector3 normal, Vector2 textureCoordinate,
+			Vector3 tangent, Vector3 binormal)
+		{
+			Position = position;
+			Normal = normal;
+			TextureCoordinate = textureCoordinate;
+			Tangent = tangent;
+			Binormal = binormal;
+		}
+
+		public static int SizeInBytes { get { return sizeof(float) * 14; } }
+	}
+
+	/// <summary>
 	/// Class that stores original terrain heightmap info and clipmaps
 	/// to visually represent it.
 	/// </summary>
@@ -26,13 +60,13 @@ namespace Meteor.Resources
 		private short[,] heightData;
 
 		/// Amount to scale heightmap by
-		private float scale;
+		public float scale;
 
 		/// Amount to scale heightmap textures by
-		private float textureScale = 10f;
+		public float textureScale = 10f;
 
 		/// Primary texture to apply to the terrain mesh
-		private Texture2D mainTexture, heightMapTexture;
+		private Texture2D mainTexture, normalTexture, heightMapTexture;
 
 		/// The innermost (level 0) geo clipmap to render the terrain with
 		private InnerClipmap innerClipMap;
@@ -61,10 +95,11 @@ namespace Meteor.Resources
 		/// Create a heightmap from a grayscale image
 		/// </summary>
 		
-		public void GenerateFromImage(string image, string texture)
+		public void GenerateFromImage(String image, String texture, String normalTex)
 		{
 			heightMapTexture = content.Load<Texture2D>(image);
 			mainTexture = content.Load<Texture2D>(texture);
+			normalTexture = content.Load<Texture2D>(normalTex);
 
 			terrainWidth = heightMapTexture.Width;
 			terrainHeight = heightMapTexture.Height;
@@ -93,10 +128,10 @@ namespace Meteor.Resources
 			//SetUpIndices();
 
 			// Setup the clip maps
-			int clipMapSize = 96;
+			int clipMapSize = 80;
 
 			innerClipMap = new InnerClipmap(clipMapSize, graphicsDevice);
-			outerClipMaps = new OuterClipmap[5];
+			outerClipMaps = new OuterClipmap[4];
 
 			for (int i = 0; i < outerClipMaps.Length; i++)
 				outerClipMaps[i] = new OuterClipmap(i + 1, clipMapSize, graphicsDevice);
@@ -207,7 +242,8 @@ namespace Meteor.Resources
 			//graphicsDevice.RasterizerState = rWireframeState;
 
 			effect.Parameters["Texture"].SetValue(mainTexture);
-			effect.Parameters["heightMapTexture"].SetValue(heightMapTexture);
+			if (normalTexture != null && effect.CurrentTechnique != effect.Techniques["Default"])
+				effect.Parameters["NormalMap"].SetValue(normalTexture);
 
 			// Special texture effects
 			effect.Parameters["textureScale"].SetValue(textureScale);

@@ -24,7 +24,7 @@ namespace Meteor.Rendering
 		public int totalPolys;
 
 		/// Farthest depth value to render scene from.
-		const float farDepth = 0.999995f;
+		const float farDepth = 0.99999f;
 
 		/// Resources used for loading and rendering scene content
 		ContentManager content;
@@ -61,9 +61,19 @@ namespace Meteor.Rendering
             shaderTechnique = "GBuffer";
 			currentEffect = null;
 
-			blankNormal = content.Load<Texture2D>("null_normal");
-			blankTexture = content.Load<Texture2D>("null_color");
-			blankSpecular = content.Load<Texture2D>("null_specular");
+			blankNormal = new Texture2D(device, 1, 1);//content.Load<Texture2D>("null_normal");
+			blankTexture = new Texture2D(device, 1, 1); //content.Load<Texture2D>("null_color");
+			blankSpecular = new Texture2D(device, 1, 1);//content.Load<Texture2D>("null_specular");
+
+			// Create the dummy textures
+			Color[][] pixels = new Color[3][];
+			pixels[0] = new Color[] { Color.White};
+			pixels[1] = new Color[] { Color.Transparent}; 
+			pixels[2] = new Color[] { new Color(0.5f, 0.5f, 1.0f, 1.0f) };
+
+			blankTexture.SetData<Color>(pixels[0]);
+			blankSpecular.SetData<Color>(pixels[1]);
+			blankNormal.SetData<Color>(pixels[2]);
 
 			// Helper for drawing debug shapes
 			ShapeRenderer.Initialize(graphicsDevice);
@@ -90,20 +100,6 @@ namespace Meteor.Rendering
 		}
 
 		/// <summary>
-		/// Check for meshes that are outside the view frustum.
-		/// </summary>
-
-		public void CullModelMeshes(Scene scene, Camera camera)
-		{
-			scene.visibleMeshes = 0;
-			scene.culledMeshes = 0;
-
-			SceneCuller.CullFromList(camera, scene.staticModels);
-			SceneCuller.CullFromList(camera, scene.skinnedModels);
-			SceneCuller.CullFromList(camera, scene.blendModels);
-		}
-
-		/// <summary>
 		/// Draw the entire scene to the GBuffer
 		/// </summary>
 		/// <param name="camera"></param>
@@ -117,8 +113,19 @@ namespace Meteor.Rendering
 			graphicsDevice.BlendState = blendState;
 			graphicsDevice.RasterizerState = RasterizerState.CullNone;
 
+			// Early Z-pass test
+			/*
+			DepthStencilState d = new DepthStencilState();
+			d.DepthBufferEnable = true;
+			d.DepthBufferWriteEnable = true;
+			graphicsDevice.DepthStencilState = d;
+
+			BlendState b = new BlendState();
+			b.ColorWriteChannels = ColorWriteChannels.None;
+			graphicsDevice.BlendState = b;
+			*/
 			totalPolys = 0;
-			scene.totalPolys = 0;
+			//scene.totalPolys = 0;
 
 			// Update the viewport for proper rendering order
 
@@ -156,7 +163,6 @@ namespace Meteor.Rendering
 			graphicsDevice.Viewport = viewport;
 			graphicsDevice.RasterizerState = RasterizerState.CullNone;
 
-			graphicsDevice.SetVertexBuffer(null);
 			currentEffect = effect;
 
 			foreach (InstancedModel instancedModel in scene.staticModels.Values)
@@ -274,7 +280,13 @@ namespace Meteor.Rendering
 						currentEffect.Parameters["bones"].SetValue(tempBones);
 
 					if (instancedModel.Textures[meshIndex] != null)
+					{
 						currentEffect.Parameters["Texture"].SetValue(instancedModel.Textures[meshIndex]);
+					}
+					else
+					{
+						currentEffect.Parameters["Texture"].SetValue(blankTexture);
+					}
 
 					DrawInstancedMeshPart(meshPart, instanceGroup);
 					meshIndex++;
@@ -369,6 +381,8 @@ namespace Meteor.Rendering
 					meshPart.NumVertices, meshPart.StartIndex,
 					meshPart.PrimitiveCount, instanceGroup.totalVisible);
 			}
+			// Add to the scene's polygon count
+			totalPolys += meshPart.NumVertices * instanceGroup.totalVisible;
 		}
 		
 		/// <summary>
@@ -390,9 +404,9 @@ namespace Meteor.Rendering
 				return;
 			
 			// Make skybox visible and copy instance data
-			scene.Skybox.MeshInstanceGroups["DefaultName"].totalVisible = 1;
-			scene.Skybox.MeshInstanceGroups["DefaultName"].visibleInstances[0] =
-				scene.Skybox.MeshInstanceGroups["DefaultName"].instances[0];
+			scene.Skybox.MeshInstanceGroups["DefaultName_0"].totalVisible = 1;
+			scene.Skybox.MeshInstanceGroups["DefaultName_0"].visibleInstances[0] =
+				scene.Skybox.MeshInstanceGroups["DefaultName_0"].instances[0];
 
 			scene.Skybox.Translate(camera.Position);
 			DrawModel(scene.Skybox, camera, this.shaderTechnique);
@@ -406,8 +420,6 @@ namespace Meteor.Rendering
 		{
 			if (scene.debug == true)
 			{
-				CullModelMeshes(scene, camera);
-
 				basicEffect.View = camera.View;
 				basicEffect.Projection = camera.Projection;
 
@@ -506,7 +518,7 @@ namespace Meteor.Rendering
 					if (camera.Frustum.Contains(meshInstance.BSphere) != ContainmentType.Disjoint)
 					{
 						// Add a bounding sphere to the list of shapes to draw
-						ShapeRenderer.AddBoundingSphere(meshInstance.BSphere, Color.Red);
+						//ShapeRenderer.AddBoundingSphere(meshInstance.BSphere, Color.Red);
 						
 						for (int i = 0; i < basicEffect.CurrentTechnique.Passes.Count; i++)
 						{

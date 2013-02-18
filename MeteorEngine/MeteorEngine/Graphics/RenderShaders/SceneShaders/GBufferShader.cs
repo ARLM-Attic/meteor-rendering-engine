@@ -6,11 +6,12 @@ using Microsoft.Xna.Framework.Content;
 
 namespace Meteor.Rendering
 {
+	/// <summary>
+	/// Effect class for a regular GBuffer, containing diffuse/albedo rendertarget.
+	/// Other GBuffer targets and the clear GBuffer effect are inherited from SmallGBuffer.
+	/// </summary>
 	public class GBufferShader : SmallGBufferShader
 	{
-		/// Other GBuffer targets and the clear Effect
-		/// are inherited from SmallGBuffer
-
 		/// Color and specular intensity
 		RenderTarget2D diffuseRT;
 
@@ -22,7 +23,6 @@ namespace Meteor.Rendering
 			: base(profile, content)
 		{
 			// Diffuse/albedo render target
-
 			diffuseRT = profile.AddRenderTarget(
 				(int)(backBufferWidth * bufferScaling),
 				(int)(backBufferHeight * bufferScaling), 
@@ -66,8 +66,8 @@ namespace Meteor.Rendering
 			quadRenderer.Render(Vector2.One * -1, Vector2.One);
 
 			// Cull the objects
-			SceneCuller.CullLights(scene, camera);
-			sceneRenderer.CullModelMeshes(scene, camera);
+			sceneCuller.CullLights(scene, camera);
+			sceneCuller.CullModelMeshes(scene, camera);
 
 			// Render the scene
 			sceneRenderer.UseTechnique("GBufferTerrain");
@@ -76,17 +76,20 @@ namespace Meteor.Rendering
 			sceneRenderer.UseTechnique("GBuffer");
 			sceneRenderer.Draw(scene, camera);
 
-			// Render the skybox
-			// Update the sampler state
+			// Render the skybox and update the sampler state
 			graphicsDevice.SamplerStates[0] = SamplerState.LinearClamp;
 			sceneRenderer.UseTechnique("Skybox");
 			sceneRenderer.DrawSkybox(scene, camera);
 
 			renderStopWatch.Stop();
-
 			return outputTargets;
 		}
 	}
+
+	/// <summary>
+	/// A smaller GBuffer class, with only depth and normal data rendertargets.
+	/// Mostly useful for light pre-pass rendering.
+	/// </summary>
 
 	public class SmallGBufferShader : BaseShader
 	{
@@ -168,8 +171,8 @@ namespace Meteor.Rendering
 			quadRenderer.Render(Vector2.One * -1, Vector2.One);
 
 			// Cull objects
-			SceneCuller.CullLights(scene, camera);
-			sceneRenderer.CullModelMeshes(scene, camera);
+			sceneCuller.CullLights(scene, camera);
+			sceneCuller.CullModelMeshes(scene, camera);
 
 			// Render the scene
 			sceneRenderer.UseTechnique("SmallGBufferTerrain");

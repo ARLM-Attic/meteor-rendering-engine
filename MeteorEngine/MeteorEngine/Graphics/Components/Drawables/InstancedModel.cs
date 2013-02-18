@@ -35,13 +35,13 @@ namespace Meteor.Resources
 		/// <summary>
 		/// Default constructor
 		/// </summary>
-		public MeshInstanceGroup(string name)
+		public MeshInstanceGroup()
 		{
 			instances = new List<MeshInstance>();
 			visibleInstances = new List<MeshInstance>();
 			tempTransforms = new Matrix[1];
 
-			meshName = name;
+			meshName = "default";
 		}
 	}
 
@@ -113,17 +113,18 @@ namespace Meteor.Resources
 			// Add model matrices
 			boneMatrices = new Matrix[model.Bones.Count];
 			model.CopyAbsoluteBoneTransformsTo(boneMatrices);
+			int index = 0;
 
 			// Extract textures and create bounding boxes
 			foreach (ModelMesh mesh in model.Meshes)
 			{
 				string meshName = mesh.Name;
 
-				if (mesh.Name == null)
-					meshName = "DefaultName";
+				if (mesh.Name == null || mesh.Name == "(null)")
+					meshName = "DefaultName_" + index++;
 
 				// Add mesh Instance Group
-				meshInstanceGroups.Add(meshName, new MeshInstanceGroup(meshName));
+				meshInstanceGroups.Add(meshName, new MeshInstanceGroup());
 
 				// Build bounding volumes
 				Matrix meshTransform = boneMatrices[mesh.ParentBone.Index];
@@ -260,6 +261,23 @@ namespace Meteor.Resources
 				instanceGroup.visibleInstances.Add(null);
 
 				Array.Resize(ref instanceGroup.tempTransforms, instanceGroup.tempTransforms.Length + 1);
+			}
+
+			return this;
+		}
+
+		/// <summary>
+		/// Add a number of new instances with default transformation.
+		/// </summary>
+
+		public InstancedModel NewInstances(int capacity)
+		{
+			foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups.Values)
+			{
+				instanceGroup.instances.AddRange(new List<MeshInstance>(capacity));
+				instanceGroup.visibleInstances.AddRange(new List<MeshInstance>(capacity));
+
+				Array.Resize(ref instanceGroup.tempTransforms, instanceGroup.tempTransforms.Length + capacity);
 			}
 
 			return this;

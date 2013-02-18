@@ -169,7 +169,7 @@ float4 SetThreshold(VertexShaderOutput input) : COLOR0
 }
 
 // Helper for modifying the saturation of a color.
-float4 AdjustSaturation(float4 color, float saturation)
+float3 AdjustSaturation(float3 color, float saturation)
 {
     // The constants 0.3, 0.59, and 0.11 are chosen because the
     // human eye is more sensitive to green light, and less to blue.
@@ -180,16 +180,17 @@ float4 AdjustSaturation(float4 color, float saturation)
 
 float4 AddBloom(VertexShaderOutput input) : COLOR0
 {
-	float4 combinedBloom = tex2D(blurSampler, input.TexCoord);
-	float4 frameBufferSample = tex2D(diffuseSampler, input.TexCoord);
-	float4 original = frameBufferSample;
+	float3 combinedBloom = tex2D(blurSampler, input.TexCoord).rgb;
+	float3 frameBufferSample = tex2D(diffuseSampler, input.TexCoord).rgb;
+	float3 original = frameBufferSample;
 
     combinedBloom = AdjustSaturation(combinedBloom, 0.85f) * bloomFactor;
     frameBufferSample = AdjustSaturation(frameBufferSample, saturation);
     frameBufferSample *= (1 - saturate(combinedBloom));
     
     // Combine the two images.
-	return pow(abs(frameBufferSample + combinedBloom), contrast);
+	float3 output = pow(abs(frameBufferSample + combinedBloom), contrast);
+	return float4(output, 1);
 }
 
 technique QuickDOF

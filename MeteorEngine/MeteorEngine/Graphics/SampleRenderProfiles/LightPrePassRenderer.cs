@@ -106,7 +106,6 @@ namespace Meteor.Rendering
 			diffuse.Draw();
 
 			// Combine with lighting
-			//ssao.Draw();
 			composite.Draw();
 
 			// Post effects

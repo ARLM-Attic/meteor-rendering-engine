@@ -227,12 +227,12 @@ namespace Meteor.Resources
 		/// </summary>
 		/// <param name="imagePath"></param>
 
-		public void AddTerrain(String imagePath, String texture)
+		public void AddTerrain(String imagePath, String texture, String normalTexture)
 		{
 			// Set up terrain map
 			terrain = new Terrain(content, graphicsDevice);
 
-			terrain.GenerateFromImage(imagePath, texture);
+			terrain.GenerateFromImage(imagePath, texture, normalTexture);
 		}
 
 		/// <summary>

@@ -53,8 +53,7 @@ namespace Meteor.Rendering
             finalRT[0] = inputTargets[0]; // This is the composite render target
             int totalPasses;
 
-			renderStopWatch.Reset();
-			renderStopWatch.Restart();
+			renderStopWatch.Start();
 
             blurEffect.CurrentTechnique = blurEffect.Techniques["GaussianBlur"];
             totalPasses = blurEffect.CurrentTechnique.Passes.Count;

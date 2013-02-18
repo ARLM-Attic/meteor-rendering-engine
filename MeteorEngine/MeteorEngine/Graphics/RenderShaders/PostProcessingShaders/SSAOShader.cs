@@ -14,11 +14,11 @@ namespace Meteor.Rendering
 	public class SSAOShader : BaseShader
 	{
 		// Basic parameters
-		public float radius = 0.5f;
-		public float intensity = 1f;
+		public float radius = 2.5f;
+		public float intensity = 7f;
 		public float scale = 1f;
 		public float bias = 0.01f;
-		public bool applyBlur = false;
+		public bool applyBlur = true;
 
 		/// Final combined pass
 		RenderTarget2D[] finalRT;
@@ -78,9 +78,7 @@ namespace Meteor.Rendering
 
 		public override RenderTarget2D[] Draw()
 		{
-			renderStopWatch.Reset();
-			renderStopWatch.Restart();
-
+			renderStopWatch.Start();
 			ssaoEffect.CurrentTechnique = ssaoEffect.Techniques[0];
 
 			graphicsDevice.BlendState = BlendState.Opaque;

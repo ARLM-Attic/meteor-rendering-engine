@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using Meteor.Resources;
 
@@ -17,25 +18,41 @@ namespace Meteor.Rendering
 		}
 	}
 
-	static class SceneCuller
+	class MeshDistanceSort : IComparer<MeshInstance>
+	{
+		public int Compare(MeshInstance instance1, MeshInstance instance2)
+		{
+			return instance1.distance.CompareTo(instance2.distance);
+		}
+	}
+
+	/// <summary>
+	/// Culls all possible objects in a scene 
+	/// </summary>
+
+	public class SceneCuller
 	{
 		/// Cached list of instances from last model culling.
-		static List<MeshInstance> visibleInstances = new List<MeshInstance>();
-
-		/// Function to sort meshes by priority level (combination of size and distance)
-		static MeshPrioritySort meshPrioritySort;
+		private List<MeshInstance> visibleInstances = new List<MeshInstance>();
 
 		/// <summary>
 		/// Cull an InstancedModel and its mesh groups.
 		/// </summary>
 
-		public static void CullModel(Camera camera, InstancedModel instancedModel)
+		public void CullModelInstances(Camera camera, InstancedModel instancedModel)
 		{
 			// Pre-cull mesh parts
 			int meshIndex = 0;
 			foreach (MeshInstanceGroup instanceGroup in instancedModel.MeshInstanceGroups.Values)
 			{
 				instanceGroup.totalVisible = 0;
+
+				// Out of the visible instances, sort them by instance
+				foreach (MeshInstance meshInstance in instanceGroup.instances)
+					meshInstance.distance = Vector3.Distance(camera.Position, meshInstance.position);
+
+				//instanceGroup.instances.Sort((a, b) => a.distance.CompareTo(b.distance));
+
 				foreach (MeshInstance meshInstance in instanceGroup.instances)
 				{
 					// Add mesh and instances to visible list if they're contained in the frustum
@@ -43,11 +60,9 @@ namespace Meteor.Rendering
 					{
 						instanceGroup.visibleInstances[instanceGroup.totalVisible] = meshInstance;
 						instanceGroup.totalVisible++;
-					}
-					else
-					{
-						// Add instance to list cache.
-						visibleInstances.Add(meshInstance);
+
+						//if (instanceGroup.totalVisible >= 25)
+						//	break;
 					}
 				}
 				meshIndex++;
@@ -56,15 +71,29 @@ namespace Meteor.Rendering
 		}
 
 		/// <summary>
+		/// Check all meshes in a scene that are outside the camera view frustum.
+		/// </summary>
+
+		public void CullModelMeshes(Scene scene, Camera camera)
+		{
+			scene.visibleMeshes = 0;
+			scene.culledMeshes = 0;
+
+			CullFromList(camera, scene.staticModels);
+			CullFromList(camera, scene.skinnedModels);
+			CullFromList(camera, scene.blendModels);
+		}
+
+		/// <summary>
 		/// Wrapper to cull meshes from a specified list.
 		/// </summary>
 
-		public static void CullFromList(Camera camera, Dictionary<String, InstancedModel> modelList)
+		public void CullFromList(Camera camera, Dictionary<String, InstancedModel> modelList)
 		{
 			visibleInstances.Clear();
 
 			foreach (InstancedModel instancedModel in modelList.Values)
-				CullModel(camera, instancedModel);
+				CullModelInstances(camera, instancedModel);
 			
 			// Finished culling all models
 			int total = visibleInstances.Count;
@@ -74,7 +103,7 @@ namespace Meteor.Rendering
 		/// Remove any lights outside of the viewable frustum.
 		/// </summary>
 
-		public static void CullLights(Scene scene, Camera camera)
+		public void CullLights(Scene scene, Camera camera)
 		{
 			Vector3 lightPosition = Vector3.Zero;
 			Vector3 radiusVector = Vector3.Zero;

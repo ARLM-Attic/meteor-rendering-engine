@@ -114,6 +114,7 @@
     <Compile Include="Graphics\Rendering\SceneCuller.cs" />
     <Compile Include="Graphics\Rendering\SceneRenderer.cs" />
     <Compile Include="Graphics\Components\Core.cs" />
+    <Compile Include="Graphics\RenderShaders\SceneShaders\DepthMapShader.cs" />
     <Compile Include="Helpers\DebugDisplay.cs" />
     <Compile Include="Helpers\GaussianBlur.cs" />
     <Compile Include="Helpers\CopyShader.cs" />
@@ -130,7 +131,6 @@
     <Compile Include="Graphics\RenderShaders\SceneShaders\DiffuseShader.cs" />
     <Compile Include="Graphics\RenderShaders\SceneShaders\GBufferShader.cs" />
     <Compile Include="Graphics\RenderShaders\SceneShaders\LightShader.cs" />
-    <Compile Include="Graphics\RenderShaders\SceneShaders\DepthShader.cs" />
     <Compile Include="Helpers\RenderStats.cs" />
     <Compile Include="Graphics\SampleRenderProfiles\DeferredRenderer.cs">
       <SubType>Code</SubType>

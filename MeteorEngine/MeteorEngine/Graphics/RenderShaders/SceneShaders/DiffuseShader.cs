@@ -59,7 +59,8 @@ namespace Meteor.Rendering
 			graphicsDevice.SamplerStates[1] = SamplerState.PointWrap;
 
 			// Cull the objects
-			//sceneRenderer.CullModelMeshes(scene, camera);
+			sceneCuller.CullLights(scene, camera);
+			sceneCuller.CullModelMeshes(scene, camera);
 
             // Forward render the scene
 			sceneRenderer.UseTechnique("DiffuseRenderTerrain");

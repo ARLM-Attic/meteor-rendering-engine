@@ -55,6 +55,7 @@ namespace Meteor.Resources
 		/// Distance to a world position
 		public float distance = 0f;
 
+		/// Generator to produce colors
 		static Random random = new Random(256);
 
 		/// Constructor sets identity matrix as default
@@ -73,7 +74,7 @@ namespace Meteor.Resources
 			largestScale = 1f;
 		}
 
-		/// New instance with an Entity and transform matrix
+		/// New instance with an bounding sphere and transform matrix
 		public MeshInstance(BoundingSphere sphere, Matrix instanceTransform)
 		{
 			transform = instanceTransform;

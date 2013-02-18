@@ -66,7 +66,7 @@ namespace Meteor.Rendering
 			blurMap = blurEffect.Parameters["blurMap"];
 
 			threshold.SetValue(0.75f);
-			bloomIntensity.SetValue(0.0f);
+			bloomIntensity.SetValue(0.7f);
 			saturation.SetValue(1.25f);
 			contrast.SetValue(1.05f);
 		}
@@ -78,9 +78,7 @@ namespace Meteor.Rendering
 		public override RenderTarget2D[] Draw()
 		{
 			int totalPasses;
-
-			renderStopWatch.Reset();
-			renderStopWatch.Restart();
+			renderStopWatch.Start();
 
 			blurEffect.CurrentTechnique = blurEffect.Techniques["SimpleBloom"];
 
@@ -129,7 +127,6 @@ namespace Meteor.Rendering
 			quadRenderer.Render(Vector2.One * -1, Vector2.One);
 						
 			renderStopWatch.Stop();
-
 			return outputs;
 		}
 	}

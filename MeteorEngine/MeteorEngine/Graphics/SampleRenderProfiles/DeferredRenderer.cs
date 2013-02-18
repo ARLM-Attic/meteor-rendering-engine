@@ -18,6 +18,9 @@ namespace Meteor.Rendering
 		/// Used for drawing the light map
 		LightShader lights;
 
+		/// Draws depth map for shadows
+		DepthMapShader depth;
+
 		/// Forward render with color map
 		DiffuseShader diffuse;
 
@@ -59,6 +62,7 @@ namespace Meteor.Rendering
 
 			gBuffer = new GBufferShader(this, resxContent);
 			lights = new LightShader(this, resxContent);
+			depth = new DepthMapShader(this, resxContent);
 			diffuse = new DiffuseShader(this, resxContent);
 			composite = new CompositeShader(this, resxContent);
 			dof = new DepthOfFieldShader(this, resxContent);
@@ -77,14 +81,15 @@ namespace Meteor.Rendering
 		{
 			// Map the renderer inputs to outputs
 			gBuffer.SetInputs(scene, camera, null);
-			lights.SetInputs(scene, camera, gBuffer.outputs);
+			depth.SetInputs(scene, camera, null);
+			lights.SetInputs(scene, camera, gBuffer.outputs[0], gBuffer.outputs[1],
+				gBuffer.outputs[2], depth.outputs[0]);
 			composite.SetInputs(scene, camera, 
 				gBuffer.outputs[2], lights.outputs[0], ssao.outputs[0], gBuffer.outputs[1]);
 			fxaa.SetInputs(composite.outputs);
 			copy.SetInputs(composite.outputs);
 			blur.SetInputs(composite.outputs);
-			ssao.SetInputs(scene, camera, gBuffer.outputs[0], gBuffer.outputs[1],
-				lights.outputs[1]);
+			ssao.SetInputs(scene, camera, gBuffer.outputs[0], gBuffer.outputs[1]);
 			dof.SetInputs(composite.outputs[0], copy.outputs[0], gBuffer.outputs[1]);
 			bloom.SetInputs(composite.outputs);
 
@@ -94,13 +99,14 @@ namespace Meteor.Rendering
 			debugRenderTargets.Add(gBuffer.outputs[2]);
 			debugRenderTargets.Add(gBuffer.outputs[0]);
 			debugRenderTargets.Add(lights.outputs[0]);
-			debugRenderTargets.Add(lights.outputs[1]);
+			debugRenderTargets.Add(depth.outputs[0]);
 		}
 
 		public override void Draw()
 		{
 			// Create the lighting map
 			gBuffer.Draw();
+			depth.Draw();
 			lights.Draw();
 
 			// Composite drawing

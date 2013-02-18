@@ -46,8 +46,7 @@ namespace Meteor.Rendering
 
 		public override RenderTarget2D[] Draw()
 		{
-			renderStopWatch.Reset();
-			renderStopWatch.Restart();
+			renderStopWatch.Start();
 
 			fxaaEffect.CurrentTechnique = fxaaEffect.Techniques[0];
 
