@@ -6,7 +6,6 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Content;
 using Meteor.Resources;
-using Meteor.Resources;
 using Meteor.Rendering;
 using MeteorEngine;
 

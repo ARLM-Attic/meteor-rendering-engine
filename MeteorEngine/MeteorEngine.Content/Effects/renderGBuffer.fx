@@ -102,6 +102,9 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input, InstanceInput i
     output.TangentToWorld[1] = mul(normalize(mul(input.binormal, WorldInstance)), View);
     output.TangentToWorld[2] = mul(normalize(mul(input.Normal, WorldInstance)), View);
 
+	//if (output.TangentToWorld[2].z < 0)
+	//	output.TangentToWorld[2] = -output.TangentToWorld[2];
+
     // Compute a reflection vector for the environment map.
 	float3 ViewDirection = CameraPosition - output.Position;
     output.Reflection = reflect(normalize(ViewDirection), input.Normal);
@@ -183,7 +186,7 @@ PixelShaderOutput1 PixelShaderGBuffer(VertexShaderOutput input)
 	// Output Color
 	// First check if this pixel is opaque
     output.Color = tex2D(diffuseSampler, input.TexCoord);
-	clip(output.Color.a - 0.95);
+	clip(output.Color.a - 0.5);
 
     // Output the normal, in [0,1] space
     float3 normalFromMap = tex2D(normalMapSampler, input.TexCoord);
@@ -210,7 +213,7 @@ PixelShaderOutput2 PixelShaderSmallGBuffer(VertexShaderOutput input)
 
 	// First check if this pixel is opaque
 	float mask = tex2D(diffuseSampler, input.TexCoord).a;
-	clip(mask - 0.95);
+	clip(mask - 0.5);
 
     // Output the normal, in [0,1] space
     float3 normalFromMap = tex2D(normalMapSampler, input.TexCoord);
@@ -234,7 +237,7 @@ float4 PixelShaderDiffuseRender(VertexShaderOutput input) : COLOR0
 {
 	// First check if mask channel is opaque
 	float4 diffuse = tex2D(diffuseSampler, input.TexCoord);
-	clip(diffuse.a - 0.95);
+	clip(diffuse.a - 0.5);
 
 	float3 envmap = texCUBE(environmentMapSampler, normalize(input.Reflection));
 
@@ -285,7 +288,7 @@ float4 SkyboxPS(VertexShaderOutput input) : COLOR0
     // Flag skybox output with zero alpha
 	float4 color = tex2D(diffuseSampler, input.TexCoord);
 
-	color.a = 0.99f;
+	color.a = 0.49f;
 	return color;
 }
 

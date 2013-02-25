@@ -17,6 +17,9 @@ namespace Meteor.Rendering
 		/// Effect that's currently used by the scene
 		Effect currentEffect;
 
+		/// Effect that's currently used by the scene
+		Effect gBufferEffect;
+
 		/// Effect technique used by the scene
 		String shaderTechnique;
 
@@ -58,6 +61,7 @@ namespace Meteor.Rendering
 			imposter = new Imposter(graphicsDevice, content);
 
             // Use standard GBuffer as a default
+			gBufferEffect = content.Load<Effect>("renderGBuffer");
             shaderTechnique = "GBuffer";
 			currentEffect = null;
 
@@ -254,7 +258,7 @@ namespace Meteor.Rendering
 				foreach (ModelMeshPart meshPart in mesh.MeshParts)
 				{
 					// Assign effect (all mesh parts use the same one)
-					currentEffect = meshPart.Effect;
+					currentEffect = gBufferEffect;
 
 					// Set GBuffer parameters
 					currentEffect.Parameters["World"].SetValue(world);
@@ -268,14 +272,16 @@ namespace Meteor.Rendering
 					if (instancedModel.animationPlayer != null)
 						currentEffect.Parameters["bones"].SetValue(tempBones);
 
-					if (instancedModel.Textures[meshIndex] != null)
+					if (instancedModel.textures[meshIndex] != null)
 					{
-						currentEffect.Parameters["Texture"].SetValue(instancedModel.Textures[meshIndex]);
+						currentEffect.Parameters["Texture"].SetValue(instancedModel.textures[meshIndex]);
 					}
 					else
 					{
 						currentEffect.Parameters["Texture"].SetValue(blankTexture);
 					}
+
+					currentEffect.Parameters["NormalMap"].SetValue(instancedModel.normalMapTextures[meshIndex]);
 
 					DrawInstancedMeshPart(meshPart, instanceGroup);
 					meshIndex++;
@@ -328,8 +334,8 @@ namespace Meteor.Rendering
 					if (instancedModel.animationPlayer != null)
 						effect.Parameters["bones"].SetValue(tempBones);
 
-					if (instancedModel.Textures[meshIndex] != null)
-						effect.Parameters["Texture"].SetValue(instancedModel.Textures[meshIndex]);
+					if (instancedModel.textures[meshIndex] != null)
+						effect.Parameters["Texture"].SetValue(instancedModel.textures[meshIndex]);
 
 					DrawInstancedMeshPart(meshPart, instanceGroup);
 					meshIndex++;

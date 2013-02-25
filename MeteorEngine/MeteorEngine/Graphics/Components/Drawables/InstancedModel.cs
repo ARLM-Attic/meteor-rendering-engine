@@ -54,12 +54,11 @@ namespace Meteor.Resources
 		/// Pointer for the last updated instance
 		private int lastInstance;
 
-		/// Model's main dffuse texture
-		public List<Texture2D> modelTextures;
-		public List<Texture2D> Textures
-		{
-			get { return modelTextures; }
-		}
+		/// Model's diffuse color textures
+		public List<Texture2D> textures;
+
+		/// Model's normal/bump map textures
+		public List<Texture2D> normalMapTextures;
 
 		/// Array for the instancing groups of each mesh
 		/// Instances are grouped by mesh name
@@ -107,7 +106,8 @@ namespace Meteor.Resources
 			animationPlayer = null;
 
 			// Set up model data
-			modelTextures = new List<Texture2D>();
+			textures = new List<Texture2D>();
+			normalMapTextures = new List<Texture2D>();
 			meshInstanceGroups = new Dictionary<string, MeshInstanceGroup>();
 
 			// Bounding box data
@@ -144,9 +144,12 @@ namespace Meteor.Resources
 				meshInstanceGroups[meshName].instanceVB =
 					CreateInstanceVB(graphicsDevice, meshInstanceGroups[meshName].instances);
 
-				// Add mesh textures
+				// Extract textures from each mesh
 				foreach (ModelMeshPart meshPart in mesh.MeshParts)
-					modelTextures.Add(meshPart.Effect.Parameters["Texture"].GetValueTexture2D());
+				{
+					textures.Add(meshPart.Effect.Parameters["Texture"].GetValueTexture2D());
+					normalMapTextures.Add(meshPart.Effect.Parameters["NormalMap"].GetValueTexture2D());
+				}
 			}
 		}
 
