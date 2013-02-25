@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -145,7 +142,7 @@ namespace Meteor.Resources
 					int index = i * spanWidth + j;
 
 					vertices[index].Position =
-						new Vector3(x, heightData[x, y] / 5.0f, -y);
+						new Vector3(x, heightData[x, y] / 4.0f, -y);
 
 					vertices[index].TextureCoordinate.X = (float)x / 20.0f;
 					vertices[index].TextureCoordinate.Y = (float)y / 20.0f;

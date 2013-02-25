@@ -91,7 +91,7 @@ float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 	diffuse.rgb *= diffuse.rgb;
 
 	// This ensures that the specular highlight is of the right color
-	float3 specular = light.rgb * light.a;
+	float3 specular = light.a;
 
 	float4 ssao = 1;
 	if (includeSSAO >= 1)
@@ -99,7 +99,7 @@ float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 
 	light *= ssao + float4(ambientTerm, 1);
 
-	float4 finalColor = float4(light.rgb * diffuse + specular, diffuse.a);
+	float4 finalColor = float4((light.rgb * diffuse) + specular, diffuse.a);
 
 	// Add fog based on exponential depth
 	float4 fogColor = float4(0.3, 0.5, 0.92, 1);

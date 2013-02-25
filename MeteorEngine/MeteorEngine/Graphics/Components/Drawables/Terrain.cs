@@ -67,6 +67,9 @@ namespace Meteor.Resources
 
 		/// Primary texture to apply to the terrain mesh
 		private Texture2D mainTexture, normalTexture, heightMapTexture;
+		
+		/// Splate textures for additional terrain features
+		private Texture2D blendTexture1;
 
 		/// The innermost (level 0) geo clipmap to render the terrain with
 		private InnerClipmap innerClipMap;
@@ -99,6 +102,7 @@ namespace Meteor.Resources
 		{
 			heightMapTexture = content.Load<Texture2D>(image);
 			mainTexture = content.Load<Texture2D>(texture);
+			blendTexture1 = content.Load<Texture2D>("Textures/grass");
 			normalTexture = content.Load<Texture2D>(normalTex);
 
 			terrainWidth = heightMapTexture.Width;
@@ -131,7 +135,7 @@ namespace Meteor.Resources
 			int clipMapSize = 80;
 
 			innerClipMap = new InnerClipmap(clipMapSize, graphicsDevice);
-			outerClipMaps = new OuterClipmap[4];
+			outerClipMaps = new OuterClipmap[5];
 
 			for (int i = 0; i < outerClipMaps.Length; i++)
 				outerClipMaps[i] = new OuterClipmap(i + 1, clipMapSize, graphicsDevice);
@@ -205,12 +209,12 @@ namespace Meteor.Resources
 
 			// normalize the height positions and interpolate them.
 			float topHeight = MathHelper.Lerp(
-				heightData[left, top] / 5.0f, 
-				heightData[left + 1, top] / 5.0f, xNormalized);
+				heightData[left, top] / 4.0f, 
+				heightData[left + 1, top] / 4.0f, xNormalized);
 
 			float bottomHeight = MathHelper.Lerp(
-				heightData[left, top + 1] / 5.0f, 
-				heightData[left + 1, top + 1] / 5.0f, xNormalized);
+				heightData[left, top + 1] / 4.0f, 
+				heightData[left + 1, top + 1] / 4.0f, xNormalized);
 
 			float height = MathHelper.Lerp(topHeight, bottomHeight, zNormalized);
 
@@ -242,6 +246,7 @@ namespace Meteor.Resources
 			//graphicsDevice.RasterizerState = rWireframeState;
 
 			effect.Parameters["Texture"].SetValue(mainTexture);
+
 			if (normalTexture != null && effect.CurrentTechnique != effect.Techniques["Default"])
 				effect.Parameters["NormalMap"].SetValue(normalTexture);
 
@@ -256,8 +261,12 @@ namespace Meteor.Resources
 			if (effect.CurrentTechnique != effect.Techniques["Default"])
 			{
 				// Set camera transformation matrices
-				effect.Parameters["View"].SetValue(camera.View);
-				effect.Parameters["Projection"].SetValue(camera.Projection);
+				effect.Parameters["View"].SetValue(camera.view);
+				effect.Parameters["Projection"].SetValue(camera.projection);
+				effect.Parameters["WorldInverseTranspose"].SetValue(camera.view);
+
+				// Additional textures for terrain features
+				effect.Parameters["blendTexture1"].SetValue(blendTexture1);
 			}
 
 			int polycount = 0;

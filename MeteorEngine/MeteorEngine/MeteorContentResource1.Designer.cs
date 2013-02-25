@@ -60,6 +60,13 @@ namespace MeteorEngine {
             }
         }
         
+        internal static byte[] AreaTexDX9 {
+            get {
+                object obj = ResourceManager.GetObject("AreaTexDX9", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
         internal static byte[] ball {
             get {
                 object obj = ResourceManager.GetObject("ball", resourceCulture);
@@ -112,6 +119,13 @@ namespace MeteorEngine {
         internal static byte[] fxaa {
             get {
                 object obj = ResourceManager.GetObject("fxaa", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        internal static byte[] mlaa {
+            get {
+                object obj = ResourceManager.GetObject("mlaa", resourceCulture);
                 return ((byte[])(obj));
             }
         }

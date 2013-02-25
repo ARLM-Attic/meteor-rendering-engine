@@ -50,7 +50,7 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="Nuclex.Fonts.Content.TrueTypeImporter">
-      <HintPath>..\..\..\others\nuclex-framework-r1404-binaries\xna-4.0-x86\Nuclex.Fonts.Content.TrueTypeImporter.dll</HintPath>
+      <HintPath>..\..\..\others\nuclex-framework-r1404-demos\References\framework\xna-4.0-x86\Nuclex.Fonts.Content.TrueTypeImporter.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -103,18 +103,10 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Fonts\defaultFont.spritefont">
-      <Name>defaultFont</Name>
-      <Importer>FontDescriptionImporter</Importer>
-      <Processor>NuclexSpriteFontDescriptionProcessor</Processor>
-      <ProcessorParameters_Hinter>Disable</ProcessorParameters_Hinter>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="Fonts\segoeUI.spritefont">
       <Name>segoeUI</Name>
       <Importer>FontDescriptionImporter</Importer>
-      <Processor>NuclexSpriteFontDescriptionProcessor</Processor>
+      <Processor>FontDescriptionProcessor</Processor>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -161,40 +153,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="null_color.tga">
-      <Name>null_color</Name>
-      <Importer>TextureImporter</Importer>
-      <Processor>TextureProcessor</Processor>
-    </Compile>
-    <Compile Include="null_specular.tga">
-      <Name>null_specular</Name>
-      <Importer>TextureImporter</Importer>
-      <Processor>TextureProcessor</Processor>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="null_normal.tga">
-      <Name>null_normal</Name>
-      <Importer>TextureImporter</Importer>
-      <Processor>TextureProcessor</Processor>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="seattle.bmp">
-      <Name>seattle</Name>
-      <Importer>TextureImporter</Importer>
-      <Processor>TextureProcessor</Processor>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="skyblue_cube.dds">
-      <Name>skyblue_cube</Name>
-      <Importer>TextureImporter</Importer>
-      <Processor>TextureProcessor</Processor>
-      <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="Effects\terrainGBuffer.fx">
       <Name>terrainGBuffer</Name>
       <Importer>EffectImporter</Importer>
@@ -213,6 +171,29 @@
       <Name>imposter</Name>
       <Importer>EffectImporter</Importer>
       <Processor>EffectProcessor</Processor>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Effects\mlaa.fx">
+      <Name>mlaa</Name>
+      <Importer>EffectImporter</Importer>
+      <Processor>EffectProcessor</Processor>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Effects\AreaTexDX9.dds">
+      <Name>AreaTexDX9</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>TextureProcessor</Processor>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Fonts\defaultFont.spritefont">
+      <Name>defaultFont</Name>
+      <Importer>FontDescriptionImporter</Importer>
+      <Processor>NuclexSpriteFontDescriptionProcessor</Processor>
+      <SubType>Designer</SubType>
+      <ProcessorParameters_Hinter>AutoHinter</ProcessorParameters_Hinter>
     </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\XNA Game Studio\$(XnaFrameworkVersion)\Microsoft.Xna.GameStudio.ContentPipeline.targets" />

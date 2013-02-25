@@ -24,65 +24,34 @@ namespace Meteor.Resources
             get { return cameraRotation; }
         }
 
-		protected Matrix worldTransform;
+		protected Matrix worldMatrix;
 		public Matrix WorldMatrix
 		{
-			get { return worldTransform; }
+			get { return worldMatrix; }
 		}
 
-		protected Matrix view;
-		public Matrix View
-		{
-			get { return view; }
-			set { view = value; }
-		}
+		/// Camera's view matrix
+		public Matrix view;
 
-		protected Matrix projection;
-		public Matrix Projection
-		{
-			get { return projection; }
-			set { projection = value; }
-		}
+		/// Camera's projecition matrix
+		public Matrix projection;
 
-		protected Matrix oldView;
-		public Matrix OldView
-		{
-			get { return oldView; }
-		}
+		/// Camera position
+		public Vector3 position;
 
-		protected Matrix oldProjection;
-		public Matrix OldProjection
-		{
-			get { return oldProjection; }
-		}
+		/// Bounding volume of view frustum
+		public BoundingFrustum frustum;
 
-		protected Vector3 position;
-        public Vector3 Position
-        {
-            get { return position; }
-        }
-
-		protected BoundingFrustum cameraFrustum;
-		public BoundingFrustum Frustum
-		{
-			get { return cameraFrustum; }
-			set { cameraFrustum = value; }
-		}
-
+		/// Corners of bounding frustum
 		public Vector3[] frustumCorners;
 
-		protected Vector2 viewAspect;
-		public Vector2 ViewAspect
-		{
-			get { return viewAspect; }
-		}
+		/// X and Y aspect
+		public Vector2 viewAspect;
 
-		protected float viewAngle;
-		public float ViewAngle
-		{
-			get { return viewAngle; }
-		}
+		/// Camera field of view
+		public float viewAngle;
 
+		/// H/V aspect ratio
 		public float AspectRatio
 		{
 			get { return (float)viewAspect.X / (float)viewAspect.Y; }
@@ -102,12 +71,11 @@ namespace Meteor.Resources
 		/// better looking shadows at shorter distances.
 		/// </summary>
 
-		public Vector2 GetFrustumSplit(int split, int numSplits, float lambda = 0.25f, float limit = 1f)
+		public Vector2 GetFrustumSplit(int split, int numSplits, float lambda = 0.25f)
 		{
-			limit = (limit > 1f) ? 1f : limit;
 			split = (split > numSplits) ? numSplits : split;
 
-			float farDistance = farPlaneDistance * limit;
+			float farDistance = farPlaneDistance;
 
 			// CLi = n*(f/n)^(i/numsplits)
 			// CUi = n + (f-n)*(i/numsplits)
@@ -145,7 +113,7 @@ namespace Meteor.Resources
 			nearSplitPlaneDistance = nearPlaneDistance;
 			farSplitPlaneDistance = farPlaneDistance;
 
-			cameraFrustum = new BoundingFrustum(Matrix.Identity);
+			frustum = new BoundingFrustum(Matrix.Identity);
         }
 
 		/// <summary>
@@ -166,15 +134,6 @@ namespace Meteor.Resources
 			farSplitPlaneDistance = farPlaneDistance;
 		}
 
-		/// <summary>
-		/// Force repositioning of the camera
-		/// </summary>
-
-		public void Reposition(Vector3 pos)
-		{
-			position = pos;
-		}
-
         /// <summary>
         /// Sets up the camera with a default viewport and world matrix
         /// </summary>
@@ -185,11 +144,15 @@ namespace Meteor.Resources
 			viewAspect.Y = (int)height;
 			viewAngle = MathHelper.PiOver4 * 4f / 3f;
 
-			cameraFrustum = new BoundingFrustum(Matrix.Identity);
+			frustum = new BoundingFrustum(Matrix.Identity);
 			frustumCorners = new Vector3[8];
-			worldTransform = Matrix.Identity;
+			worldMatrix = Matrix.Identity;
 
-			UpdateProjection();
+			float aspectRatio = (float)viewAspect.X / (float)viewAspect.Y;
+			projection = Matrix.CreatePerspectiveFieldOfView(
+				viewAngle, aspectRatio, nearPlaneDistance, farPlaneDistance);
+
+			UpdateMatrices();
         }
 
         /// <summary>
@@ -199,9 +162,17 @@ namespace Meteor.Resources
         {
             nearPlaneDistance = clipPlanes.X;
             farPlaneDistance = clipPlanes.Y;
-            UpdateProjection();
+
+			float aspectRatio = (float)viewAspect.X / (float)viewAspect.Y;
+			projection = Matrix.CreatePerspectiveFieldOfView(
+				viewAngle, aspectRatio, nearPlaneDistance, farPlaneDistance);
+
+			UpdateMatrices();
         }
 
+		/// <summary>
+		/// Set Euler angle-based orientation
+		/// </summary>
 		public void SetOrientation(Vector2 orientation)
 		{
 			targetRotation = orientation.X; // yaw
@@ -210,9 +181,6 @@ namespace Meteor.Resources
 
 		public virtual void Update(GameTime gameTime = null)
 		{
-			oldView = view;
-			oldProjection = projection;
-
 			UpdateMatrices();
 		}
 
@@ -221,7 +189,7 @@ namespace Meteor.Resources
 		/// </summary>
 		public virtual void SetMatrices(Matrix world, Matrix view, Matrix projection)
 		{
-			this.worldTransform = world;
+			this.worldMatrix = world;
 			this.view = view;
 			this.projection = projection;
 
@@ -233,19 +201,7 @@ namespace Meteor.Resources
         /// </summary>
 		protected virtual void UpdateMatrices()
         {
-			cameraFrustum.Matrix = view * projection;
-        }
-
-        /// <summary>
-        /// Set the camera's projection matrix
-        /// </summary>
-		protected void UpdateProjection()
-        {
-			float aspectRatio = (float)viewAspect.X / (float)viewAspect.Y;
-            projection = Matrix.CreatePerspectiveFieldOfView(
-                viewAngle, aspectRatio, nearPlaneDistance, farPlaneDistance);
-
-			cameraFrustum.Matrix = view * projection;
+			frustum.Matrix = view * projection;
         }
 	}
 
@@ -261,17 +217,17 @@ namespace Meteor.Resources
 			// traditional cascaded shadow maps
 
 			// Calculate the near and far plane centers
-			Vector3 nearPlaneCenter = camera.Position +
+			Vector3 nearPlaneCenter = camera.position +
 				Vector3.Normalize(camera.WorldMatrix.Forward) * camera.nearSplitPlaneDistance;
-			Vector3 farPlaneCenter = camera.Position +
+			Vector3 farPlaneCenter = camera.position +
 				Vector3.Normalize(camera.WorldMatrix.Forward) * camera.farSplitPlaneDistance;
 
 			// Get the vertical and horizontal extent locations from the center
-			float nearExtentDistance = (float)Math.Tan(camera.ViewAngle / 2f) * camera.nearSplitPlaneDistance;
+			float nearExtentDistance = (float)Math.Tan(camera.viewAngle / 2f) * camera.nearSplitPlaneDistance;
 			Vector3 nearExtentY = nearExtentDistance * camera.WorldMatrix.Up;
 			Vector3 nearExtentX = nearExtentDistance * camera.AspectRatio * camera.WorldMatrix.Left;
 
-			float farExtentDistance = (float)Math.Tan(camera.ViewAngle / 2f) * camera.farSplitPlaneDistance;
+			float farExtentDistance = (float)Math.Tan(camera.viewAngle / 2f) * camera.farSplitPlaneDistance;
 			Vector3 farExtentY = farExtentDistance * camera.WorldMatrix.Up;
 			Vector3 farExtentX = farExtentDistance * camera.AspectRatio * camera.WorldMatrix.Left;
 

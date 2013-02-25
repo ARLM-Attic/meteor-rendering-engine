@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using Meteor.Resources;
+using Meteor.Resources;
 
 namespace Meteor.Rendering
 {
@@ -35,36 +36,51 @@ namespace Meteor.Rendering
 		/// Cached list of instances from last model culling.
 		private List<MeshInstance> visibleInstances = new List<MeshInstance>();
 
+		/// Minimum distance to limit full mesh rendering.
+		public float maxLODdistance = 25000f;
+
 		/// <summary>
 		/// Cull an InstancedModel and its mesh groups.
 		/// </summary>
 
 		public void CullModelInstances(Camera camera, InstancedModel instancedModel)
 		{
-			// Pre-cull mesh parts
 			int meshIndex = 0;
 			foreach (MeshInstanceGroup instanceGroup in instancedModel.MeshInstanceGroups.Values)
 			{
+				// Pre-cull mesh parts
 				instanceGroup.totalVisible = 0;
-
-				// Out of the visible instances, sort them by instance
-				foreach (MeshInstance meshInstance in instanceGroup.instances)
-					meshInstance.distance = Vector3.Distance(camera.Position, meshInstance.position);
-
-				//instanceGroup.instances.Sort((a, b) => a.distance.CompareTo(b.distance));
 
 				foreach (MeshInstance meshInstance in instanceGroup.instances)
 				{
 					// Add mesh and instances to visible list if they're contained in the frustum
-					if (camera.Frustum.Contains(meshInstance.BSphere) != ContainmentType.Disjoint)
+					if (camera.frustum.Contains(meshInstance.BSphere) != ContainmentType.Disjoint)
 					{
 						instanceGroup.visibleInstances[instanceGroup.totalVisible] = meshInstance;
 						instanceGroup.totalVisible++;
-
-						//if (instanceGroup.totalVisible >= 25)
-						//	break;
 					}
 				}
+
+				int fullMeshInstances = 0;
+
+				// Out of the visible instances, sort those by distance
+				for (int i = 0; i < instanceGroup.totalVisible; i++)
+				{
+					MeshInstance meshInstance = instanceGroup.visibleInstances[i];
+					meshInstance.distance = Vector3.Distance(camera.position, meshInstance.position);
+
+					// Use a second loop-through to separate the full meshes from the imposters.
+					// Meshes closer than the limit distance will be moved to the front of the list,
+					// and those beyond will be put into a separate bucket for imposter rendering.
+
+					if (meshInstance.distance < maxLODdistance)
+						instanceGroup.visibleInstances[fullMeshInstances++] = meshInstance;
+				}
+				// Update the new, filtered amount of full meshes to draw
+				instanceGroup.totalVisible = fullMeshInstances;
+
+				//instanceGroup.instances.Sort((a, b) => a.distance.CompareTo(b.distance));
+
 				meshIndex++;
 			}
 			// Finished culling this model
@@ -76,7 +92,6 @@ namespace Meteor.Rendering
 
 		public void CullModelMeshes(Scene scene, Camera camera)
 		{
-			scene.visibleMeshes = 0;
 			scene.culledMeshes = 0;
 
 			CullFromList(camera, scene.staticModels);
@@ -130,7 +145,7 @@ namespace Meteor.Rendering
 				bounds.Center = lightPosition;
 				bounds.Radius = radius;
 
-				if (camera.Frustum.Contains(bounds) != ContainmentType.Disjoint)
+				if (camera.frustum.Contains(bounds) != ContainmentType.Disjoint)
 				{
 					scene.visibleLights.Add(light);
 				}

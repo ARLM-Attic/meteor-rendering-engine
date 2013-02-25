@@ -66,7 +66,7 @@ namespace Meteor.Rendering
 			blurMap = blurEffect.Parameters["blurMap"];
 
 			threshold.SetValue(0.75f);
-			bloomIntensity.SetValue(0.7f);
+			bloomIntensity.SetValue(1f);
 			saturation.SetValue(1.25f);
 			contrast.SetValue(1.05f);
 		}
@@ -84,7 +84,7 @@ namespace Meteor.Rendering
 
 			totalPasses = blurEffect.CurrentTechnique.Passes.Count;
 
-			// Prepare 1st pass
+			// 1st pass
 			graphicsDevice.SetRenderTarget(finalRT[2]);
 			graphicsDevice.Clear(Color.Transparent);
 
@@ -94,7 +94,7 @@ namespace Meteor.Rendering
 			blurEffect.CurrentTechnique.Passes[0].Apply();
 			quadRenderer.Render(Vector2.One * -1, Vector2.One);
 
-			// Prepare 2nd pass
+			// 2nd pass
 			graphicsDevice.SetRenderTarget(finalRT[1]);
 			graphicsDevice.Clear(Color.Transparent);
 
@@ -105,7 +105,7 @@ namespace Meteor.Rendering
 			blurEffect.CurrentTechnique.Passes[1].Apply();
 			quadRenderer.Render(Vector2.One * -1, Vector2.One);
 
-			// Prepare 3rd pass
+			// 3rd pass
 			graphicsDevice.SetRenderTarget(finalRT[2]);
 			graphicsDevice.Clear(Color.Transparent);
 
@@ -116,7 +116,7 @@ namespace Meteor.Rendering
 			blurEffect.CurrentTechnique.Passes[2].Apply();
 			quadRenderer.Render(Vector2.One * -1, Vector2.One);
 
-			// Prepare 4th pass
+			// 4th pass
 			graphicsDevice.SetRenderTarget(finalRT[0]);
 			graphicsDevice.Clear(Color.Transparent);
 
@@ -125,7 +125,8 @@ namespace Meteor.Rendering
 
 			blurEffect.CurrentTechnique.Passes[3].Apply();
 			quadRenderer.Render(Vector2.One * -1, Vector2.One);
-						
+					
+			// Finished	
 			renderStopWatch.Stop();
 			return outputs;
 		}

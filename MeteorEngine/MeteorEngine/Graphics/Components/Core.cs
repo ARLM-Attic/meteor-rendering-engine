@@ -6,6 +6,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Content;
 using Meteor.Resources;
+using Meteor.Resources;
 using Meteor.Rendering;
 using MeteorEngine;
 
@@ -157,9 +158,6 @@ namespace Meteor
 
 			// Resize the viewport for newer render targets
 			graphicsDevice.Viewport = viewport;
-			//graphicsDevice.PresentationParameters.BackBufferHeight = viewportWidth;
-			//graphicsDevice.PresentationParameters.BackBufferWidth = viewportHeight;
-			//graphicsDevice.Reset(graphicsDevice.PresentationParameters);
 
 			// Reset the camera and render profile
 			currentCamera.Initialize(viewportWidth, viewportHeight);
@@ -346,9 +344,9 @@ namespace Meteor
 
 			// Display camera position
 
-			debugString.Concat(currentCamera.Position.X).Append(", ");
-			debugString.Concat(currentCamera.Position.Y).Append(", ");
-			debugString.Concat(currentCamera.Position.Z).Append(" ");
+			debugString.Concat(currentCamera.position.X).Append(", ");
+			debugString.Concat(currentCamera.position.Y).Append(", ");
+			debugString.Concat(currentCamera.position.Z).Append(" ");
 
 			spriteBatch.DrawString(font, debugString,
 				new Vector2(4, font.LineSpacing * 4 + height), Color.White);

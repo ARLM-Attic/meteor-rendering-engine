@@ -13,7 +13,6 @@ float3 camPosition;
 #define MAPS_PER_ROW 2
 #define MAPS_PER_COL 2
 
-float4x4 lightProjection[NUM_CASCADES];
 float4x4 lightViewProj[NUM_CASCADES];
 float cascadeSplits[NUM_CASCADES];
 
@@ -115,7 +114,7 @@ float2 poissonDisk[24] = {
 	float2(-0.9310728f, 0.3289311f)
 };
 
-#define TOTAL_SAMPLES 16
+#define TOTAL_SAMPLES 20
 
 float3 PoissonDiscFilter(sampler smp, float3 ambient, float2 texCoord, float ourdepth)
 {	
@@ -126,7 +125,7 @@ float3 PoissonDiscFilter(sampler smp, float3 ambient, float2 texCoord, float our
 	float sampleDiscSize = 1.7f;
 	float2 pixelSize = shadowMapPixelSize * sampleDiscSize;
 
-	// Pseudo-random number to dither the maps
+	// Sample the texture at various offsets
 
 	[unroll]
 	for (int i = 0; i < TOTAL_SAMPLES; i++)
@@ -189,20 +188,18 @@ float4 CalculateWorldPosition(float2 texCoord, float depthVal)
 	return position;
 }
 
-float3 FindShadow(float4 shadowMapPos, float shadowIndex, float3 normal)
+float3 FindShadow(float4 shadowMapPos, float shadowIndex)
 {
 	// In progress: calculate the bias based on the angle of the surface relative to the light
-	float3 lightDir = -normalize(lightDirection);
-	float bias = dot(lightDir, normal) * 0.005f;
+	//float3 lightDir = -normalize(lightDirection);
+	//float bias = dot(lightDir, normal) * 0.005f;
 
 	// Project the shadow map and find the position in it for this pixel
 	float2 shadowTexCoord = shadowMapPos.xy / shadowMapPos.w / 2.0f + float2(0.5, 0.5);
 
-	shadowTexCoord.x /= MAPS_PER_ROW;
-	shadowTexCoord.x += (shadowIndex % MAPS_PER_ROW) / MAPS_PER_ROW;
 	shadowTexCoord.y = 1 - shadowTexCoord.y;
-	shadowTexCoord.y /= MAPS_PER_COL;
-	shadowTexCoord.y += floor(shadowIndex / MAPS_PER_ROW) / MAPS_PER_COL;
+	shadowTexCoord += float2(shadowIndex % MAPS_PER_ROW, floor(shadowIndex / MAPS_PER_ROW));
+	shadowTexCoord /= float2(MAPS_PER_ROW, MAPS_PER_COL);
 
 	// Calculate the current pixel depth
 	float ourdepth = (shadowMapPos.z / shadowMapPos.w) - DepthBias;  
@@ -245,14 +242,15 @@ float4 PixelShaderShadowed(VertexShaderOutput input) : COLOR0
 	// Get linear depth space from viewport distance
 	float camNear = 0.0025f;
 	float camFar = 8.f;
-	float linearZ = (2 * camNear) / (camFar +  camNear - depthVal * (camFar - camNear));
+	float linearZ = (2 * camNear) / (camFar + camNear - depthVal * (camFar - camNear));
 
 	// Get the light projection for the first available frustum split	
 	float shadowIndex = 0;
+	float xt = 1.5f;
 
 	[unroll]
 	for (int i = 0; i < NUM_CASCADES; i++)  
-		shadowIndex += (linearZ > cascadeSplits[i]);
+		shadowIndex += (linearZ > cascadeSplits[i] * xt);
 
 	// Get normal data for bias adjustment
 	float4 normalData = tex2D(normalSampler, input.TexCoord);
@@ -262,25 +260,25 @@ float4 PixelShaderShadowed(VertexShaderOutput input) : COLOR0
 	float4 shadowMapPos = mul(position, lightViewProj[shadowIndex]);
 
 	// Find the position in the shadow map for this pixel
-	float3 shadow = FindShadow(shadowMapPos, shadowIndex, normal);
+	float3 shadow = FindShadow(shadowMapPos, shadowIndex);
 
 	// Calculates minimum cascade distance to start blending in shadow
 	// from the next cascade for a smoother transition. This reduces the
 	// 'pop' or seam visible where the cascades are split.
-	float minDistance = cascadeSplits[shadowIndex] * 0.8f;
-
+	float minDistance = cascadeSplits[shadowIndex] * 0.8f * xt;
+	
 	if (linearZ > minDistance)
 	{
 		// Get second shadow map position projected in light view
 		float4 shadowMapPos2 = mul(position, lightViewProj[shadowIndex + 1]);
-		float relDistance = (linearZ - minDistance) / (cascadeSplits[shadowIndex] - minDistance);
+		float relDistance = (linearZ - minDistance) / (cascadeSplits[shadowIndex] * xt - minDistance);
 
 		// Get shadow value from next cascade and blend the results
-		float3 shadow2 = FindShadow(shadowMapPos2, shadowIndex + 1, normal);
+		float3 shadow2 = FindShadow(shadowMapPos2, shadowIndex + 1);
 
 		shadow = lerp(shadow, shadow2, relDistance);
 	}
-	
+
 	lightOutput.rgb *= shadow;
 	return lightOutput;
 }

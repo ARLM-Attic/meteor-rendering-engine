@@ -51,6 +51,9 @@ namespace Meteor.Resources
 		/// Model representing the object
 		public Model model;
 
+		/// Pointer for the last updated instance
+		private int lastInstance;
+
 		/// Model's main dffuse texture
 		public List<Texture2D> modelTextures;
 		public List<Texture2D> Textures
@@ -135,6 +138,7 @@ namespace Meteor.Resources
 				meshInstanceGroups[meshName].instances.Add(new MeshInstance(boundingSphere));
 				meshInstanceGroups[meshName].visibleInstances.Add(new MeshInstance(boundingSphere));
 				meshInstanceGroups[meshName].tempTransforms[0] = new Matrix();
+				lastInstance = 0; 
 
 				// Add dynamic vertex buffers
 				meshInstanceGroups[meshName].instanceVB =
@@ -229,7 +233,7 @@ namespace Meteor.Resources
 		}
 
 		/// <summary>
-		/// Add a new instance of this model.
+		/// Add a new instance of this model with default transformation.
 		/// Returns the object, useful for adding transformations to this instance.
 		/// </summary>
 
@@ -242,6 +246,7 @@ namespace Meteor.Resources
 				instanceGroup.visibleInstances.Add(null);
 
 				Array.Resize(ref instanceGroup.tempTransforms, instanceGroup.tempTransforms.Length + 1);
+				lastInstance = instanceGroup.instances.Count - 1; 
 			}
 
 			return this;
@@ -254,20 +259,43 @@ namespace Meteor.Resources
 		public InstancedModel NewInstance()
 		{
 			int i = 0;
-
+			bool foundExisting = false;
 			foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups.Values)
 			{
+				for (int j = 0; j < instanceGroup.instances.Count; j++)
+				{
+					if (instanceGroup.instances[j] == null)
+					{
+						instanceGroup.instances[j] = new MeshInstance(model.Meshes[i++].BoundingSphere);
+						lastInstance = j;
+						foundExisting = true;
+
+						break;
+					}
+				}
+			}
+
+			// We're done here, no need to add to the lists
+			if (foundExisting) 
+				return this;
+
+			i = 0;
+			foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups.Values)
+			{
+				// We haven't found any null/unused instances so let's just add one now
 				instanceGroup.instances.Add(new MeshInstance(model.Meshes[i++].BoundingSphere));
 				instanceGroup.visibleInstances.Add(null);
 
 				Array.Resize(ref instanceGroup.tempTransforms, instanceGroup.tempTransforms.Length + 1);
+				lastInstance = instanceGroup.instances.Count - 1; 
 			}
 
 			return this;
 		}
 
 		/// <summary>
-		/// Add a number of new instances with default transformation.
+		/// Allocates new instances for this model for later updating.
+		/// Returns the object, useful for adding transformations to this instance.
 		/// </summary>
 
 		public InstancedModel NewInstances(int capacity)
@@ -282,6 +310,18 @@ namespace Meteor.Resources
 
 			return this;
 		}
+
+		/// <summary>
+		/// Set a world transform for all meshes of an instance
+		/// </summary>
+		/*
+		public MeshInstance UpdateInstance(int index, Matrix worldTransform)
+		{
+			foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups.Values)
+				instanceGroup.instances[instanceGroup.instances.Count - 1].UpdateTransform(worldTransform);
+
+			return meshInstanceGroups[0].instances[0];
+		} */
 
 		/// <summary>
 		/// Returns the last instance of this model.

@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Collections;
 using Microsoft.Xna.Framework;
 
@@ -93,6 +92,21 @@ namespace Meteor.Resources
 			transform = Matrix.CreateScale(scaling) *
 				Matrix.CreateFromQuaternion(rotation) *
 				Matrix.CreateTranslation(position);
+
+			// Update the bounding sphere
+			bSphere = originalBSphere.Transform(transform);
+
+			return transform;
+		}
+
+		/// <summary>
+		/// Update instance's world matrix based on scale, rotation, and translation
+		/// </summary>
+
+		public Matrix UpdateTransform(Matrix worldTransform)
+		{
+			transform = worldTransform;
+			position = worldTransform.Translation;
 
 			// Update the bounding sphere
 			bSphere = originalBSphere.Transform(transform);

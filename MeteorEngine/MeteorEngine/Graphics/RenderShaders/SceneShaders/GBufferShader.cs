@@ -26,7 +26,7 @@ namespace Meteor.Rendering
 			diffuseRT = profile.AddRenderTarget(
 				(int)(backBufferWidth * bufferScaling),
 				(int)(backBufferHeight * bufferScaling), 
-				SurfaceFormat.Color, DepthFormat.Depth24Stencil8);
+				SurfaceFormat.Color, DepthFormat.Depth24Stencil8, 4);
 
 			outputTargets = new RenderTarget2D[3];
 			outputTargets[0] = normalRT;
@@ -52,7 +52,7 @@ namespace Meteor.Rendering
 			graphicsDevice.BlendState = BlendState.Opaque;
 			graphicsDevice.SetRenderTargets(bindingTargets);
 			graphicsDevice.DepthStencilState = DepthStencilState.Default;
-			graphicsDevice.Clear(Color.Black);
+			graphicsDevice.Clear(Color.Transparent);
 
 			// Reset the sampler states after SpriteBatch
 			graphicsDevice.SamplerStates[0] = SamplerState.PointWrap;
@@ -120,12 +120,13 @@ namespace Meteor.Rendering
 			// Normal render targets
 			normalRT = profile.AddRenderTarget(
 				(int)(backBufferWidth * bufferScaling),
-				(int)(backBufferHeight * bufferScaling), 
-				SurfaceFormat.Color, DepthFormat.Depth24Stencil8);
+				(int)(backBufferHeight * bufferScaling),
+				SurfaceFormat.Color, DepthFormat.Depth24Stencil8, 4);
 
 			depthRT = profile.AddRenderTarget(
 				(int)(backBufferWidth * bufferScaling),
-				(int)(backBufferHeight * bufferScaling), SurfaceFormat.Rg32, DepthFormat.None);
+				(int)(backBufferHeight * bufferScaling), 
+				SurfaceFormat.Rg32, DepthFormat.None, 4);
 
 			// Set new half-pixel values to reflect new sizes
 			halfPixel.X = 0.5f / (float)(backBufferWidth * bufferScaling);

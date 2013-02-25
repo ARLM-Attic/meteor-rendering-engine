@@ -97,6 +97,7 @@
     <Compile Include="Graphics\Components\Cameras\DragCamera.cs" />
     <Compile Include="Graphics\Components\Cameras\FreeCamera.cs" />
     <Compile Include="Graphics\Components\DrawableComponent.cs" />
+    <Compile Include="Graphics\Components\Drawables\Grass.cs" />
     <Compile Include="Graphics\Components\Drawables\InnerClipmap.cs" />
     <Compile Include="Graphics\Components\Drawables\OuterClipmap.cs" />
     <Compile Include="Graphics\Components\Drawables\MeshInstance.cs">
@@ -114,6 +115,7 @@
     <Compile Include="Graphics\Rendering\SceneCuller.cs" />
     <Compile Include="Graphics\Rendering\SceneRenderer.cs" />
     <Compile Include="Graphics\Components\Core.cs" />
+    <Compile Include="Graphics\RenderShaders\PostProcessingShaders\MLAAShader.cs" />
     <Compile Include="Graphics\RenderShaders\SceneShaders\DepthMapShader.cs" />
     <Compile Include="Helpers\DebugDisplay.cs" />
     <Compile Include="Helpers\GaussianBlur.cs" />
@@ -158,12 +160,14 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\AreaTexDX9.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\blur.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\clearGBuffer.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\combination.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\depth.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\directionalLight.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\fxaa.xnb" />
+    <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\mlaa.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\pointLight.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\renderGBuffer.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\ssao.xnb" />

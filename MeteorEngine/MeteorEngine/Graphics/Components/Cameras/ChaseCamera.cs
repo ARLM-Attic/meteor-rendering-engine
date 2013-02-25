@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 
 namespace Meteor.Resources
@@ -165,11 +164,11 @@ namespace Meteor.Resources
 		protected override void UpdateMatrices()
 		{
 			//view = Matrix.CreateLookAt(position, position + worldTransform.Forward, worldTransform.Up);
-			view = Matrix.CreateLookAt(this.Position, this.LookAt, this.Up);
+			view = Matrix.CreateLookAt(this.position, this.LookAt, this.Up);
 			projection = Matrix.CreatePerspectiveFieldOfView(FieldOfView,
 				AspectRatio, nearPlaneDistance, farPlaneDistance);
 
-			cameraFrustum.Matrix = view * projection;
+			frustum.Matrix = view * projection;
 		}
 
 		/// <summary>

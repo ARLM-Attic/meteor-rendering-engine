@@ -58,10 +58,7 @@ namespace Meteor.Rendering
 			depthRT = profile.AddRenderTarget(shadowMapSize * mapsPerRow, shadowMapSize * mapsPerCol,
 				SurfaceFormat.Single, DepthFormat.Depth24);
 
-			outputTargets = new RenderTarget2D[]
-			{
-				depthRT
-			};
+			outputTargets = new RenderTarget2D[] { depthRT };
 
 			lightCamera = new Camera();
 			lightCamera.farPlaneDistance = 1000f;
@@ -89,26 +86,6 @@ namespace Meteor.Rendering
 
 			renderStopWatch.Stop();
 			return outputs;
-		}
-
-		/// <summary>
-		/// Set common parameters to reduce state changes
-		/// </summary> 
-
-		private void SetCommonParameters(Effect effect, Camera camera, RenderTarget2D[] targets)
-		{
-			// Set Matrix parameters
-			effect.Parameters["View"].SetValue(camera.View);
-			effect.Parameters["Projection"].SetValue(camera.Projection);
-
-			// Set the G-Buffer parameters
-			effect.Parameters["normalMap"].SetValue(targets[0]);
-			effect.Parameters["depthMap"].SetValue(targets[1]);
-
-			// Set additional camera parameters
-			effect.Parameters["camPosition"].SetValue(camera.Position);
-			effect.Parameters["invertViewProj"].SetValue(Matrix.Invert(camera.View * camera.Projection));
-			effect.Parameters["inverseView"].SetValue(Matrix.Invert(camera.View));
 		}
 
 		/// <summary>
@@ -140,6 +117,7 @@ namespace Meteor.Rendering
 						// Adjust viewport settings to draw to the correct portion
 						// of the render target
 						Viewport viewport = graphicsDevice.Viewport;
+
 						viewport.Width = shadowMapSize;
 						viewport.Height = shadowMapSize;
 						viewport.X = shadowMapSize * (cascade % mapsPerRow);
@@ -148,12 +126,12 @@ namespace Meteor.Rendering
 
 						// Update view matrices
 						CreateLightViewProjMatrix(light.direction, lightCamera);
-						terrainDepthEffect.Parameters["LightViewProj"].SetValue(lightCamera.View * lightCamera.Projection);
+						terrainDepthEffect.Parameters["LightViewProj"].SetValue(lightCamera.view * lightCamera.projection);
 
 						// Draw the terrain here
-						sceneRenderer.DrawTerrainDefault(scene, lightCamera, terrainDepthEffect);
+						//sceneRenderer.DrawTerrainDefault(scene, lightCamera, terrainDepthEffect);
 
-						depthEffect.Parameters["LightViewProj"].SetValue(lightCamera.View * lightCamera.Projection);
+						depthEffect.Parameters["LightViewProj"].SetValue(lightCamera.view * lightCamera.projection);
 						depthEffect.Parameters["nearClip"].SetValue(lightCamera.nearPlaneDistance);
 
 						// Cull models from this point of view
@@ -176,7 +154,7 @@ namespace Meteor.Rendering
 		{
 			// Matrix with that will rotate in points the direction of the light
 			Matrix lightRotation = Matrix.CreateLookAt(Vector3.Zero, lightDirection, Vector3.Up);
-			camera.Frustum.GetCorners(camera);
+			camera.frustum.GetCorners(camera);
 
 			// Transform the positions of the corners into the direction of the light
 			for (int i = 0; i < camera.frustumCorners.Length; i++)
@@ -240,12 +218,12 @@ namespace Meteor.Rendering
 			lightPosition = Vector3.Transform(lightPosition, Matrix.Invert(lightRotation));
 
 			// Create the view matrix for the light
-			lightCamera.View = Matrix.CreateLookAt(lightPosition, lightPosition + lightDirection, Vector3.Up);
+			lightCamera.view = Matrix.CreateLookAt(lightPosition, lightPosition + lightDirection, Vector3.Up);
 
 			// Create the projection matrix for the light
 			// The projection is orthographic since we are using a directional light
-			float nearScale = 5f;
-			lightCamera.Projection =
+			float nearScale = 10f;
+			lightCamera.projection =
 				Matrix.CreateOrthographic(boxSize.X, boxSize.Y, -boxSize.Z * nearScale, boxSize.Z / 2f);
 
 			// Finally, update the view frustum's matrix

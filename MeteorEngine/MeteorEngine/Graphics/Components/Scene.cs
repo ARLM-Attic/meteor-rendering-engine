@@ -5,6 +5,8 @@ using System.IO;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
+using Meteor.Resources;
+using Meteor.Resources;
 using SkinnedModel;
 
 namespace Meteor.Resources

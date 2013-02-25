@@ -126,7 +126,7 @@ namespace Meteor.Resources
 				{
 					for (int x = left, j = 0; x <= right; x += gridUnitSize, j++)
 					{
-						vertices[i * clipLevelSize + j].Position = new Vector3(x, heightData[x, y] / 5.0f, -y);
+						vertices[i * clipLevelSize + j].Position = new Vector3(x, heightData[x, y] / 4.0f, -y);
 						vertices[i * clipLevelSize + j].TextureCoordinate = new Vector2(x, y) / 20.0f;
 						updatedVertices++;
 					}

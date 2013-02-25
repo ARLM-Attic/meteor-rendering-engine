@@ -13,9 +13,7 @@ texture EnvironmentMap;
 sampler diffuseSampler : register(s0) = sampler_state
 {
     Texture = <Texture>;
-	MinFilter = Anisotropic;
-	MagFilter = Anisotropic;
-	MipFilter = Linear;
+	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Wrap;
 	AddressV = Wrap;
 };
@@ -182,10 +180,10 @@ PixelShaderOutput1 PixelShaderGBuffer(VertexShaderOutput input)
 {
     PixelShaderOutput1 output;
 
+	// Output Color
 	// First check if this pixel is opaque
-	//output Color
     output.Color = tex2D(diffuseSampler, input.TexCoord);
-	clip(output.Color.a - 0.5);
+	clip(output.Color.a - 0.95);
 
     // Output the normal, in [0,1] space
     float3 normalFromMap = tex2D(normalMapSampler, input.TexCoord);
@@ -196,7 +194,7 @@ PixelShaderOutput1 PixelShaderGBuffer(VertexShaderOutput input)
 
 	// Output SpecularPower and SpecularIntensity
 	float4 specularAttributes = tex2D(specularSampler, input.TexCoord);
-    output.Normal.a = specularAttributes.r; //specularIntensity;
+    output.Normal.a = specularAttributes.r;
 
 	// Output Depth
     //output.Depth = -input.Depth / 2000.f;	//output Depth in linear space, [0..1] 
@@ -212,7 +210,7 @@ PixelShaderOutput2 PixelShaderSmallGBuffer(VertexShaderOutput input)
 
 	// First check if this pixel is opaque
 	float mask = tex2D(diffuseSampler, input.TexCoord).a;
-	clip(mask - 0.5);
+	clip(mask - 0.95);
 
     // Output the normal, in [0,1] space
     float3 normalFromMap = tex2D(normalMapSampler, input.TexCoord);
@@ -236,7 +234,7 @@ float4 PixelShaderDiffuseRender(VertexShaderOutput input) : COLOR0
 {
 	// First check if mask channel is opaque
 	float4 diffuse = tex2D(diffuseSampler, input.TexCoord);
-	clip(diffuse.a - 0.5);
+	clip(diffuse.a - 0.95);
 
 	float3 envmap = texCUBE(environmentMapSampler, normalize(input.Reflection));
 
@@ -280,6 +278,15 @@ float4 BasicPS(VertexShaderOutput input) : COLOR0
 {
     // Simply return the input texture color
 	return tex2D(diffuseSampler, input.TexCoord);
+}
+
+float4 SkyboxPS(VertexShaderOutput input) : COLOR0
+{
+    // Flag skybox output with zero alpha
+	float4 color = tex2D(diffuseSampler, input.TexCoord);
+
+	color.a = 0.99f;
+	return color;
 }
 
 struct VertexShaderSkyboxData
@@ -362,7 +369,7 @@ technique DiffuseRender
 {
     pass Pass1
     {
-		AlphablendEnable = false;
+	    ZEnable = true;
         VertexShader = compile vs_3_0 VertexShaderFunction();
         PixelShader = compile ps_3_0 PixelShaderDiffuseRender();
     }
@@ -372,7 +379,7 @@ technique DiffuseRenderAnimated
 {
     pass Pass1
     {
-		AlphablendEnable = false;
+	    ZEnable = true;
         VertexShader = compile vs_3_0 VertexShaderSkinnedAnimation();
         PixelShader = compile ps_3_0 PixelShaderDiffuseRender();
     }
@@ -383,12 +390,12 @@ technique Skybox
     pass Pass1
     {
 		CullMode = None;
-		ZENABLE = True;
-		ZFUNC = LESSEQUAL;
-		ZWRITEENABLE = False;		
+	    ZEnable = true;
+		ZFunc = LessEqual;
+		ZWriteEnable = false;
 		
         VertexShader = compile vs_3_0 VertexShaderSkybox();
-        PixelShader = compile ps_3_0 BasicPS();
+        PixelShader = compile ps_3_0 SkyboxPS();
     }
 }
 

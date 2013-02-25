@@ -449,8 +449,7 @@ namespace DeferredRenderingPipeline
                 // New material
                 case "newmtl":
                     // Finish the current material
-                    if (materialContent != null && 
-						!materials.ContainsKey(materialContent.Name))
+                    if (materialContent != null && !materials.ContainsKey(materialContent.Name))
                         materials.Add(materialContent.Name, materialContent);
 
                     // Start a new material

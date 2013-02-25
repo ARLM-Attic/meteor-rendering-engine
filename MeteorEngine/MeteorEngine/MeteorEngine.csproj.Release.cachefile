@@ -8,14 +8,11 @@ MeteorEngine.Content\Effects\pointLight.xnb
 MeteorEngine.Content\Effects\depth.xnb
 MeteorEngine.Content\Effects\ssao.xnb
 MeteorEngine.Content\random.xnb
-MeteorEngine.Content\null_color.xnb
-MeteorEngine.Content\null_specular.xnb
-MeteorEngine.Content\null_normal.xnb
-MeteorEngine.Content\Fonts\defaultFont.xnb
 MeteorEngine.Content\Models\ball.xnb
 MeteorEngine.Content\Fonts\segoeUI.xnb
 MeteorEngine.Content\Effects\terrainGBuffer.xnb
-MeteorEngine.Content\seattle.xnb
-MeteorEngine.Content\skyblue_cube.xnb
 MeteorEngine.Content\Effects\terrainDepth.xnb
 MeteorEngine.Content\Effects\imposter.xnb
+MeteorEngine.Content\Effects\mlaa.xnb
+MeteorEngine.Content\Effects\AreaTexDX9.xnb
+MeteorEngine.Content\Fonts\defaultFont.xnb

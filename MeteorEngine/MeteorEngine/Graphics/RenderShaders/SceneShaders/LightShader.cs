@@ -43,8 +43,8 @@ namespace Meteor.Rendering
 		/// Ratio of linear to logarithmic split in view cascades
 		public float splitLambda = 0.9f;
 
+		/// View matrices for each frustum split
 		Matrix[] lightViewProj;
-		Matrix[] lightProjection;
 
 		BlendState additiveBlendState = new BlendState()
 		{
@@ -96,12 +96,10 @@ namespace Meteor.Rendering
 			lightCamera.Initialize(shadowMapSize, shadowMapSize);
 
 			lightViewProj = new Matrix[numCascades];
-			lightProjection = new Matrix[numCascades];
 
 			// Load the shader effects
 			directionalLightEffect = content.Load<Effect>("directionalLight");
 			pointLightEffect = content.Load<Effect>("pointLight");
-
 
 			// Set constant parameters
 			directionalLightEffect.Parameters["halfPixel"].SetValue(halfPixel);
@@ -145,17 +143,17 @@ namespace Meteor.Rendering
 		private void SetCommonParameters(Effect effect, Camera camera, RenderTarget2D[] targets)
 		{
 			// Set Matrix parameters
-			effect.Parameters["View"].SetValue(camera.View);
-			effect.Parameters["Projection"].SetValue(camera.Projection);
+			effect.Parameters["View"].SetValue(camera.view);
+			effect.Parameters["Projection"].SetValue(camera.projection);
 
 			// Set the G-Buffer parameters
 			effect.Parameters["normalMap"].SetValue(targets[0]);
 			effect.Parameters["depthMap"].SetValue(targets[1]);
 
 			// Set additional camera parameters
-			effect.Parameters["camPosition"].SetValue(camera.Position);
-			effect.Parameters["invertViewProj"].SetValue(Matrix.Invert(camera.View * camera.Projection));
-			effect.Parameters["inverseView"].SetValue(Matrix.Invert(camera.View));
+			effect.Parameters["camPosition"].SetValue(camera.position);
+			effect.Parameters["invertViewProj"].SetValue(Matrix.Invert(camera.view * camera.projection));
+			effect.Parameters["inverseView"].SetValue(Matrix.Invert(camera.view));
 		}
 
 		/// <summary>
@@ -193,20 +191,15 @@ namespace Meteor.Rendering
 					// Calculate view projection matrices for each shadow map cascade
 					for (int i = 0; i < numCascades; i++)
 					{
-						// Set shadow distance limit scale
-						float farLimit = 1f;
-
-						camera.GetFrustumSplit(i, numCascades, splitLambda, farLimit);
-						splitNearFar[i] = camera.farSplitPlaneDistance / (camera.farPlaneDistance * farLimit);
+						camera.GetFrustumSplit(i, numCascades, splitLambda);
+						splitNearFar[i] = camera.farSplitPlaneDistance / camera.farPlaneDistance;
 
 						CreateLightViewProjMatrix(light.direction, lightCamera);
-						lightViewProj[i] = lightCamera.View * lightCamera.Projection;
-						lightProjection[i] = lightCamera.Projection;
+						lightViewProj[i] = lightCamera.view * lightCamera.projection;
 					}
 
 					directionalLightEffect.Parameters["cascadeSplits"].SetValue(splitNearFar);
 					directionalLightEffect.Parameters["lightViewProj"].SetValue(lightViewProj);
-					directionalLightEffect.Parameters["lightProjection"].SetValue(lightProjection);
 					directionalLightEffect.Parameters["shadowMap"].SetValue(targets[3]);
 				}
 				else
@@ -231,7 +224,7 @@ namespace Meteor.Rendering
 		{
 			// Matrix with that will rotate in points the direction of the light
 			Matrix lightRotation = Matrix.CreateLookAt(Vector3.Zero, lightDirection, Vector3.Up);
-			camera.Frustum.GetCorners(camera);
+			camera.frustum.GetCorners(camera);
 
 			// Transform the positions of the corners into the direction of the light
 			for (int i = 0; i < camera.frustumCorners.Length; i++)
@@ -262,7 +255,6 @@ namespace Meteor.Rendering
 				// The camera will snap along texel-sized increments
 
 				float diagonalLength = (camera.frustumCorners[1] - camera.frustumCorners[7]).Length();
-				//diagonalLength *= 1.1f;
 				float worldsUnitsPerTexel = diagonalLength / (float)shadowMapSize;
 
 				Vector3 vBorderOffset = (new Vector3(diagonalLength, diagonalLength, diagonalLength) -
@@ -295,12 +287,12 @@ namespace Meteor.Rendering
 			lightPosition = Vector3.Transform(lightPosition, Matrix.Invert(lightRotation));
 
 			// Create the view matrix for the light
-			lightCamera.View = Matrix.CreateLookAt(lightPosition, lightPosition + lightDirection, Vector3.Up);
+			lightCamera.view = Matrix.CreateLookAt(lightPosition, lightPosition + lightDirection, Vector3.Up);
 
 			// Create the projection matrix for the light
 			// The projection is orthographic since we are using a directional light
-			float nearScale = 5f;
-			lightCamera.Projection =
+			float nearScale = 10f;
+			lightCamera.projection =
 				Matrix.CreateOrthographic(boxSize.X, boxSize.Y, -boxSize.Z * nearScale, boxSize.Z / 2f);
 
 			// Finally, update the view frustum's matrix
@@ -345,7 +337,7 @@ namespace Meteor.Rendering
 			/// "outer" lights don't contain the camera at all.
 			/// </summary>
 
-			BoundingFrustum cameraFrustum = new BoundingFrustum(camera.View * camera.Projection);
+			BoundingFrustum cameraFrustum = new BoundingFrustum(camera.view * camera.projection);
 			innerLights.Clear();
 			outerLights.Clear();
 
@@ -359,7 +351,7 @@ namespace Meteor.Rendering
 				radiusVector.Y = light.instance.transform.M12;
 				radiusVector.Z = light.instance.transform.M13;
 
-				float camToCenter = Vector3.Distance(camera.Position, lightPosition);
+				float camToCenter = Vector3.Distance(camera.position, lightPosition);
 				radius = radiusVector.Length();
 
 				BoundingSphere bSphere = new BoundingSphere(lightPosition, radius);

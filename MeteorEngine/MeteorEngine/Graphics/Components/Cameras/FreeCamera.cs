@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Reflection;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
-using Microsoft.Xna.Framework.Graphics;
 
 namespace Meteor.Resources
 {
@@ -43,12 +40,12 @@ namespace Meteor.Resources
 		/// </summary>
 		protected override void UpdateMatrices()
 		{
-			worldTransform =
+			worldMatrix =
 				Matrix.CreateFromAxisAngle(Vector3.Right, MathHelper.ToRadians(cameraArc)) *
 				Matrix.CreateFromAxisAngle(Vector3.Up, MathHelper.ToRadians(cameraRotation));
-			view = Matrix.CreateLookAt(position, position + worldTransform.Forward, worldTransform.Up);
+			view = Matrix.CreateLookAt(position, position + worldMatrix.Forward, worldMatrix.Up);
 
-			cameraFrustum.Matrix = view * projection;
+			frustum.Matrix = view * projection;
 		}
 
 		/// Default position to keep the mouse pointer centered
@@ -85,12 +82,12 @@ namespace Meteor.Resources
 			// Check for input to move the camera forward and back
 			if (currentKeyboardState.IsKeyDown(Keys.W))
 			{
-				position += worldTransform.Forward * time * moveSpeed;
+				position += worldMatrix.Forward * time * moveSpeed;
 			}
 
 			if (currentKeyboardState.IsKeyDown(Keys.S))
 			{
-				position -= worldTransform.Forward * time * moveSpeed;
+				position -= worldMatrix.Forward * time * moveSpeed;
 			}
 
 			cameraArc += currentGamePadState.ThumbSticks.Right.Y * time * 0.05f;
@@ -105,12 +102,12 @@ namespace Meteor.Resources
 			// Check for input to move the camera sideways
 			if (currentKeyboardState.IsKeyDown(Keys.D))
 			{
-				position += worldTransform.Right * time * moveSpeed;
+				position += worldMatrix.Right * time * moveSpeed;
 			}
 
 			if (currentKeyboardState.IsKeyDown(Keys.A))
 			{
-				position += worldTransform.Left * time * moveSpeed;
+				position += worldMatrix.Left * time * moveSpeed;
 			}
 
 			cameraRotation += currentGamePadState.ThumbSticks.Right.X * time * 0.05f;

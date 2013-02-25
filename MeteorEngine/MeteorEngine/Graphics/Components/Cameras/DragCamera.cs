@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Reflection;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
-using Microsoft.Xna.Framework.Graphics;
 
 namespace Meteor.Resources
 {
@@ -16,7 +13,7 @@ namespace Meteor.Resources
 		/// Adjust smoothing to create a more fluid moving camera.
 		/// Too much smoothing will cause a disorienting feel.
 		/// </summary>
-		public float smoothing = 1.5f;
+		public float smoothing = 2f;
 		public float moveSpeed = 0.0625f;
 
 		KeyboardState currentKeyboardState = new KeyboardState();
@@ -44,12 +41,12 @@ namespace Meteor.Resources
 		/// </summary>
 		protected override void UpdateMatrices()
 		{
-			worldTransform =
+			worldMatrix =
 				Matrix.CreateFromAxisAngle(Vector3.Right, MathHelper.ToRadians(cameraArc)) *
 				Matrix.CreateFromAxisAngle(Vector3.Up, MathHelper.ToRadians(cameraRotation));
-			view = Matrix.CreateLookAt(position, position + worldTransform.Forward, worldTransform.Up);
+			view = Matrix.CreateLookAt(position, position + worldMatrix.Forward, worldMatrix.Up);
 
-			cameraFrustum.Matrix = view * projection;
+			frustum.Matrix = view * projection;
 		}
 
 		/// Default position to keep the mouse pointer centered
@@ -111,12 +108,12 @@ namespace Meteor.Resources
 			// Check for input to move the camera forward and back
 			if (currentKeyboardState.IsKeyDown(Keys.W))
 			{
-				position += worldTransform.Forward * time * selectedMoveSpeed;
+				position += worldMatrix.Forward * time * selectedMoveSpeed;
 			}
 
 			if (currentKeyboardState.IsKeyDown(Keys.S))
 			{
-				position -= worldTransform.Forward * time * selectedMoveSpeed;
+				position -= worldMatrix.Forward * time * selectedMoveSpeed;
 			}
 
 			cameraArc += currentGamePadState.ThumbSticks.Right.Y * time;
@@ -131,12 +128,12 @@ namespace Meteor.Resources
 			// Check for input to move the camera sideways
 			if (currentKeyboardState.IsKeyDown(Keys.D))
 			{
-				position += worldTransform.Right * time * selectedMoveSpeed;
+				position += worldMatrix.Right * time * selectedMoveSpeed;
 			}
 
 			if (currentKeyboardState.IsKeyDown(Keys.A))
 			{
-				position += worldTransform.Left * time * selectedMoveSpeed;
+				position += worldMatrix.Left * time * selectedMoveSpeed;
 			}
 
 			cameraRotation += currentGamePadState.ThumbSticks.Right.X * time;

@@ -113,19 +113,8 @@ namespace Meteor.Rendering
 			graphicsDevice.BlendState = blendState;
 			graphicsDevice.RasterizerState = RasterizerState.CullNone;
 
-			// Early Z-pass test
-			/*
-			DepthStencilState d = new DepthStencilState();
-			d.DepthBufferEnable = true;
-			d.DepthBufferWriteEnable = true;
-			graphicsDevice.DepthStencilState = d;
-
-			BlendState b = new BlendState();
-			b.ColorWriteChannels = ColorWriteChannels.None;
-			graphicsDevice.BlendState = b;
-			*/
 			totalPolys = 0;
-			//scene.totalPolys = 0;
+			scene.visibleMeshes = 0;
 
 			// Update the viewport for proper rendering order
 
@@ -166,10 +155,10 @@ namespace Meteor.Rendering
 			currentEffect = effect;
 
 			foreach (InstancedModel instancedModel in scene.staticModels.Values)
-				scene.visibleMeshes += DrawModel(instancedModel, effect, "Default");
+				DrawModel(instancedModel, effect, "Default");
 
 			foreach (InstancedModel skinnedModel in scene.skinnedModels.Values)
-				scene.visibleMeshes += DrawModel(skinnedModel, effect, "DefaultAnimated");
+				DrawModel(skinnedModel, effect, "DefaultAnimated");
 
 			// Finished drawing visible meshes
 		}
@@ -269,11 +258,11 @@ namespace Meteor.Rendering
 
 					// Set GBuffer parameters
 					currentEffect.Parameters["World"].SetValue(world);
-					currentEffect.Parameters["View"].SetValue(camera.View);
-					currentEffect.Parameters["Projection"].SetValue(camera.Projection);
+					currentEffect.Parameters["View"].SetValue(camera.view);
+					currentEffect.Parameters["Projection"].SetValue(camera.projection);
 					currentEffect.Parameters["WorldInverseTranspose"].SetValue(
 						Matrix.Transpose(Matrix.Invert(world * mesh.ParentBone.Transform)));
-					currentEffect.Parameters["CameraPosition"].SetValue(camera.Position);
+					currentEffect.Parameters["CameraPosition"].SetValue(camera.position);
 
 					// Set bones if the model is animated
 					if (instancedModel.animationPlayer != null)
@@ -408,7 +397,7 @@ namespace Meteor.Rendering
 			scene.Skybox.MeshInstanceGroups["DefaultName_0"].visibleInstances[0] =
 				scene.Skybox.MeshInstanceGroups["DefaultName_0"].instances[0];
 
-			scene.Skybox.Translate(camera.Position);
+			scene.Skybox.Translate(camera.position);
 			DrawModel(scene.Skybox, camera, this.shaderTechnique);
 		}
 		
@@ -420,8 +409,8 @@ namespace Meteor.Rendering
 		{
 			if (scene.debug == true)
 			{
-				basicEffect.View = camera.View;
-				basicEffect.Projection = camera.Projection;
+				basicEffect.View = camera.view;
+				basicEffect.Projection = camera.projection;
 
 				foreach (InstancedModel instancedModel in scene.staticModels.Values)
 				{
@@ -446,7 +435,7 @@ namespace Meteor.Rendering
 			float farDistance = camera.farPlaneDistance;
 
 			// Matrices to project into screen space
-			Matrix worldViewProjection = camera.View * camera.Projection;
+			Matrix worldViewProjection = camera.view * camera.projection;
 			Matrix invClient = Matrix.Invert(Matrix.CreateOrthographicOffCenter(0, v.Width, v.Height, 0, -1, 1));
 
 			foreach (MeshInstanceGroup instancedGroup in model.MeshInstanceGroups.Values)
@@ -491,7 +480,7 @@ namespace Meteor.Rendering
 						model.boxVertices[i].Color = Color.Cyan;
 						
 						// Determin the closest distance point in the bounding box
-						float camDistance = Vector3.Distance(model.boxVertices[i].Position, camera.Position);
+						float camDistance = Vector3.Distance(model.boxVertices[i].Position, camera.position);
 						minDistance = Math.Min(camDistance, minDistance);
 
 						// Project the corners of the bounding box onto screen space
@@ -508,14 +497,14 @@ namespace Meteor.Rendering
 						rectMax.Y = (int)Math.Max((float)clientResult.Y, (float)rectMax.Y);
 					}
 
-					Vector3 topLeft = v.Unproject(new Vector3(rectMin, minDistance), camera.Projection, camera.View, camera.WorldMatrix);
-					Vector3 bottomRight = v.Unproject(new Vector3(rectMax, minDistance), camera.Projection, camera.View, camera.WorldMatrix);
+					Vector3 topLeft = v.Unproject(new Vector3(rectMin, minDistance), camera.projection, camera.view, camera.WorldMatrix);
+					Vector3 bottomRight = v.Unproject(new Vector3(rectMax, minDistance), camera.projection, camera.view, camera.WorldMatrix);
 
 					// Transform the temporary bounding boxes with the model instance's world matrix
 					// TODO: Update these boxes only when intances are updated
 
 					// Render the bounding box for this instance
-					if (camera.Frustum.Contains(meshInstance.BSphere) != ContainmentType.Disjoint)
+					if (camera.frustum.Contains(meshInstance.BSphere) != ContainmentType.Disjoint)
 					{
 						// Add a bounding sphere to the list of shapes to draw
 						//ShapeRenderer.AddBoundingSphere(meshInstance.BSphere, Color.Red);

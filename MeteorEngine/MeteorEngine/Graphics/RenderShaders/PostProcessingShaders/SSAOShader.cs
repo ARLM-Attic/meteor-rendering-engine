@@ -14,11 +14,11 @@ namespace Meteor.Rendering
 	public class SSAOShader : BaseShader
 	{
 		// Basic parameters
-		public float radius = 2.5f;
-		public float intensity = 7f;
+		public float radius = 1.5f;
+		public float intensity = 3f;
 		public float scale = 1f;
-		public float bias = 0.01f;
-		public bool applyBlur = true;
+		public float bias = 0.1f;
+		public bool applyBlur = false;
 
 		/// Final combined pass
 		RenderTarget2D[] finalRT;
@@ -86,10 +86,10 @@ namespace Meteor.Rendering
 			graphicsDevice.Clear(Color.White);
 
 			// SSAO effect
-			ssaoEffect.Parameters["View"].SetValue(camera.View);
-			ssaoEffect.Parameters["Projection"].SetValue(camera.Projection);
-			ssaoEffect.Parameters["invertViewProj"].SetValue(Matrix.Invert(camera.View * camera.Projection));
-			ssaoEffect.Parameters["invertProjection"].SetValue(Matrix.Invert(camera.Projection));
+			ssaoEffect.Parameters["View"].SetValue(camera.view);
+			ssaoEffect.Parameters["Projection"].SetValue(camera.projection);
+			ssaoEffect.Parameters["invertViewProj"].SetValue(Matrix.Invert(camera.view * camera.projection));
+			ssaoEffect.Parameters["invertProjection"].SetValue(Matrix.Invert(camera.projection));
 
 			ssaoEffect.Parameters["NormalBuffer"].SetValue(inputTargets[0]);
 			ssaoEffect.Parameters["DepthBuffer"].SetValue(inputTargets[1]);
