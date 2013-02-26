@@ -61,7 +61,7 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 // This will set how many texture samples to blur from.
 // If you want a larger blur change the sample_count to a higher odd number.
 
-#define SAMPLE_COUNT 11
+#define SAMPLE_COUNT 7
 
 uniform extern half4 sampleOffsets[SAMPLE_COUNT];
 uniform extern half sampleWeights[SAMPLE_COUNT];

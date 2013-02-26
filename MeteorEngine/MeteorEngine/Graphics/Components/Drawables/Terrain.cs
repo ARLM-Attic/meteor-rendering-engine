@@ -6,40 +6,6 @@ using Microsoft.Xna.Framework.Graphics;
 namespace Meteor.Resources
 {
 	/// <summary>
-	/// Vertex structure for normal mapped terrain
-	/// </summary>
-
-	public struct VertexPositionTangentToWorld
-	{
-		public Vector3 Position;
-		public Vector3 Normal;
-		public Vector2 TextureCoordinate;
-		public Vector3 Tangent;
-		public Vector3 Binormal;
-
-		public static VertexDeclaration terrainVertexDeclaration = new VertexDeclaration
-		(
-			new VertexElement(0, VertexElementFormat.Vector3, VertexElementUsage.Position, 0),
-			new VertexElement(sizeof(float) * 3, VertexElementFormat.Vector3, VertexElementUsage.Normal, 0),
-			new VertexElement(sizeof(float) * 6, VertexElementFormat.Vector2, VertexElementUsage.TextureCoordinate, 0),
-			new VertexElement(sizeof(float) * 8, VertexElementFormat.Vector3, VertexElementUsage.Tangent, 0),
-			new VertexElement(sizeof(float) * 11, VertexElementFormat.Vector3, VertexElementUsage.Binormal, 0)
-		);
-
-		public VertexPositionTangentToWorld(Vector3 position, Vector3 normal, Vector2 textureCoordinate,
-			Vector3 tangent, Vector3 binormal)
-		{
-			Position = position;
-			Normal = normal;
-			TextureCoordinate = textureCoordinate;
-			Tangent = tangent;
-			Binormal = binormal;
-		}
-
-		public static int SizeInBytes { get { return sizeof(float) * 14; } }
-	}
-
-	/// <summary>
 	/// Class that stores original terrain heightmap info and clipmaps
 	/// to visually represent it.
 	/// </summary>
@@ -102,7 +68,7 @@ namespace Meteor.Resources
 		{
 			heightMapTexture = content.Load<Texture2D>(image);
 			mainTexture = content.Load<Texture2D>(texture);
-			blendTexture1 = content.Load<Texture2D>("Textures/grass");
+			blendTexture1 = content.Load<Texture2D>("Textures/desert-cracked1");
 			normalTexture = content.Load<Texture2D>(normalTex);
 
 			terrainWidth = heightMapTexture.Width;
@@ -132,10 +98,10 @@ namespace Meteor.Resources
 			//SetUpIndices();
 
 			// Setup the clip maps
-			int clipMapSize = 80;
+			int clipMapSize = 96;
 
 			innerClipMap = new InnerClipmap(clipMapSize, graphicsDevice);
-			outerClipMaps = new OuterClipmap[5];
+			outerClipMaps = new OuterClipmap[4];
 
 			for (int i = 0; i < outerClipMaps.Length; i++)
 				outerClipMaps[i] = new OuterClipmap(i + 1, clipMapSize, graphicsDevice);
@@ -161,6 +127,9 @@ namespace Meteor.Resources
 		{
 			Vector2 mapCenter = getMapPosition(centerPosition);
 			innerClipMap.ForceUpdate(new Vector2(terrainWidth, terrainHeight), mapCenter, heightData);
+
+			foreach(OuterClipmap outerClipMap in outerClipMaps)
+				outerClipMap.ForceUpdate(new Vector2(terrainWidth, terrainHeight), mapCenter, heightData);
 		}
 
 		/// <summary>

@@ -397,6 +397,95 @@ namespace Meteor.Resources
 		}
 
 		/// <summary>
+		/// Make a DummyBox. Useful for occlusion queries and other tests.
+		/// </summary>
+		/// <param name="corners"></param>
+		public static VertexBuffer AddDummyBox()
+		{
+			VertexPositionNormalTexture[] boxVertices = new VertexPositionNormalTexture[36];
+
+			// Calculate the position of the vertices on the top face.
+			Vector3 topLeftFront = new Vector3(-1.0f, 1.0f, -1.0f);
+			Vector3 topLeftBack = new Vector3(-1.0f, 1.0f, 1.0f);
+			Vector3 topRightFront = new Vector3(1.0f, 1.0f, -1.0f);
+			Vector3 topRightBack = new Vector3(1.0f, 1.0f, 1.0f);
+
+			// Calculate the position of the vertices on the bottom face.
+			Vector3 btmLeftFront = new Vector3(-1.0f, -1.0f, -1.0f);
+			Vector3 btmLeftBack = new Vector3(-1.0f, -1.0f, 1.0f);
+			Vector3 btmRightFront = new Vector3(1.0f, -1.0f, -1.0f);
+			Vector3 btmRightBack = new Vector3(1.0f, -1.0f, 1.0f);
+
+			// Normal vectors for each face (needed for lighting / display)
+			Vector3 normalFront = new Vector3(0.0f, 0.0f, 1.0f);
+			Vector3 normalBack = new Vector3(0.0f, 0.0f, -1.0f);
+			Vector3 normalTop = new Vector3(0.0f, 1.0f, 0.0f);
+			Vector3 normalBottom = new Vector3(0.0f, -1.0f, 0.0f);
+			Vector3 normalLeft = new Vector3(-1.0f, 0.0f, 0.0f);
+			Vector3 normalRight = new Vector3(1.0f, 0.0f, 0.0f);
+
+			// UV texture coordinates
+			Vector2 textureTopLeft = new Vector2(1.0f, 0.0f);
+			Vector2 textureTopRight = new Vector2(0.0f, 0.0f);
+			Vector2 textureBottomLeft = new Vector2(1.0f, 1.0f);
+			Vector2 textureBottomRight = new Vector2(0.0f, 1.0f);
+
+			// Add the vertices for the front face.
+			boxVertices[0] = new VertexPositionNormalTexture(topLeftFront, normalFront, textureTopLeft);
+			boxVertices[1] = new VertexPositionNormalTexture(btmLeftFront, normalFront, textureBottomLeft);
+			boxVertices[2] = new VertexPositionNormalTexture(topRightFront, normalFront, textureTopRight);
+			boxVertices[3] = new VertexPositionNormalTexture(btmLeftFront, normalFront, textureBottomLeft);
+			boxVertices[4] = new VertexPositionNormalTexture(btmRightFront, normalFront, textureBottomRight);
+			boxVertices[5] = new VertexPositionNormalTexture(topRightFront, normalFront, textureTopRight);
+
+			// Add the vertices for the back face.
+			boxVertices[6] = new VertexPositionNormalTexture(topLeftBack, normalBack, textureTopRight);
+			boxVertices[7] = new VertexPositionNormalTexture(topRightBack, normalBack, textureTopLeft);
+			boxVertices[8] = new VertexPositionNormalTexture(btmLeftBack, normalBack, textureBottomRight);
+			boxVertices[9] = new VertexPositionNormalTexture(btmLeftBack, normalBack, textureBottomRight);
+			boxVertices[10] = new VertexPositionNormalTexture(topRightBack, normalBack, textureTopLeft);
+			boxVertices[11] = new VertexPositionNormalTexture(btmRightBack, normalBack, textureBottomLeft);
+
+			// Add the vertices for the top face.
+			boxVertices[12] = new VertexPositionNormalTexture(topLeftFront, normalTop, textureBottomLeft);
+			boxVertices[13] = new VertexPositionNormalTexture(topRightBack, normalTop, textureTopRight);
+			boxVertices[14] = new VertexPositionNormalTexture(topLeftBack, normalTop, textureTopLeft);
+			boxVertices[15] = new VertexPositionNormalTexture(topLeftFront, normalTop, textureBottomLeft);
+			boxVertices[16] = new VertexPositionNormalTexture(topRightFront, normalTop, textureBottomRight);
+			boxVertices[17] = new VertexPositionNormalTexture(topRightBack, normalTop, textureTopRight);
+
+			// Add the vertices for the bottom face. 
+			boxVertices[18] = new VertexPositionNormalTexture(btmLeftFront, normalBottom, textureTopLeft);
+			boxVertices[19] = new VertexPositionNormalTexture(btmLeftBack, normalBottom, textureBottomLeft);
+			boxVertices[20] = new VertexPositionNormalTexture(btmRightBack, normalBottom, textureBottomRight);
+			boxVertices[21] = new VertexPositionNormalTexture(btmLeftFront, normalBottom, textureTopLeft);
+			boxVertices[22] = new VertexPositionNormalTexture(btmRightBack, normalBottom, textureBottomRight);
+			boxVertices[23] = new VertexPositionNormalTexture(btmRightFront, normalBottom, textureTopRight);
+
+			// Add the vertices for the left face.
+			boxVertices[24] = new VertexPositionNormalTexture(topLeftFront, normalLeft, textureTopRight);
+			boxVertices[25] = new VertexPositionNormalTexture(btmLeftBack, normalLeft, textureBottomLeft);
+			boxVertices[26] = new VertexPositionNormalTexture(btmLeftFront, normalLeft, textureBottomRight);
+			boxVertices[27] = new VertexPositionNormalTexture(topLeftBack, normalLeft, textureTopLeft);
+			boxVertices[28] = new VertexPositionNormalTexture(btmLeftBack, normalLeft, textureBottomLeft);
+			boxVertices[29] = new VertexPositionNormalTexture(topLeftFront, normalLeft, textureTopRight);
+
+			// Add the vertices for the right face. 
+			boxVertices[30] = new VertexPositionNormalTexture(topRightFront, normalRight, textureTopLeft);
+			boxVertices[31] = new VertexPositionNormalTexture(btmRightFront, normalRight, textureBottomLeft);
+			boxVertices[32] = new VertexPositionNormalTexture(btmRightBack, normalRight, textureBottomRight);
+			boxVertices[33] = new VertexPositionNormalTexture(topRightBack, normalRight, textureTopRight);
+			boxVertices[34] = new VertexPositionNormalTexture(topRightFront, normalRight, textureTopLeft);
+			boxVertices[35] = new VertexPositionNormalTexture(btmRightBack, normalRight, textureBottomRight);
+
+			VertexBuffer boxVB = new VertexBuffer(graphics, typeof(VertexPositionNormalTexture), boxVertices.Length,
+				BufferUsage.WriteOnly);
+			boxVB.SetData(boxVertices);
+
+			return boxVB;
+		}
+
+		/// <summary>
 		/// Creates the unitSphere array of vertices.
 		/// </summary>
 		private static void InitializeSphere()

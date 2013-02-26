@@ -13,7 +13,9 @@ texture EnvironmentMap;
 sampler diffuseSampler : register(s0) = sampler_state
 {
     Texture = <Texture>;
-	Filter = MIN_MAG_MIP_LINEAR;
+    MagFilter = Linear;
+    MinFilter = Anisotropic;
+    MipFilter = Linear;
 	AddressU = Wrap;
 	AddressV = Wrap;
 };
@@ -21,7 +23,9 @@ sampler diffuseSampler : register(s0) = sampler_state
 sampler specularSampler : register(s1) = sampler_state
 {
     Texture = <SpecularMap>;
-	Filter = MIN_MAG_MIP_LINEAR;
+    MagFilter = Linear;
+    MinFilter = Anisotropic;
+    MipFilter = Linear;
 	AddressU = Wrap;
 	AddressV = Wrap;
 };
@@ -29,7 +33,9 @@ sampler specularSampler : register(s1) = sampler_state
 sampler normalMapSampler : register(s2) = sampler_state
 {
     Texture = <NormalMap>;
-	Filter = MIN_MAG_MIP_LINEAR;
+    MagFilter = Linear;
+    MinFilter = Anisotropic;
+    MipFilter = Linear;
 	AddressU = Wrap;
 	AddressV = Wrap;
 };
@@ -37,7 +43,9 @@ sampler normalMapSampler : register(s2) = sampler_state
 sampler environmentMapSampler : register(s3) = sampler_state
 {
     Texture = <EnvironmentMap>;
-	Filter = MIN_MAG_MIP_LINEAR;
+    MagFilter = Linear;
+    MinFilter = Anisotropic;
+    MipFilter = Linear;
 	AddressU = Mirror; 
 	AddressV = Mirror; 
 };
@@ -83,7 +91,6 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input, InstanceInput i
 
 	// First transform by the instance matrix
     float4 worldPosition = mul(input.Position, WorldInstance);
-    float4 viewPosition = mul(worldPosition, View);
 	output.Position = mul(worldPosition, wvp);
 	output.NewPosition = output.Position;
 
@@ -94,6 +101,8 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input, InstanceInput i
     input.Normal = normalize(mul(input.Normal, World));
     output.Depth.x = output.Position.z;// - 100.f; // Subtract to make color more visible
     output.Depth.y = output.Position.w;
+
+    float4 viewPosition = mul(worldPosition, View);
 	output.Depth.z = viewPosition.z;
 
     // calculate tangent space to world space matrix using the world space tangent,
@@ -259,19 +268,48 @@ float4 PixelShaderDiffuseRender(VertexShaderOutput input) : COLOR0
 
 float2 halfPixel;
 
-struct VertexShaderBasicOutput
+struct VertexShaderBasic
 {
     float4 Position : POSITION0;
 	float2 TexCoord : TEXCOORD0;
 };
 
-VertexShaderBasicOutput BasicVS(
+struct VertexShaderNormalBasic
+{
+    float4 Position : POSITION0;
+	float2 TexCoord : TEXCOORD0;
+	float3 Normal : TEXCOORD1;
+};
+
+VertexShaderBasic BasicVS(
 	float3 position : POSITION0, float2 texCoord : TEXCOORD0)
 {
-    VertexShaderBasicOutput output;
+    VertexShaderBasic output;
 
 	// Just pass these through
     output.Position = float4(position, 1);
+	output.TexCoord = texCoord + halfPixel;
+
+    return output;
+}
+
+VertexShaderNormalBasic BasicMeshVS(
+	InstanceInput instance,
+	in float3 position : POSITION0, 
+	in float2 texCoord : TEXCOORD0)
+{
+    VertexShaderNormalBasic output;
+
+	float4x4 wvp = mul(mul(World, View), Projection);
+	float4x4 WorldInstance = 
+		float4x4(instance.vWorld1, instance.vWorld2, instance.vWorld3, instance.vWorld4);
+
+	// First transform by the instance matrix
+    float4 worldPosition = mul(position, WorldInstance);
+
+	// Set the outputs
+	output.Position = mul(worldPosition, wvp);
+	output.Normal = 0;// mul(normalize(mul(normal, WorldInstance)), View);
 	output.TexCoord = texCoord + halfPixel;
 
     return output;
@@ -283,14 +321,12 @@ float4 BasicPS(VertexShaderOutput input) : COLOR0
 	return tex2D(diffuseSampler, input.TexCoord);
 }
 
-float4 SkyboxPS(VertexShaderOutput input) : COLOR0
+float4 PS_White() : COLOR0
 {
-    // Flag skybox output with zero alpha
-	float4 color = tex2D(diffuseSampler, input.TexCoord);
-
-	color.a = 0.49f;
-	return color;
+	return float4(1, 1, 1, 1);
 }
+
+//--- Skybox shader ---//
 
 struct VertexShaderSkyboxData
 {
@@ -316,9 +352,13 @@ VertexShaderSkyboxData VertexShaderSkybox(VertexShaderInput input, InstanceInput
 	return output;
 }
 
-float4 PS_White() : COLOR0
+float4 SkyboxPS(VertexShaderOutput input) : COLOR0
 {
-	return float4(1, 1, 1, 1);
+    // Flag skybox output with zero alpha
+	float4 color = tex2D(diffuseSampler, input.TexCoord);
+
+	color.a = 0.49f;
+	return color;
 }
 
 /// The following four techniques draw a variation of the GBuffer, 
@@ -409,6 +449,15 @@ technique PassThrough
     pass Pass1
     {
         VertexShader = compile vs_2_0 BasicVS();
+        PixelShader = compile ps_2_0 BasicPS();
+    }
+}
+
+technique BasicMesh
+{
+    pass Pass1
+    {
+        VertexShader = compile vs_2_0 BasicMeshVS();
         PixelShader = compile ps_2_0 BasicPS();
     }
 }

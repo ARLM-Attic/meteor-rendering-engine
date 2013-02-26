@@ -230,7 +230,11 @@ namespace Meteor.Resources
 				instanceGroup.tempTransforms[i] = instanceGroup.visibleInstances[i].Transform;
 
 			// Update vertex buffer
-			instanceGroup.instanceVB.SetData(instanceGroup.tempTransforms);
+			if (instanceGroup.totalVisible > 0)
+			{
+				instanceGroup.instanceVB.SetData(instanceGroup.tempTransforms, 0, 
+					instanceGroup.totalVisible, SetDataOptions.None);
+			}
 
 			return instanceGroup.instanceVB;
 		}

@@ -95,6 +95,13 @@ namespace MeteorEngine {
             }
         }
         
+        internal static byte[] cube {
+            get {
+                object obj = ResourceManager.GetObject("cube", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
         internal static byte[] defaultFont {
             get {
                 object obj = ResourceManager.GetObject("defaultFont", resourceCulture);
@@ -112,6 +119,13 @@ namespace MeteorEngine {
         internal static byte[] directionalLight {
             get {
                 object obj = ResourceManager.GetObject("directionalLight", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        internal static byte[] forwardRender {
+            get {
+                object obj = ResourceManager.GetObject("forwardRender", resourceCulture);
                 return ((byte[])(obj));
             }
         }

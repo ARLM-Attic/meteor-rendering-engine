@@ -315,8 +315,9 @@ namespace Meteor
 			spriteBatch.Draw(nullTexture, new Rectangle(0, 0, 250, font.LineSpacing * 7 + 4), 
 				new Color(0, 0, 0, 120));
 			
-			spriteBatch.DrawString(font, debugString.Append("FPS: ").Concat(frameRate),
-				new Vector2(4, height), Color.LawnGreen);
+			debugString.Append("FPS: ").Concat(frameRate, 2);
+			debugString.Append(" (").Concat(1000f / frameRate, 2).Append("ms)");
+			spriteBatch.DrawString(font, debugString, new Vector2(4, height), Color.LawnGreen);
 			debugString.Clear();
 			spriteBatch.DrawString(font, debugString.Append("Frame ").Concat(totalFrames),
 				new Vector2(4, font.LineSpacing + height), Color.White);

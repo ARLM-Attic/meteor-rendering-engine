@@ -6,18 +6,6 @@ using Meteor.Resources;
 
 namespace Meteor.Rendering
 {
-	class MeshPrioritySort : IComparer<Scene.OrderedInstancedMeshData>
-	{
-		public int Compare(Scene.OrderedInstancedMeshData rp1,
-			Scene.OrderedInstancedMeshData rp2)
-		{
-			int returnValue = 1;
-			returnValue = rp2.priority.CompareTo(rp1.priority);
-
-			return returnValue;
-		}
-	}
-
 	class MeshDistanceSort : IComparer<MeshInstance>
 	{
 		public int Compare(MeshInstance instance1, MeshInstance instance2)
@@ -77,12 +65,20 @@ namespace Meteor.Rendering
 				}
 				// Update the new, filtered amount of full meshes to draw
 				instanceGroup.totalVisible = fullMeshInstances;
-
 				//instanceGroup.instances.Sort((a, b) => a.distance.CompareTo(b.distance));
 
 				meshIndex++;
 			}
 			// Finished culling this model
+		}
+
+		/// <summary>
+		/// Perform an occlusion query with basic proxy model
+		/// </summary>
+
+		public void DoOcclusionQuery()
+		{
+			//models.Sort(delegate(BasicModel m1, BasicModel m2) { return m1.Distance.CompareTo(m2.Distance); });	 
 		}
 
 		/// <summary>

@@ -50,15 +50,6 @@ namespace Meteor.Resources
 			get { return visibleLights.Count; }
 		}
 
-		public class OrderedInstancedMeshData
-		{
-			public string modelName;
-			public int meshID;
-			public float priority;
-		};
-
-		public List<OrderedInstancedMeshData> orderedInstancedMeshes;
-
 		/// Skybox mesh
 		InstancedModel skyboxModel;
 
@@ -87,9 +78,6 @@ namespace Meteor.Resources
 			staticModels = new Dictionary<string, InstancedModel>();
 			skinnedModels = new Dictionary<string, InstancedModel>();
 			blendModels = new Dictionary<string, InstancedModel>();
-
-			// Ordered list for model sorting
-			orderedInstancedMeshes = new List<OrderedInstancedMeshData>();
 		}
 
 		/// <summary>
@@ -134,14 +122,9 @@ namespace Meteor.Resources
 		/// the same key name as the file for the model
 		/// </summary>
 
-		private InstancedModel AddModel(String directory, String modelPath)
+		private InstancedModel AddMeshObject(String directory, String modelPath)
 		{
 			staticModels.Add(modelPath, new InstancedModel(FindModel(directory, modelPath), graphicsDevice));
-
-			for (int i = 0; i < staticModels[modelPath].model.Meshes.Count; i++)
-			{
-				orderedInstancedMeshes.Add(new OrderedInstancedMeshData());
-			}
 
 			return staticModels[modelPath];
 		}
@@ -152,7 +135,7 @@ namespace Meteor.Resources
 
 		private InstancedModel AddModel(String modelPath)
 		{
-			return AddModel(modelPath, modelPath);
+			return AddMeshObject(modelPath, modelPath);
 		}
 
 		/// <summary>

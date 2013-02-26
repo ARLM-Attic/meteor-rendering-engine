@@ -120,9 +120,9 @@ float4 TriplanarMapping(VT_Output input, float scale = 1)
 	mXZ /= total;
 	mYZ /= total;
 
-	float4 cXY = tex2D(diffuseSampler, input.NewPosition.xy / textureScale * scale);
-	float4 cXZ = tex2D(blendSampler1, input.NewPosition.xz / textureScale * scale);
-	float4 cYZ = tex2D(diffuseSampler, input.NewPosition.yz / textureScale * scale);
+	float4 cXY = tex2D(blendSampler1, input.NewPosition.xy / textureScale * scale);
+	float4 cXZ = tex2D(diffuseSampler, input.NewPosition.xz / textureScale * scale);
+	float4 cYZ = tex2D(blendSampler1, input.NewPosition.yz / textureScale * scale);
 
 	float4 diffuse = cXY * mXY + cXZ * mXZ + cYZ * mYZ;
 	return diffuse;

@@ -111,12 +111,12 @@ namespace Meteor.Rendering
 
 			// Composite drawing
 			composite.Draw();
-
+			/*
 			// Post effects
-			//copy.Draw();
-			//blur.Draw();
-			//dof.Draw();
-
+			copy.Draw();
+			blur.Draw();
+			dof.Draw();
+			*/
 			output = bloom.Draw()[0];
 		}
 	}

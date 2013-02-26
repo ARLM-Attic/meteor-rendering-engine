@@ -97,7 +97,6 @@
     <Compile Include="Graphics\Components\Cameras\DragCamera.cs" />
     <Compile Include="Graphics\Components\Cameras\FreeCamera.cs" />
     <Compile Include="Graphics\Components\DrawableComponent.cs" />
-    <Compile Include="Graphics\Components\Drawables\Grass.cs" />
     <Compile Include="Graphics\Components\Drawables\InnerClipmap.cs" />
     <Compile Include="Graphics\Components\Drawables\OuterClipmap.cs" />
     <Compile Include="Graphics\Components\Drawables\MeshInstance.cs">
@@ -116,6 +115,7 @@
     <Compile Include="Graphics\Rendering\SceneRenderer.cs" />
     <Compile Include="Graphics\Components\Core.cs" />
     <Compile Include="Graphics\RenderShaders\PostProcessingShaders\MLAAShader.cs" />
+    <Compile Include="Graphics\RenderShaders\SceneShaders\ForwardShader.cs" />
     <Compile Include="Graphics\RenderShaders\SceneShaders\DepthMapShader.cs" />
     <Compile Include="Helpers\DebugDisplay.cs" />
     <Compile Include="Helpers\GaussianBlur.cs" />
@@ -141,6 +141,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Graphics\Components\Scene.cs" />
+    <Compile Include="Helpers\VertexPositionTangent.cs" />
     <Compile Include="MeteorContentResource1.Designer.cs">
       <DependentUpon>MeteorContentResource.resx</DependentUpon>
       <DesignTime>True</DesignTime>
@@ -166,6 +167,8 @@
     <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\combination.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\depth.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\directionalLight.xnb" />
+    <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\forward.xnb" />
+    <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\forwardRender.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\fxaa.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\mlaa.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\pointLight.xnb" />
@@ -176,6 +179,7 @@
     <None Include="bin\x86\Debug\MeteorEngine.Content\Fonts\defaultFont.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\Fonts\segoeUI.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\Models\ball.xnb" />
+    <None Include="bin\x86\Debug\MeteorEngine.Content\Models\cube.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\null_color.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\null_normal.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\null_specular.xnb" />

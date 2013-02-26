@@ -119,7 +119,7 @@
   </resheader>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="AreaTexDX9" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>bin\x86\Debug\MeteorEngine.Content\Effects\AreaTexDX9.xnb;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>bin\x86\Debug\MeteorEngine.Content\AreaTexDX9.xnb;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="ball" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>bin\x86\Debug\MeteorEngine.Content\Models\ball.xnb;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
@@ -133,6 +133,9 @@
   <data name="combination" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>bin\x86\Debug\MeteorEngine.Content\Effects\combination.xnb;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
+  <data name="cube" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>bin\x86\Debug\MeteorEngine.Content\Models\cube.xnb;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
   <data name="defaultFont" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>bin\x86\Debug\MeteorEngine.Content\Fonts\defaultFont.xnb;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
@@ -141,6 +144,9 @@
   </data>
   <data name="directionalLight" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>bin\x86\Debug\MeteorEngine.Content\Effects\directionalLight.xnb;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="forwardRender" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>bin\x86\Debug\MeteorEngine.Content\Effects\forwardRender.xnb;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="fxaa" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>bin\x86\Debug\MeteorEngine.Content\Effects\fxaa.xnb;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>

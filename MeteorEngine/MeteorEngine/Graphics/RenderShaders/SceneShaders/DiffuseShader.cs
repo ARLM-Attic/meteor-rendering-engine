@@ -12,8 +12,9 @@ namespace Meteor.Rendering
         /// Color and specular intensity
         RenderTarget2D diffuseRT;
 
-		/// External source for GBuffer effect
-		protected Effect terrainGBufferEffect;
+		/// External sources for GBuffer effects
+		Effect gBufferEffect;
+		Effect terrainGBufferEffect;
 
         public DiffuseShader(RenderProfile profile, ResourceContentManager content)
             : base(profile, content) 
@@ -36,6 +37,7 @@ namespace Meteor.Rendering
 			};
 
 			// Load the shader effects
+			gBufferEffect = content.Load<Effect>("renderGBuffer");
 			terrainGBufferEffect = content.Load<Effect>("terrainGBuffer");
         }
 
@@ -49,7 +51,7 @@ namespace Meteor.Rendering
 			renderStopWatch.Restart();
 
             // Prepare the forward rendering
-            graphicsDevice.SetRenderTarget(diffuseRT);
+			graphicsDevice.SetRenderTarget(diffuseRT);
 			graphicsDevice.Clear(Color.Transparent);
 			graphicsDevice.DepthStencilState = DepthStencilState.Default;
 			graphicsDevice.BlendState = BlendState.Opaque;
@@ -67,7 +69,7 @@ namespace Meteor.Rendering
 			sceneRenderer.DrawTerrain(scene, camera, terrainGBufferEffect);
 
 			sceneRenderer.UseTechnique("DiffuseRender");
-			sceneRenderer.Draw(scene, camera);
+			sceneRenderer.Draw(scene, camera, gBufferEffect);
 			
 			// Render the skybox and update sampler state
 			graphicsDevice.SamplerStates[0] = SamplerState.LinearClamp;

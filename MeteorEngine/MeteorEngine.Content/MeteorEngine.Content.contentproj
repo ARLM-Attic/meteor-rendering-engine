@@ -181,7 +181,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Effects\AreaTexDX9.dds">
+    <Compile Include="AreaTexDX9.dds">
       <Name>AreaTexDX9</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
@@ -194,6 +194,20 @@
       <Processor>NuclexSpriteFontDescriptionProcessor</Processor>
       <SubType>Designer</SubType>
       <ProcessorParameters_Hinter>AutoHinter</ProcessorParameters_Hinter>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Effects\forwardRender.fx">
+      <Name>forwardRender</Name>
+      <Importer>EffectImporter</Importer>
+      <Processor>EffectProcessor</Processor>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Models\cube.fbx">
+      <Name>cube</Name>
+      <Importer>FbxImporter</Importer>
+      <Processor>ModelProcessor</Processor>
     </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\XNA Game Studio\$(XnaFrameworkVersion)\Microsoft.Xna.GameStudio.ContentPipeline.targets" />

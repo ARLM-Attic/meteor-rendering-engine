@@ -4,26 +4,19 @@ using Microsoft.Xna.Framework;
 namespace Meteor.Resources
 {
     /// <summary>
-    /// Controllable camera class
+    /// Basic camera class
     /// </summary>
     public class Camera
     {
-		protected float cameraArc = 0;
-		protected float targetArc = 0;
+		/// Camera's arc rotation
+		protected float cameraArcRotation = 0;
+		protected float targetArcRotation = 0;
 
-        public float CameraArc
-        {
-            get { return cameraArc; }
-        }
+		/// Camera's yaw rotation
+		protected float cameraYawRotation = -90;
+		protected float targetYawRotation = -90;
 
-		protected float cameraRotation = -90;
-		protected float targetRotation = -90;
-
-        public float CameraRotation
-        {
-            get { return cameraRotation; }
-        }
-
+		/// Camera's world space matrix
 		protected Matrix worldMatrix;
 		public Matrix WorldMatrix
 		{
@@ -124,11 +117,11 @@ namespace Meteor.Resources
 		{
 			position = pos;
 
-			cameraRotation = orientation.X;
-			cameraArc = orientation.Y;
+			cameraYawRotation = orientation.X;
+			cameraArcRotation = orientation.Y;
 
-			targetRotation = orientation.X; // yaw
-			targetArc = orientation.Y; // pitch
+			targetYawRotation = orientation.X; // yaw
+			targetArcRotation = orientation.Y; // pitch
 
 			nearSplitPlaneDistance = nearPlaneDistance;
 			farSplitPlaneDistance = farPlaneDistance;
@@ -175,8 +168,8 @@ namespace Meteor.Resources
 		/// </summary>
 		public void SetOrientation(Vector2 orientation)
 		{
-			targetRotation = orientation.X; // yaw
-			targetArc = orientation.Y; // pitch			
+			targetYawRotation = orientation.X; // yaw
+			targetArcRotation = orientation.Y; // pitch			
 		}
 
 		public virtual void Update(GameTime gameTime = null)

@@ -35,6 +35,9 @@ namespace Meteor.Rendering
 		const int mapsPerRow = 2;
 		const int mapsPerCol = 2;
 
+		/// Textures to cache depth maps
+		Texture2D[] depthMapCache;
+
 		/// Ratio of linear to logarithmic split in view cascades
 		public float splitLambda = 0.9f;
 
@@ -60,8 +63,14 @@ namespace Meteor.Rendering
 
 			outputTargets = new RenderTarget2D[] { depthRT };
 
+			// Set depth map cache textures
+			depthMapCache = new Texture2D[2] {
+				new Texture2D(graphicsDevice, shadowMapSize, shadowMapSize),
+				new Texture2D(graphicsDevice, shadowMapSize, shadowMapSize)
+			};
+
 			lightCamera = new Camera();
-			lightCamera.farPlaneDistance = 1000f;
+			lightCamera.farPlaneDistance = 5000f;
 			lightCamera.Initialize(shadowMapSize, shadowMapSize);
 
 			lightViewProj = new Matrix[numCascades];
@@ -82,7 +91,7 @@ namespace Meteor.Rendering
 			Draw(scene, camera);
 
 			// Increment the shadow update time
-			shadowUpdateTimer = 1 - shadowUpdateTimer;
+			shadowUpdateTimer = (shadowUpdateTimer == 8) ? 0 : shadowUpdateTimer + 1;
 
 			renderStopWatch.Stop();
 			return outputs;
@@ -108,7 +117,7 @@ namespace Meteor.Rendering
 					for (int cascade = 0; cascade < numCascades; cascade++)
 					{
 						// Skip update of far shadow cascades in intervals
-						//if (cascade >= 1 && shadowUpdateTimer == 0)
+						//if (cascade > 1 && shadowUpdateTimer != 0)
 						//	break;
 
 						// Set camera's near and far view distance
@@ -137,6 +146,12 @@ namespace Meteor.Rendering
 						// Cull models from this point of view
 						sceneCuller.CullModelMeshes(scene, lightCamera);
 						sceneRenderer.Draw(scene, depthEffect);
+
+						// Cache the shadow map to a texture
+						if (cascade > 1 && shadowUpdateTimer == 0)
+						{
+							//graphicsDevice.SetRenderTarget(null);							
+						}
 					}
 
 					lightID++;

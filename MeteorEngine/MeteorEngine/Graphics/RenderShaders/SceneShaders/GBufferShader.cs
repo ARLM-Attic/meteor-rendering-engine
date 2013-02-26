@@ -74,7 +74,7 @@ namespace Meteor.Rendering
 			sceneRenderer.DrawTerrain(scene, camera, terrainGBufferEffect);
 
 			sceneRenderer.UseTechnique("GBuffer");
-			sceneRenderer.Draw(scene, camera);
+			sceneRenderer.Draw(scene, camera, gBufferEffect);
 
 			// Render the skybox and update the sampler state
 			graphicsDevice.SamplerStates[0] = SamplerState.LinearClamp;
@@ -99,7 +99,8 @@ namespace Meteor.Rendering
 		/// Scene depth
 		protected RenderTarget2D depthRT;
 
-		/// External source for GBuffer effect
+		/// External sources for GBuffer effects
+		protected Effect gBufferEffect;
 		protected Effect terrainGBufferEffect;
 
 		/// Source effect for clearing GBuffer
@@ -141,6 +142,7 @@ namespace Meteor.Rendering
 			outputTargets[1] = depthRT;
 
 			// Load the shader effects
+			gBufferEffect = content.Load<Effect>("renderGBuffer");
 			terrainGBufferEffect = content.Load<Effect>("terrainGBuffer");
 			clearBufferEffect = content.Load<Effect>("clearGBuffer");
 		}
@@ -180,7 +182,7 @@ namespace Meteor.Rendering
 			sceneRenderer.DrawTerrain(scene, camera, terrainGBufferEffect);
 
 			sceneRenderer.UseTechnique("SmallGBuffer");
-			sceneRenderer.Draw(scene, camera);
+			sceneRenderer.Draw(scene, camera, gBufferEffect);
 
 			renderStopWatch.Stop();
 			return outputTargets;

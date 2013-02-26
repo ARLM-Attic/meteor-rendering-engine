@@ -17,9 +17,6 @@ namespace Meteor.Rendering
 		/// Effect that's currently used by the scene
 		Effect currentEffect;
 
-		/// Effect that's currently used by the scene
-		Effect gBufferEffect;
-
 		/// Effect technique used by the scene
 		String shaderTechnique;
 
@@ -49,6 +46,9 @@ namespace Meteor.Rendering
 		/// Swap space for vertex buffer bindings
 		VertexBufferBinding[] vertexBufferBindings;
 
+		/// Vertex data for a dummy box
+		VertexBuffer dummyBoxVB;
+
 		/// <summary>
 		/// Create a SceneRenderer with graphics device and content manager.
 		/// </summary>
@@ -61,7 +61,6 @@ namespace Meteor.Rendering
 			imposter = new Imposter(graphicsDevice, content);
 
             // Use standard GBuffer as a default
-			gBufferEffect = content.Load<Effect>("renderGBuffer");
             shaderTechnique = "GBuffer";
 			currentEffect = null;
 
@@ -88,6 +87,9 @@ namespace Meteor.Rendering
 			basicEffect.TextureEnabled = false;
 			basicEffect.VertexColorEnabled = true;
 
+			// Create a resuable DummyBox
+			dummyBoxVB = ShapeRenderer.AddDummyBox();
+
 			boxCorners = new Vector3[8];
 			tempBones = new Matrix[60];
 
@@ -104,11 +106,10 @@ namespace Meteor.Rendering
 		}
 
 		/// <summary>
-		/// Draw the entire scene to the GBuffer
+		/// Draw the entire scene with an effect using camera parameters
 		/// </summary>
-		/// <param name="camera"></param>
 
-		public void Draw(Scene scene, Camera camera, BlendState blendState)
+		public void Draw(Scene scene, Camera camera, Effect effect, BlendState blendState)
 		{
 			Viewport viewport = graphicsDevice.Viewport;
 			viewport.MinDepth = 0.0f;
@@ -120,9 +121,9 @@ namespace Meteor.Rendering
 			totalPolys = 0;
 			scene.visibleMeshes = 0;
 
-			// Update the viewport for proper rendering order
+			currentEffect = effect;
 
-			foreach (InstancedModel instancedModel in scene.staticModels.Values)
+			foreach (InstancedModel instancedModel in scene.staticModels.Values)					
 				scene.visibleMeshes += DrawModel(instancedModel, camera, this.shaderTechnique);
 
 			foreach (InstancedModel skinnedModel in scene.skinnedModels.Values)
@@ -135,12 +136,12 @@ namespace Meteor.Rendering
 		}
 
 		/// <summary>
-		/// Overloads for drawing to the GBuffer
+		/// Overloads for drawing with an effect with camera parameters
 		/// </summary>	
 
-		public void Draw(Scene scene, Camera camera)
+		public void Draw(Scene scene, Camera camera, Effect effect)
 		{
-			Draw(scene, camera, BlendState.Opaque);
+			Draw(scene, camera, effect, BlendState.Opaque);
 		}
 
 		/// <summary>
@@ -207,7 +208,6 @@ namespace Meteor.Rendering
 		/// <summary>
 		/// A bit hacky way to limit bone transforms. Will fix soon.
 		/// </summary>
-		/// <param name="instancedModel"></param>
 
 		private void TrimBoneTransforms(InstancedModel instancedModel)
 		{
@@ -224,10 +224,10 @@ namespace Meteor.Rendering
 		}
 
 		/// <summary>
-		/// Draw all visible meshes for this model with its default effect.
+		/// Draw all visible meshes for this model with camera effect parameters.
 		/// </summary>
 
-		private int DrawModel(InstancedModel instancedModel, Camera camera, string technique)
+		private int DrawModel(InstancedModel instancedModel, Camera camera, String technique)
 		{
 			UseTechnique(technique);
 			TrimBoneTransforms(instancedModel);
@@ -258,15 +258,18 @@ namespace Meteor.Rendering
 				foreach (ModelMeshPart meshPart in mesh.MeshParts)
 				{
 					// Assign effect (all mesh parts use the same one)
-					currentEffect = gBufferEffect;
+					//currentEffect = gBufferEffect;
 
 					// Set GBuffer parameters
 					currentEffect.Parameters["World"].SetValue(world);
+
+					// Set camera parameters
 					currentEffect.Parameters["View"].SetValue(camera.view);
 					currentEffect.Parameters["Projection"].SetValue(camera.projection);
+					currentEffect.Parameters["CameraPosition"].SetValue(camera.position);
+
 					currentEffect.Parameters["WorldInverseTranspose"].SetValue(
 						Matrix.Transpose(Matrix.Invert(world * mesh.ParentBone.Transform)));
-					currentEffect.Parameters["CameraPosition"].SetValue(camera.position);
 
 					// Set bones if the model is animated
 					if (instancedModel.animationPlayer != null)
@@ -284,6 +287,7 @@ namespace Meteor.Rendering
 					currentEffect.Parameters["NormalMap"].SetValue(instancedModel.normalMapTextures[meshIndex]);
 
 					DrawInstancedMeshPart(meshPart, instanceGroup);
+					//DrawInstancedMeshDummyBox(instanceGroup);
 					meshIndex++;
 				}
 				// Finished drawing mesh parts
@@ -348,7 +352,7 @@ namespace Meteor.Rendering
 		}
 
 		/// <summary>
-		/// Draw a mesh part with the given effect and from a specific index
+		/// Draw a mesh part with the given effect
 		/// </summary>
 		
 		private void DrawInstancedMeshPart(ModelMeshPart meshPart, MeshInstanceGroup instanceGroup)
@@ -371,6 +375,7 @@ namespace Meteor.Rendering
 			{
 				currentEffect.CurrentTechnique.Passes[i].Apply();
 
+				// Or draw the dummyBox
 				graphicsDevice.DrawInstancedPrimitives(
 					PrimitiveType.TriangleList, 0, 0,
 					meshPart.NumVertices, meshPart.StartIndex,
@@ -378,6 +383,46 @@ namespace Meteor.Rendering
 			}
 			// Add to the scene's polygon count
 			totalPolys += meshPart.NumVertices * instanceGroup.totalVisible;
+		}
+
+		/// <summary>
+		/// Draw a mesh dummy box with a default effect
+		/// </summary>
+
+		private void DrawInstancedMeshDummyBox(MeshInstanceGroup instanceGroup)
+		{
+			// Skip rendering the mesh parts if they aren't visible
+			if (instanceGroup.totalVisible == 0)
+				return;
+
+			vertexBufferBindings[0] = new VertexBufferBinding(dummyBoxVB, 0, 0);
+			vertexBufferBindings[1] = new VertexBufferBinding(instanceGroup.instanceVB, 0, 1);
+
+			// Bind both mesh vertex buffer and per-instance matrix data
+			graphicsDevice.SetVertexBuffers(vertexBufferBindings);
+
+			short[] boxIndices = new short[36];
+
+			for (short i = 0; i < 36; i++)
+				boxIndices[i] = i;
+
+			IndexBuffer dummyBoxIB = new IndexBuffer(graphicsDevice, IndexElementSize.SixteenBits, 36, BufferUsage.WriteOnly);
+			dummyBoxIB.SetData(boxIndices);
+			graphicsDevice.Indices = dummyBoxIB;
+
+			// Assign effect technique
+			currentEffect.CurrentTechnique = currentEffect.Techniques["BasicMesh"];
+
+			for (int i = 0; i < currentEffect.CurrentTechnique.Passes.Count; i++)
+			{
+				currentEffect.CurrentTechnique.Passes[i].Apply();
+
+				// Draw the dummyBox
+				graphicsDevice.DrawInstancedPrimitives(
+					PrimitiveType.TriangleList, 0, 0,
+					dummyBoxVB.VertexCount, 0,
+					dummyBoxIB.IndexCount / 3, instanceGroup.totalVisible);
+			}
 		}
 		
 		/// <summary>

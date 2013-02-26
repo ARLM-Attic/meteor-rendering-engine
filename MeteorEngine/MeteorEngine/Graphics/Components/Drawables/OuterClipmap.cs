@@ -147,6 +147,19 @@ namespace Meteor.Resources
 		}
 
 		/// <summary>
+		/// Force an update on this clipmap in case data gets lost.
+		/// </summary>
+
+		public void ForceUpdate(Vector2 terrainSize, Vector2 mapCenter, short[,] heightData)
+		{
+			// Force a change in the last map center registered
+			lastMapCenter += new Vector2(0.5f) * gridUnitSize;
+
+			// Repopulate the map data
+			UpdateMap(terrainSize, mapCenter, heightData);
+		}
+
+		/// <summary>
 		/// Get the vertex indices for the terrain mesh
 		/// </summary>
 

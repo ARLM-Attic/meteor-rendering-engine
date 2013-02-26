@@ -29,11 +29,11 @@ namespace Meteor.Resources
 		public DragCamera(Vector3 pos, Vector2 orientation)
 		{
 			position = pos;
-			cameraRotation = orientation.X;
-			cameraArc = orientation.Y;
+			cameraYawRotation = orientation.X;
+			cameraArcRotation = orientation.Y;
 
-			targetRotation = orientation.X;
-			targetArc = orientation.Y;
+			targetYawRotation = orientation.X;
+			targetArcRotation = orientation.Y;
 		}
 
 		/// <summary>
@@ -42,8 +42,8 @@ namespace Meteor.Resources
 		protected override void UpdateMatrices()
 		{
 			worldMatrix =
-				Matrix.CreateFromAxisAngle(Vector3.Right, MathHelper.ToRadians(cameraArc)) *
-				Matrix.CreateFromAxisAngle(Vector3.Up, MathHelper.ToRadians(cameraRotation));
+				Matrix.CreateFromAxisAngle(Vector3.Right, MathHelper.ToRadians(cameraArcRotation)) *
+				Matrix.CreateFromAxisAngle(Vector3.Up, MathHelper.ToRadians(cameraYawRotation));
 			view = Matrix.CreateLookAt(position, position + worldMatrix.Forward, worldMatrix.Up);
 
 			frustum.Matrix = view * projection;
@@ -90,8 +90,8 @@ namespace Meteor.Resources
 				}
 				else
 				{
-					targetRotation += (float)(lastMousePos.X - mouseState.X) * time / 30f;
-					targetArc += (float)(lastMousePos.Y - mouseState.Y) * time / 30f;
+					targetYawRotation += (float)(lastMousePos.X - mouseState.X) * time / 30f;
+					targetArcRotation += (float)(lastMousePos.Y - mouseState.Y) * time / 30f;
 				}
 
 				lastMousePos.X = mouseState.X;
@@ -116,14 +116,14 @@ namespace Meteor.Resources
 				position -= worldMatrix.Forward * time * selectedMoveSpeed;
 			}
 
-			cameraArc += currentGamePadState.ThumbSticks.Right.Y * time;
-			cameraArc += targetArc - (cameraArc / smoothing);
+			cameraArcRotation += currentGamePadState.ThumbSticks.Right.Y * time;
+			cameraArcRotation += targetArcRotation - (cameraArcRotation / smoothing);
 
 			// Limit the arc movement.
-			if (targetArc > 90.0f)
-				targetArc = 90.0f;
-			else if (targetArc < -90.0f)
-				targetArc = -90.0f;
+			if (targetArcRotation > 90.0f)
+				targetArcRotation = 90.0f;
+			else if (targetArcRotation < -90.0f)
+				targetArcRotation = -90.0f;
 
 			// Check for input to move the camera sideways
 			if (currentKeyboardState.IsKeyDown(Keys.D))
@@ -136,14 +136,14 @@ namespace Meteor.Resources
 				position += worldMatrix.Left * time * selectedMoveSpeed;
 			}
 
-			cameraRotation += currentGamePadState.ThumbSticks.Right.X * time;
-			cameraRotation += targetRotation - (cameraRotation / smoothing);
+			cameraYawRotation += currentGamePadState.ThumbSticks.Right.X * time;
+			cameraYawRotation += targetYawRotation - (cameraYawRotation / smoothing);
 
 			if (currentGamePadState.Buttons.RightStick == ButtonState.Pressed ||
 				currentKeyboardState.IsKeyDown(Keys.R))
 			{
-				cameraArc = -30;
-				cameraRotation = 0;
+				cameraArcRotation = -30;
+				cameraYawRotation = 0;
 			}
 			
 		}
