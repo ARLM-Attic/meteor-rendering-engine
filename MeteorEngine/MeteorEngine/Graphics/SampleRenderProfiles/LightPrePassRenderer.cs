@@ -17,7 +17,10 @@ namespace Meteor.Rendering
 		/// Used for drawing the light map
 		BaseShader lights;
 
-		/// Forward render with color map
+		/// Draws depth map for shadows
+		DepthMapShader depth;
+
+		/// Forward render with diffuse color
 		BaseShader diffuse;
 
 		/// Helper to copy image
@@ -58,6 +61,7 @@ namespace Meteor.Rendering
 
 			smallGBuffer = new SmallGBufferShader(this, resxContent);
 			lights = new LightShader(this, resxContent);
+			depth = new DepthMapShader(this, resxContent);
 			diffuse = new DiffuseShader(this, resxContent);
 			composite = new CompositeShader(this, resxContent);
 			blur = new BlurShader(this, resxContent);
@@ -77,7 +81,9 @@ namespace Meteor.Rendering
 			// Map the renderer inputs to outputs
 			smallGBuffer.SetInputs(scene, camera, null);
 			diffuse.SetInputs(scene, camera, null);
-			lights.SetInputs(scene, camera, smallGBuffer.outputs);
+			depth.SetInputs(scene, camera, null);
+			lights.SetInputs(scene, camera, smallGBuffer.outputs[0], smallGBuffer.outputs[1],
+				diffuse.outputs[0], depth.outputs[0]);
 			ssao.SetInputs(scene, camera, smallGBuffer.outputs);
 			composite.SetInputs(scene, camera, 
 				diffuse.outputs[0], lights.outputs[0], ssao.outputs[0], smallGBuffer.outputs[1]);
@@ -93,13 +99,14 @@ namespace Meteor.Rendering
 			debugRenderTargets.Add(diffuse.outputs[0]);
 			debugRenderTargets.Add(smallGBuffer.outputs[0]);
 			debugRenderTargets.Add(lights.outputs[0]);
-			debugRenderTargets.Add(lights.outputs[1]);
+			debugRenderTargets.Add(depth.outputs[0]);
 		}
 
 		public override void Draw()
 		{
 			// Create the lighting map
 			smallGBuffer.Draw();
+			depth.Draw();
 			lights.Draw();
 
 			// Forward render the scene with diffuse only 

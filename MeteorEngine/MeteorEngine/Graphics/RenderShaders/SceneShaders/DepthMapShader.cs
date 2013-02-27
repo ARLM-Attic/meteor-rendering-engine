@@ -26,7 +26,7 @@ namespace Meteor.Rendering
 		Camera lightCamera;
 
 		/// Texture dimensions for individual shadow cascade
-		const int shadowMapSize = 1280;
+		const int shadowMapSize = 768;
 
 		/// Total number of cascades for CSM
 		const int numCascades = 4;
@@ -145,6 +145,7 @@ namespace Meteor.Rendering
 
 						// Cull models from this point of view
 						sceneCuller.CullModelMeshes(scene, lightCamera);
+						sceneRenderer.UseTechnique("Default");
 						sceneRenderer.Draw(scene, depthEffect);
 
 						// Cache the shadow map to a texture

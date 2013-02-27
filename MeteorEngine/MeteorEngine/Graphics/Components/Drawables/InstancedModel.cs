@@ -200,8 +200,8 @@ namespace Meteor.Resources
 		/// <summary>
 		/// Create an instance vertex buffer from instancing data
 		/// </summary>
-		
-		public DynamicVertexBuffer CreateInstanceVB(
+
+		private DynamicVertexBuffer CreateInstanceVB(
 			GraphicsDevice graphicsDevice, List<MeshInstance> meshInstances)
 		{
 			int totalInstances = meshInstances.Count;
@@ -223,7 +223,7 @@ namespace Meteor.Resources
 		/// Update the instancing vertex buffer
 		/// </summary>
 
-		public DynamicVertexBuffer UpdateInstanceVB(MeshInstanceGroup instanceGroup)
+		private DynamicVertexBuffer UpdateInstanceVB(MeshInstanceGroup instanceGroup)
 		{			
 			// Copy transform data to InstanceData structure
 			for (int i = 0; i < instanceGroup.totalVisible; i++)
@@ -237,6 +237,26 @@ namespace Meteor.Resources
 			}
 
 			return instanceGroup.instanceVB;
+		}
+
+		/// <summary>
+		/// Resize mesh vertex buffer and/or get the bone matrices
+		/// </summary>
+		public void PrepareMeshData(GraphicsDevice graphicsDevice, MeshInstanceGroup instanceGroup)
+		{
+			int totalInstances = instanceGroup.instances.Count;
+			graphicsDevice.SetVertexBuffers(null);
+
+			/// Resize the vertex buffer for instances if needed
+			if (totalInstances > instanceGroup.instanceVB.VertexCount)
+			{
+				instanceGroup.instanceVB =
+					CreateInstanceVB(graphicsDevice, instanceGroup.instances);
+			}
+			else
+			{
+				UpdateInstanceVB(instanceGroup);
+			}
 		}
 
 		/// <summary>

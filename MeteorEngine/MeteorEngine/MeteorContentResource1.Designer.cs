@@ -186,6 +186,13 @@ namespace MeteorEngine {
             }
         }
         
+        internal static byte[] terrainForwardRender {
+            get {
+                object obj = ResourceManager.GetObject("terrainForwardRender", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
         internal static byte[] terrainGBuffer {
             get {
                 object obj = ResourceManager.GetObject("terrainGBuffer", resourceCulture);

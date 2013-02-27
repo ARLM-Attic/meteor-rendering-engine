@@ -232,7 +232,6 @@ namespace Meteor.Resources
 				// Set camera transformation matrices
 				effect.Parameters["View"].SetValue(camera.view);
 				effect.Parameters["Projection"].SetValue(camera.projection);
-				effect.Parameters["WorldInverseTranspose"].SetValue(camera.view);
 
 				// Additional textures for terrain features
 				effect.Parameters["blendTexture1"].SetValue(blendTexture1);

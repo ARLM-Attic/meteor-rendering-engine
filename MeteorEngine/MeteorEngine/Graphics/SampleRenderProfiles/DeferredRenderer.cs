@@ -21,9 +21,6 @@ namespace Meteor.Rendering
 		/// Draws depth map for shadows
 		DepthMapShader depth;
 
-		/// Forward render with color map
-		DiffuseShader diffuse;
-
 		/// Comination render for final image
 		CompositeShader composite;
 
@@ -63,7 +60,6 @@ namespace Meteor.Rendering
 			gBuffer = new GBufferShader(this, resxContent);
 			lights = new LightShader(this, resxContent);
 			depth = new DepthMapShader(this, resxContent);
-			diffuse = new DiffuseShader(this, resxContent);
 			composite = new CompositeShader(this, resxContent);
 			dof = new DepthOfFieldShader(this, resxContent);
 			blur = new BlurShader(this, resxContent);

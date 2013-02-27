@@ -18,3 +18,4 @@ MeteorEngine.Content\Fonts\defaultFont.xnb
 MeteorEngine.Content\AreaTexDX9.xnb
 MeteorEngine.Content\Models\cube.xnb
 MeteorEngine.Content\Effects\forwardRender.xnb
+MeteorEngine.Content\Effects\terrainForwardRender.xnb

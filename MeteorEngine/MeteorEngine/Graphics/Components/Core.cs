@@ -45,14 +45,13 @@ namespace Meteor
         /// Useful for all DrawableComponents
         SpriteFont font;
         SpriteBatch spriteBatch;
+		Texture2D nullTexture;
 
 		/// <summary>
 		/// Content loaders (by file or by resource)
 		/// </summary>
         ContentManager content;
 		ResourceContentManager resxContent;
-
-		Texture2D nullTexture;
 
 		/// Used to draw scenes
 		SceneRenderer sceneRenderer;
@@ -258,10 +257,18 @@ namespace Meteor
 			spriteBatch.Begin(0, BlendState.NonPremultiplied, SamplerState.LinearClamp,
 				DepthStencilState.None, RasterizerState.CullCounterClockwise);
 
+			int splitType = outputs.Count;
+			int splitID = 0;
+
 			foreach (RenderTarget2D output in outputs)
 			{
-				spriteBatch.Draw(output, new Rectangle(0, 0,
-					graphicsDevice.Viewport.Width, graphicsDevice.Viewport.Height), Color.White);
+				spriteBatch.Draw(output, new Rectangle(
+					(graphicsDevice.Viewport.Width / splitType) * splitID, 0,
+					graphicsDevice.Viewport.Width / splitType, graphicsDevice.Viewport.Height),
+					new Rectangle(
+					(graphicsDevice.Viewport.Width / splitType) * splitID++, 0,
+					graphicsDevice.Viewport.Width / splitType, graphicsDevice.Viewport.Height),
+					 Color.White);
 			}
 
 			spriteBatch.End();

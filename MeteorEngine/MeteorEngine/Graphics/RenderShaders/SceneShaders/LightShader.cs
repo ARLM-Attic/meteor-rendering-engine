@@ -16,7 +16,7 @@ namespace Meteor.Rendering
 		Effect directionalLightEffect;
 
 		/// Handles point lights
-		Effect pointLightEffect;	
+		Effect pointLightEffect;
 
 		/// Sphere used for point lighting
 		Model sphereModel;
@@ -28,7 +28,7 @@ namespace Meteor.Rendering
 		Camera lightCamera;
 
 		/// Texture dimensions for individual shadow cascade
-		const int shadowMapSize = 1280;
+		const int shadowMapSize = 768;
 
 		/// Total number of cascades for CSM
 		const int numCascades = 4;
@@ -36,9 +36,6 @@ namespace Meteor.Rendering
 		/// Arrangement of depth maps in atlas
 		const int mapsPerRow = 2;
 		const int mapsPerCol = 2;
-
-		/// Ambient light irradiance
-		Vector3 ambientTerm;
 
 		/// Ratio of linear to logarithmic split in view cascades
 		public float splitLambda = 0.9f;
@@ -164,9 +161,7 @@ namespace Meteor.Rendering
 			RenderTarget2D[] targets)
 		{
 			SetCommonParameters(directionalLightEffect, camera, targets);
-
-			ambientTerm = scene.ambientLight;
-			directionalLightEffect.Parameters["ambientTerm"].SetValue(ambientTerm);
+			directionalLightEffect.Parameters["ambientTerm"].SetValue(scene.ambientLight);
 
 			foreach (DirectionLight light in scene.directionalLights)
 			{

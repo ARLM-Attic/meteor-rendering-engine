@@ -117,7 +117,8 @@
     <Compile Include="Graphics\RenderShaders\PostProcessingShaders\MLAAShader.cs" />
     <Compile Include="Graphics\RenderShaders\SceneShaders\ForwardShader.cs" />
     <Compile Include="Graphics\RenderShaders\SceneShaders\DepthMapShader.cs" />
-    <Compile Include="Helpers\DebugDisplay.cs" />
+    <Compile Include="Graphics\SampleRenderProfiles\ForwardRenderer.cs" />
+    <Compile Include="Helpers\DebugGUI.cs" />
     <Compile Include="Helpers\GaussianBlur.cs" />
     <Compile Include="Helpers\CopyShader.cs" />
     <Compile Include="Graphics\Rendering\RenderInput.cs" />
@@ -175,6 +176,7 @@
     <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\renderGBuffer.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\ssao.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\terrainDepth.xnb" />
+    <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\terrainForwardRender.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\terrainGBuffer.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\Fonts\defaultFont.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\Fonts\segoeUI.xnb" />

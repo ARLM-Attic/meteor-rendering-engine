@@ -16,10 +16,14 @@ float3 camPosition;
 float4x4 lightViewProj[NUM_CASCADES];
 float cascadeSplits[NUM_CASCADES];
 
+// Directional light pass
+
 float3 lightDirection;
 float3 lightColor;
 float3 ambientTerm;
 float lightIntensity;
+
+// Apply textures to the lighting
 
 texture depthMap;
 texture normalMap;
@@ -154,17 +158,15 @@ float4 DirectionalLightPS(VertexShaderOutput input, float4 position) : COLOR0
 
 	// Reflection data
 
-	float3 reflection = normalize(reflect(-lightDir, normal)); 
+	//float3 reflection = normalize(reflect(-lightDir, normal)); 
 	float3 directionToCamera = normalize(camPosition - position);
 
 	// Compute the final specular factor
 	// Compute diffuse light
 	
-	float3 halfAngle = normalize(lightDir + directionToCamera);
-	float ndh = saturate(dot(normal, halfAngle));
+	float3 halfVector = normalize(lightDir + directionToCamera);
+	float ndh = saturate(dot(normal, halfVector));
 	float ndl = saturate(dot(normal, lightDir));
-
-	//ndl = ambientTerm + ndl; // (ndl * (1 - ambientTerm));
 
 	float3 diffuse = ambientTerm + ndl * lightColor;
 	float specLight = specIntensity * pow(ndh, specPower) * ((specPower + 8.0f) / (8.0f * 3.14159265f));

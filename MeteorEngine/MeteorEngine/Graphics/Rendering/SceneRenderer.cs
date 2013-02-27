@@ -57,6 +57,7 @@ namespace Meteor.Rendering
         {
 			this.graphicsDevice = device; 
 			this.content = content;
+
 			spriteBatch = new SpriteBatch(graphicsDevice);
 			imposter = new Imposter(graphicsDevice, content);
 
@@ -64,9 +65,9 @@ namespace Meteor.Rendering
             shaderTechnique = "GBuffer";
 			currentEffect = null;
 
-			blankNormal = new Texture2D(device, 1, 1);//content.Load<Texture2D>("null_normal");
-			blankTexture = new Texture2D(device, 1, 1); //content.Load<Texture2D>("null_color");
-			blankSpecular = new Texture2D(device, 1, 1);//content.Load<Texture2D>("null_specular");
+			blankNormal = new Texture2D(device, 1, 1);
+			blankTexture = new Texture2D(device, 1, 1);
+			blankSpecular = new Texture2D(device, 1, 1);
 
 			// Create the dummy textures
 			Color[][] pixels = new Color[3][];
@@ -123,11 +124,16 @@ namespace Meteor.Rendering
 
 			currentEffect = effect;
 
+			// Set camera parameters
+			currentEffect.Parameters["View"].SetValue(camera.view);
+			currentEffect.Parameters["Projection"].SetValue(camera.projection);
+			currentEffect.Parameters["CameraPosition"].SetValue(camera.position);
+
 			foreach (InstancedModel instancedModel in scene.staticModels.Values)					
-				scene.visibleMeshes += DrawModel(instancedModel, camera, this.shaderTechnique);
+				scene.visibleMeshes += DrawModel(instancedModel, this.shaderTechnique);
 
 			foreach (InstancedModel skinnedModel in scene.skinnedModels.Values)
-				scene.visibleMeshes += DrawModel(skinnedModel, camera, this.shaderTechnique + "Animated");
+				scene.visibleMeshes += DrawModel(skinnedModel, this.shaderTechnique + "Animated");
 
 			scene.totalPolys = totalPolys;
 
@@ -136,7 +142,31 @@ namespace Meteor.Rendering
 		}
 
 		/// <summary>
-		/// Overloads for drawing with an effect with camera parameters
+		/// Draw with a custom effect not requiring a camera
+		/// </summary>
+
+		public void Draw(Scene scene, Effect effect, BlendState blendState)
+		{
+			Viewport viewport = graphicsDevice.Viewport;
+			viewport.MinDepth = 0.0f;
+			viewport.MaxDepth = farDepth;
+			graphicsDevice.Viewport = viewport;
+			graphicsDevice.BlendState = blendState;
+			graphicsDevice.RasterizerState = RasterizerState.CullNone;
+
+			currentEffect = effect;
+
+			foreach (InstancedModel instancedModel in scene.staticModels.Values)
+				DrawModel(instancedModel, effect, this.shaderTechnique);
+
+			foreach (InstancedModel skinnedModel in scene.skinnedModels.Values)
+				DrawModel(skinnedModel, effect, this.shaderTechnique + "Animated");
+
+			// Finished drawing visible meshes
+		}
+
+		/// <summary>
+		/// Overload for drawing with an effect with camera parameters
 		/// </summary>	
 
 		public void Draw(Scene scene, Camera camera, Effect effect)
@@ -145,41 +175,12 @@ namespace Meteor.Rendering
 		}
 
 		/// <summary>
-		/// Draw with a custom effect
-		/// </summary>
-
-		public void Draw(Scene scene, Effect effect, BlendState blendState,
-			RasterizerState rasterizerState)
-		{
-			Viewport viewport = graphicsDevice.Viewport;
-			viewport.MinDepth = 0.0f;
-			viewport.MaxDepth = farDepth;
-			graphicsDevice.Viewport = viewport;
-			graphicsDevice.RasterizerState = RasterizerState.CullNone;
-
-			currentEffect = effect;
-
-			foreach (InstancedModel instancedModel in scene.staticModels.Values)
-				DrawModel(instancedModel, effect, "Default");
-
-			foreach (InstancedModel skinnedModel in scene.skinnedModels.Values)
-				DrawModel(skinnedModel, effect, "DefaultAnimated");
-
-			// Finished drawing visible meshes
-		}
-
-		/// <summary>
-		/// Overloads for drawing custom effects
+		/// Overload for drawing custom effects not requiring a camera
 		/// </summary>	
 
 		public void Draw(Scene scene, Effect effect)
 		{
-			Draw(scene, effect, BlendState.Opaque, RasterizerState.CullNone);
-		}
-
-		public void Draw(Scene scene, Effect effect, BlendState blendState)
-		{
-			Draw(scene, effect, blendState, RasterizerState.CullNone);
+			Draw(scene, effect, BlendState.Opaque);
 		}
 
 		/// <summary>
@@ -227,7 +228,7 @@ namespace Meteor.Rendering
 		/// Draw all visible meshes for this model with camera effect parameters.
 		/// </summary>
 
-		private int DrawModel(InstancedModel instancedModel, Camera camera, String technique)
+		private int DrawModel(InstancedModel instancedModel, String technique)
 		{
 			UseTechnique(technique);
 			TrimBoneTransforms(instancedModel);
@@ -237,57 +238,28 @@ namespace Meteor.Rendering
 
 			foreach (MeshInstanceGroup instanceGroup in instancedModel.MeshInstanceGroups.Values)
 			{
-				int totalInstances = instanceGroup.instances.Count;
-				graphicsDevice.SetVertexBuffers(null);
-
-				/// Resize the vertex buffer for instances if needed
-				if (totalInstances > instanceGroup.instanceVB.VertexCount)
-				{
-					instanceGroup.instanceVB =
-						instancedModel.CreateInstanceVB(graphicsDevice, instanceGroup.instances);
-				}
-				else
-				{
-					instancedModel.UpdateInstanceVB(instanceGroup);
-				}
+				instancedModel.PrepareMeshData(graphicsDevice, instanceGroup);
 
 				// Retrieve the current mesh from the mesh list
 				ModelMesh mesh = instancedModel.model.Meshes[meshIndex];
 				Matrix world = instancedModel.boneMatrices[mesh.ParentBone.Index];
 
-				foreach (ModelMeshPart meshPart in mesh.MeshParts)
+				// Set world matrix for all mesh parts
+				currentEffect.Parameters["World"].SetValue(world);
+
+				foreach (ModelMeshPart meshPart in instancedModel.model.Meshes[meshIndex].MeshParts)
 				{
-					// Assign effect (all mesh parts use the same one)
-					//currentEffect = gBufferEffect;
-
-					// Set GBuffer parameters
-					currentEffect.Parameters["World"].SetValue(world);
-
-					// Set camera parameters
-					currentEffect.Parameters["View"].SetValue(camera.view);
-					currentEffect.Parameters["Projection"].SetValue(camera.projection);
-					currentEffect.Parameters["CameraPosition"].SetValue(camera.position);
-
-					currentEffect.Parameters["WorldInverseTranspose"].SetValue(
-						Matrix.Transpose(Matrix.Invert(world * mesh.ParentBone.Transform)));
-
 					// Set bones if the model is animated
 					if (instancedModel.animationPlayer != null)
 						currentEffect.Parameters["bones"].SetValue(tempBones);
 
-					if (instancedModel.textures[meshIndex] != null)
-					{
-						currentEffect.Parameters["Texture"].SetValue(instancedModel.textures[meshIndex]);
-					}
-					else
-					{
-						currentEffect.Parameters["Texture"].SetValue(blankTexture);
-					}
+					Texture2D textureValue = (instancedModel.textures[meshIndex] != null) ?
+						instancedModel.textures[meshIndex] : blankTexture;
 
+					currentEffect.Parameters["Texture"].SetValue(textureValue);
 					currentEffect.Parameters["NormalMap"].SetValue(instancedModel.normalMapTextures[meshIndex]);
 
 					DrawInstancedMeshPart(meshPart, instanceGroup);
-					//DrawInstancedMeshDummyBox(instanceGroup);
 					meshIndex++;
 				}
 				// Finished drawing mesh parts
@@ -298,48 +270,38 @@ namespace Meteor.Rendering
 		}
 
 		/// <summary>
-		/// Draw instanced model with a custom effect
+		/// Draw instanced model with a custom effect without camera parameters
 		/// </summary>	
 
-		public int DrawModel(InstancedModel instancedModel, Effect effect, String technique = "Default")
+		private int DrawModel(InstancedModel instancedModel, Effect effect, String technique)
 		{
-			TrimBoneTransforms(instancedModel);
 			UseTechnique(technique);
+			TrimBoneTransforms(instancedModel);
 
 			int meshIndex = 0;
 			int visibleInstances = 0;
 
 			foreach (MeshInstanceGroup instanceGroup in instancedModel.MeshInstanceGroups.Values)
 			{
-				int totalInstances = instanceGroup.instances.Count;
-				graphicsDevice.SetVertexBuffers(null);
-
-				/// Resize the vertex buffer for instances if needed
-				if (totalInstances > instanceGroup.instanceVB.VertexCount)
-				{
-					instanceGroup.instanceVB =
-						instancedModel.CreateInstanceVB(graphicsDevice, instanceGroup.instances);
-				}
-				else
-				{
-					instancedModel.UpdateInstanceVB(instanceGroup);
-				}
+				instancedModel.PrepareMeshData(graphicsDevice, instanceGroup);
 
 				// Retrieve the current mesh from the mesh list
 				ModelMesh mesh = instancedModel.model.Meshes[meshIndex];
 				Matrix world = instancedModel.boneMatrices[mesh.ParentBone.Index];
 
 				// Set world matrix for all mesh parts
-				effect.Parameters["World"].SetValue(instancedModel.boneMatrices[mesh.ParentBone.Index]);
+				currentEffect.Parameters["World"].SetValue(world);
 
 				foreach (ModelMeshPart meshPart in mesh.MeshParts)
 				{
 					// Set bones if the model is animated
 					if (instancedModel.animationPlayer != null)
-						effect.Parameters["bones"].SetValue(tempBones);
+						currentEffect.Parameters["bones"].SetValue(tempBones);
 
-					if (instancedModel.textures[meshIndex] != null)
-						effect.Parameters["Texture"].SetValue(instancedModel.textures[meshIndex]);
+					Texture2D textureValue = (instancedModel.textures[meshIndex] != null) ?
+						instancedModel.textures[meshIndex] : blankTexture;
+
+					currentEffect.Parameters["Texture"].SetValue(textureValue);
 
 					DrawInstancedMeshPart(meshPart, instanceGroup);
 					meshIndex++;
@@ -449,7 +411,7 @@ namespace Meteor.Rendering
 				scene.Skybox.MeshInstanceGroups["DefaultName_0"].instances[0];
 
 			scene.Skybox.Translate(camera.position);
-			DrawModel(scene.Skybox, camera, this.shaderTechnique);
+			DrawModel(scene.Skybox, this.shaderTechnique);
 		}
 		
 		/// <summary>
