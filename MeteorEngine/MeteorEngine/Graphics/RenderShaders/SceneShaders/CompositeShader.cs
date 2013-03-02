@@ -66,7 +66,6 @@ namespace Meteor.Rendering
 
 			// Combine lighting effects with diffuse color
 			finalComboEffect.Parameters["includeSSAO"].SetValue(includeSSAO);
-			finalComboEffect.Parameters["flicker"].SetValue(1);
 			finalComboEffect.Parameters["ambientTerm"].SetValue(scene.ambientLight);
 			finalComboEffect.Parameters["halfPixel"].SetValue(halfPixel);
 

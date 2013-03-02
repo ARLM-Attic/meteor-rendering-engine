@@ -69,7 +69,7 @@ namespace Meteor.Resources
 		private static Vector3[] corners = new Vector3[8];
 
 		// This holds the vertices for our unit sphere that we will use when drawing bounding spheres
-		private const int sphereResolution = 24;
+		private const int sphereResolution = 40;
 		private const int sphereLineCount = (sphereResolution + 1) * 3;
 		private static Vector3[] unitSphere;
 
@@ -304,8 +304,8 @@ namespace Meteor.Resources
 				Vector3 vertPos = unitSphere[i] * sphere.Radius + sphere.Center;
 
 				// Add the vertex to the shape
-				color = (i > 82) ? Color.Red : color;
-				color = (i > 164) ? Color.Blue : color;
+				color = (i > 80) ? Color.Red : color;
+				color = (i > 160) ? Color.Blue : color;
 				shape.Vertices[i] = new VertexPositionColor(vertPos, color);
 			}
 		}

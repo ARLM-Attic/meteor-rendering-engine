@@ -146,6 +146,7 @@ namespace Meteor.Rendering
 			// Set the G-Buffer parameters
 			effect.Parameters["normalMap"].SetValue(targets[0]);
 			effect.Parameters["depthMap"].SetValue(targets[1]);
+			effect.Parameters["specularMap"].SetValue(targets[2]);
 
 			// Set additional camera parameters
 			effect.Parameters["camPosition"].SetValue(camera.position);

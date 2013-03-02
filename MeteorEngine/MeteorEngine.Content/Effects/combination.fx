@@ -1,3 +1,6 @@
+//-----------------------------------------
+//	Combination
+//-----------------------------------------
 
 float4x4 World;
 float4x4 View;
@@ -5,7 +8,6 @@ float4x4 Projection;
 
 float2 halfPixel;
 float3 ambientTerm;
-float flicker;
 float includeSSAO;
 
 // Combined textures
@@ -90,16 +92,13 @@ float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 	// Gamma encoding
 	diffuse.rgb *= diffuse.rgb;
 
-	// This ensures that the specular highlight is of the right color
-	float3 specular = light.a;
-
 	float4 ssao = 1;
 	if (includeSSAO >= 1)
 		ssao = tex2D(ssaoSampler, input.TexCoord);
 
-	light *= ssao + float4(ambientTerm, 1);
+	light *= ssao;
 
-	float4 finalColor = float4((light.rgb * diffuse) + specular, diffuse.a);
+	float4 finalColor = float4((light.rgb * diffuse) + normalize(light.rgb) * light.a, diffuse.a);
 
 	// Add fog based on exponential depth
 	float4 fogColor = float4(0.3, 0.5, 0.92, 1);

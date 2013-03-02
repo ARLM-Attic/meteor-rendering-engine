@@ -1,3 +1,6 @@
+//-----------------------------------------
+//	DirectionalLight
+//-----------------------------------------
 
 float4x4 View;
 float4x4 Projection;
@@ -142,6 +145,13 @@ float3 PoissonDiscFilter(sampler smp, float3 ambient, float2 texCoord, float our
 	return shadow + ambientTerm;
 }
 
+// Blinn D1 (Phong) specular distribution 
+float BlinnPhong(float3 normal, float3 view, float3 light, float specPower)
+{					
+	float3 halfVector = normalize(light + view);
+	return pow(saturate(dot(normal, halfVector)), specPower);
+}
+
 float4 DirectionalLightPS(VertexShaderOutput input, float4 position) : COLOR0
 {
 	// Get normal data
@@ -151,14 +161,15 @@ float4 DirectionalLightPS(VertexShaderOutput input, float4 position) : COLOR0
 
 	// Get specular data
 
-	float specPower = 20.f;//normalData.a * 255;
-	float3 specIntensity = normalData.a;
+	float4 specular = tex2D(specularSampler, input.TexCoord);
+	float specPower = specular.a * 255;
+	float3 specIntensity = specular.rgb;
 
 	float3 lightDir = -normalize(lightDirection);
 
 	// Reflection data
 
-	//float3 reflection = normalize(reflect(-lightDir, normal)); 
+	float3 reflection = normalize(reflect(-lightDir, normal)); 
 	float3 directionToCamera = normalize(camPosition - position);
 
 	// Compute the final specular factor
@@ -168,10 +179,12 @@ float4 DirectionalLightPS(VertexShaderOutput input, float4 position) : COLOR0
 	float ndh = saturate(dot(normal, halfVector));
 	float ndl = saturate(dot(normal, lightDir));
 
-	float3 diffuse = ambientTerm + ndl * lightColor;
-	float specLight = specIntensity * pow(ndh, specPower) * ((specPower + 8.0f) / (8.0f * 3.14159265f));
+	float3 diffuse = ndl * lightColor;
 
-	return float4(diffuse * lightIntensity, specLight * lightIntensity);
+	float specLight = specIntensity * BlinnPhong(normal, directionToCamera, lightDir, specPower);
+	//pow(saturate(dot(reflection, directionToCamera)), specPower);
+
+	return float4((ambientTerm + diffuse) * lightIntensity, specLight * lightIntensity);
 }
 
 float4 CalculateWorldPosition(float2 texCoord, float depthVal)

@@ -1,3 +1,6 @@
+//-----------------------------------------
+//	TerrainGBuffer
+//-----------------------------------------
 
 float4x4 World;
 float4x4 View;
@@ -96,9 +99,10 @@ VT_Output VertexShaderTerrain(VT_Input input)
 
 struct PixelShaderOutput1
 {
-    float4 Color : COLOR0;
-    float4 Normal : COLOR1;
-    float4 Depth : COLOR2;
+    float4 Normal : COLOR0;
+    float4 Depth : COLOR1;
+    float4 Color : COLOR2;
+	float4 Specular : COLOR3;
 };
 
 struct PixelShaderOutput2
@@ -177,6 +181,7 @@ PixelShaderOutput1 PixelTerrainGBuffer(VT_Output input)
 
 	// Terrain doesn't need any specular component
     output.Normal.a = 0;
+	output.Specular = 0;// float4(0.5, 0.5, 0.5, 0.4f);
 
 	// Output Depth
 	output.Depth = input.Depth.x / input.Depth.y; 

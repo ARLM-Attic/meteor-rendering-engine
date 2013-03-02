@@ -14,6 +14,7 @@ namespace Meteor.Rendering
 	{
 		/// Color and specular intensity
 		RenderTarget2D diffuseRT;
+		RenderTarget2D specularRT;
 
 		/// <summary>
 		/// Load the GBuffer content
@@ -28,15 +29,23 @@ namespace Meteor.Rendering
 				(int)(backBufferHeight * bufferScaling), 
 				SurfaceFormat.Color, DepthFormat.Depth24Stencil8, 4);
 
-			outputTargets = new RenderTarget2D[3];
+			// Specular render target
+			specularRT = profile.AddRenderTarget(
+				(int)(backBufferWidth * bufferScaling),
+				(int)(backBufferHeight * bufferScaling),
+				SurfaceFormat.Color, DepthFormat.Depth24Stencil8, 4);
+
+			outputTargets = new RenderTarget2D[4];
 			outputTargets[0] = normalRT;
 			outputTargets[1] = depthRT;
 			outputTargets[2] = diffuseRT;
+			outputTargets[3] = specularRT;
 
-			bindingTargets = new RenderTargetBinding[3];
-			bindingTargets[0] = outputTargets[2];
-			bindingTargets[1] = outputTargets[0];
-			bindingTargets[2] = outputTargets[1];
+			bindingTargets = new RenderTargetBinding[4];
+			bindingTargets[0] = outputTargets[0];
+			bindingTargets[1] = outputTargets[1];
+			bindingTargets[2] = outputTargets[2];
+			bindingTargets[3] = outputTargets[3];
 		}
 
 		/// <summary>
