@@ -19,11 +19,11 @@ namespace Meteor.Resources
 		ContentManager content;
 
 		/// Heightmap dimensions
-		private int terrainWidth;
-		private int terrainHeight;
+		int terrainWidth;
+		int terrainHeight;
 
 		/// Array to store the data of each map pixel
-		private short[,] heightData;
+		short[,] heightData;
 
 		/// Amount to scale heightmap by
 		public float scale;
@@ -32,19 +32,19 @@ namespace Meteor.Resources
 		public float textureScale = 10f;
 
 		/// Primary texture to apply to the terrain mesh
-		private Texture2D mainTexture, normalTexture, heightMapTexture;
+		Texture2D mainTexture, normalTexture, heightMapTexture;
 		
-		/// Splate textures for additional terrain features
-		private Texture2D blendTexture1;
+		/// Splat textures for additional terrain features
+		Texture2D blendTexture1;
 
 		/// The innermost (level 0) geo clipmap to render the terrain with
-		private InnerClipmap innerClipMap;
+		InnerClipmap innerClipMap;
 
 		/// The outer geo clipmaps
-		private OuterClipmap[] outerClipMaps;
+		OuterClipmap[] outerClipMaps;
 
 		/// Location to offset the position of the terrain
-		private Vector3 heightmapPosition;
+		Vector3 heightmapPosition;
 
 		/// <summary>
 		/// Constructor to set up content and default texture
@@ -64,12 +64,12 @@ namespace Meteor.Resources
 		/// Create a heightmap from a grayscale image
 		/// </summary>
 		
-		public void GenerateFromImage(String image, String texture, String normalTex)
+		public void GenerateFromImage(String image, String baseTexture, String blendTexture)
 		{
 			heightMapTexture = content.Load<Texture2D>(image);
-			mainTexture = content.Load<Texture2D>(texture);
-			blendTexture1 = content.Load<Texture2D>("Textures/desert-cracked1");
-			normalTexture = content.Load<Texture2D>(normalTex);
+			mainTexture = content.Load<Texture2D>(baseTexture);
+			blendTexture1 = content.Load<Texture2D>(blendTexture);
+			normalTexture = content.Load<Texture2D>("Textures/earth_normal");
 
 			terrainWidth = heightMapTexture.Width;
 			terrainHeight = heightMapTexture.Height;
@@ -94,14 +94,13 @@ namespace Meteor.Resources
 				}
 			}
 
-			// Setup other data values
-			//SetUpIndices();
-
-			// Setup the clip maps
+			// Setup the clip maps, and determine how many should be needed to
+			// fit within the bounds of the terrain
 			int clipMapSize = 96;
+			//int numClipMaps = 
 
 			innerClipMap = new InnerClipmap(clipMapSize, graphicsDevice);
-			outerClipMaps = new OuterClipmap[4];
+			outerClipMaps = new OuterClipmap[3];
 
 			for (int i = 0; i < outerClipMaps.Length; i++)
 				outerClipMaps[i] = new OuterClipmap(i + 1, clipMapSize, graphicsDevice);

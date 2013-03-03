@@ -93,10 +93,9 @@ namespace Meteor
 			return false;
 		}
 
-		// CalculateCursorRay Calculates a world space ray starting at the camera's
-		// "eye" and pointing in the direction of the cursor. Viewport.Unproject is used
-		// to accomplish this. see the accompanying documentation for more explanation
-		// of the math behind this function.
+		/// <summary>
+		/// Calculates a world space ray starting at the camera's "eye" and pointing in the direction of the cursor.
+		/// <summary>
 		public Ray CalculateCursorRay(Matrix projectionMatrix, Matrix viewMatrix)
 		{
 			mouseState = Mouse.GetState();
@@ -106,19 +105,15 @@ namespace Meteor
 			// close as possible to the camera, 1 is as far away as possible.
 			Vector3 nearSource = new Vector3(mousePos, 0f);
 			Vector3 farSource = new Vector3(mousePos, 1f);
-
-			// use Viewport.Unproject to tell what those two screen space positions
-			// would be in world space. we'll need the projection matrix and view
-			// matrix, which we have saved as member variables. We also need a world
-			// matrix, which can just be identity.
+				
+			// Use Viewport.Unproject to tell what those two screen space positions would be in world space.
 			Vector3 nearPoint = graphicsDevice.Viewport.Unproject(nearSource,
 				projectionMatrix, viewMatrix, Matrix.Identity);
 
 			Vector3 farPoint = graphicsDevice.Viewport.Unproject(farSource,
 				projectionMatrix, viewMatrix, Matrix.Identity);
 
-			// find the direction vector that goes from the nearPoint to the farPoint
-			// and normalize it....
+			// find the direction vector that goes from the nearPoint to the farPoint and normalize it....
 			Vector3 direction = farPoint - nearPoint;
 			direction.Normalize();
 
@@ -141,12 +136,13 @@ namespace Meteor
 
 			// If the cursor is over a model, we'll draw its name.
 			Ray cursorRay = CalculateCursorRay(debugCamera.projection, debugCamera.view);
+
 			Matrix instanceMatrix = Matrix.Identity;
 			BoundingSphere bSphere;
 
 			foreach (InstancedModel staticModel in debugScene.staticModels.Values)
 			{
-				// check to see if the cursorRay intersects the model....
+				// Check for cursor picking intersection
 				if (RayIntersectsModel(cursorRay, staticModel, out instanceMatrix, out bSphere))
 				{
 					String foundMeshName = "Model";
@@ -156,44 +152,26 @@ namespace Meteor
 						break;
 					}
 
-					// now we know that we want to draw the model's name. We want to
-					// draw the name a little bit above the model: but where's that?
-					// SpriteBatch.DrawString takes screen space coordinates, but the 
-					// model's position is stored in world space. 
+					// Project from world space to screen space
+					Vector3 screenSpace = graphicsDevice.Viewport.Project(Vector3.Zero, debugCamera.projection, 
+						debugCamera.view, instanceMatrix);
 
-					// we'll use Viewport.Project, which will project a world space
-					// point into screen space. We'll project the vector (0,0,0) using
-					// the model's world matrix, and the view and projection matrices.
-					// that will tell us where the model's origin is on the screen.
-					Vector3 screenSpace = graphicsDevice.Viewport.Project(
-						Vector3.Zero, debugCamera.projection, debugCamera.view,
-						instanceMatrix);
-
-					// we want to draw the text a little bit above that, so we'll use
-					// the screen space position - 60 to move up a little bit. A better
-					// approach would be to calculate where the top of the model is, and
-					// draw there. It's not that much harder to do, but to keep the
-					// sample easy, we'll take the easy way out.
+					// we want to draw the text a little bit above that, so we'll use the screen space position.
 					Vector2 textPosition =
-						new Vector2(screenSpace.X, screenSpace.Y - 60);
+						new Vector2((int)screenSpace.X, (int)screenSpace.Y - 60);
 
-					// we want to draw the text centered around textPosition, so we'll
-					// calculate the center of the string, and use that as the origin
-					// argument to spriteBatch.DrawString. DrawString automatically
-					// centers text around the vector specified by the origin argument.
+					// Calculate string's center and draw using that as the origin.
 					Vector2 stringCenter =
 						font.MeasureString(foundMeshName) / 2;
 
-					spriteBatch.Draw(nullTexture, new Rectangle(
+					spriteBatch.Draw(nullTexture, 
+						new Vector2(textPosition.X - stringCenter.X - 8, textPosition.Y - (int)stringCenter.Y - 2),
+						new Rectangle(
 						(int)(textPosition.X - stringCenter.X - 8), (int)(textPosition.Y - (int)stringCenter.Y - 2),
 						(int)(stringCenter.X * 2 + 16), font.LineSpacing + 4),
 						new Color(0, 0, 0, 120));
 
-					// to make the text readable, we'll draw the same thing twice, once
-					// white and once black, with a little offset to get a drop shadow
-					// effect.
-
-					// first we'll draw the shadow...
+					// first draw the shadow...
 					Vector2 shadowOffset = new Vector2(1, 1);
 					spriteBatch.DrawString(font, foundMeshName,
 						textPosition + shadowOffset, Color.Black, 0.0f,
@@ -204,6 +182,7 @@ namespace Meteor
 						textPosition, Color.White, 0.0f,
 						stringCenter, 1.0f, SpriteEffects.None, 0.0f);
 
+					// Add debug shapes around the highlighted object
 					ShapeRenderer.AddBoundingSphere(bSphere, Color.LawnGreen);
 					ShapeRenderer.Draw(debugCamera.view, debugCamera.projection);
 

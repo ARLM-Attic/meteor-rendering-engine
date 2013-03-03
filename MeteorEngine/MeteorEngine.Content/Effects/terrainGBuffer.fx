@@ -85,7 +85,7 @@ VT_Output VertexShaderTerrain(VT_Input input)
 	//pass the texture coordinates further
     output.TexCoord = input.TexCoord;
 
-	output.Normal = mul(normalize(input.Normal), World);
+	output.Normal = normalize(mul(input.Normal, World));
 	output.N = mul(input.Normal, World);
 
     output.Depth.x = output.Position.z;// - 100.f; // Subtract to make color more visible
@@ -113,20 +113,20 @@ struct PixelShaderOutput2
 
 float4 TriplanarMapping(VT_Output input, float scale = 1)
 {
-	float tighten = 0.27;
+	float tighten = 0.4679f; 
 
-	float mXY = abs(input.Normal.z) - tighten;
-	float mXZ = abs(input.Normal.y) - tighten;
-	float mYZ = abs(input.Normal.x) - tighten;
+	float mXY = saturate(abs(input.Normal.z) - tighten);
+	float mXZ = saturate(abs(input.Normal.y) - tighten);
+	float mYZ = saturate(abs(input.Normal.x) - tighten);
 
 	float total = mXY + mXZ + mYZ;
 	mXY /= total;
 	mXZ /= total;
 	mYZ /= total;
-
-	float4 cXY = tex2D(blendSampler1, input.NewPosition.xy / textureScale * scale);
+	
+	float4 cXY = tex2D(blendSampler1, input.NewPosition.xy / textureScale * scale / 2);
 	float4 cXZ = tex2D(diffuseSampler, input.NewPosition.xz / textureScale * scale);
-	float4 cYZ = tex2D(blendSampler1, input.NewPosition.yz / textureScale * scale);
+	float4 cYZ = tex2D(blendSampler1, input.NewPosition.zy / textureScale * scale / 2);
 
 	float4 diffuse = cXY * mXY + cXZ * mXZ + cYZ * mYZ;
 	return diffuse;

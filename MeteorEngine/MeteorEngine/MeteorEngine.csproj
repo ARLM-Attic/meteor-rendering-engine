@@ -110,7 +110,6 @@
     <Compile Include="Graphics\Components\Lights\PointLight.cs" />
     <Compile Include="Graphics\Components\MeteorComponent.cs" />
     <Compile Include="Graphics\Rendering\QuadRenderer.cs" />
-    <Compile Include="Graphics\Components\QuadTree.cs" />
     <Compile Include="Graphics\Rendering\SceneCuller.cs" />
     <Compile Include="Graphics\Rendering\SceneRenderer.cs" />
     <Compile Include="Graphics\Components\Core.cs" />

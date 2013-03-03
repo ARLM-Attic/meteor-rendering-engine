@@ -87,7 +87,7 @@ namespace Meteor.Rendering
 			blur.SetInputs(composite.outputs);
 			ssao.SetInputs(scene, camera, gBuffer.outputs[0], gBuffer.outputs[1]);
 			dof.SetInputs(composite.outputs[0], copy.outputs[0], gBuffer.outputs[1]);
-			bloom.SetInputs(dof.outputs);
+			bloom.SetInputs(composite.outputs);
 
 			composite.includeSSAO = false;
 
@@ -107,12 +107,12 @@ namespace Meteor.Rendering
 
 			// Composite drawing
 			composite.Draw();
-			
+			/*
 			// Post effects
 			copy.Draw();
 			blur.Draw();
 			dof.Draw();
-			
+			*/
 			output = bloom.Draw()[0];
 		}
 	}
