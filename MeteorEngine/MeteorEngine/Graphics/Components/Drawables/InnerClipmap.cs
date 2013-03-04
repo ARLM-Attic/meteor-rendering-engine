@@ -246,17 +246,38 @@ namespace Meteor.Resources
 
 			for (int i = 0; i < indices.Length / 3; i++)
 			{
-				int index1 = indices[i * 3];
-				int index2 = indices[i * 3 + 1];
-				int index3 = indices[i * 3 + 2];
+				int index0 = indices[i * 3];
+				int index1 = indices[i * 3 + 1];
+				int index2 = indices[i * 3 + 2];
 
-				Vector3 side1 = vertices[index1].Position - vertices[index3].Position;
-				Vector3 side2 = vertices[index1].Position - vertices[index2].Position;
+				Vector3 side1 = vertices[index0].Position - vertices[index2].Position;
+				Vector3 side2 = vertices[index0].Position - vertices[index1].Position;
 				Vector3 normal = Vector3.Cross(side1, side2);
 
+				vertices[index0].Normal += normal;
 				vertices[index1].Normal += normal;
 				vertices[index2].Normal += normal;
-				vertices[index3].Normal += normal;
+
+				// Edges of the triangle : postion delta
+				Vector3 deltaPos1 = vertices[index1].Position - vertices[index0].Position;
+				Vector3 deltaPos2 = vertices[index2].Position - vertices[index0].Position;
+ 
+				// UV delta
+				Vector2 deltaUV1 = vertices[index1].TextureCoordinate - vertices[index0].TextureCoordinate;
+				Vector2 deltaUV2 = vertices[index2].TextureCoordinate - vertices[index0].TextureCoordinate;
+
+				// Calculate tangent and bitangent
+				float r = 1.0f / (deltaUV1.X * deltaUV2.Y - deltaUV1.Y * deltaUV2.Y);
+				Vector3 tangent = (deltaPos1 * deltaUV2.Y - deltaPos2 * deltaUV1.Y) * r;
+				Vector3 bitangent = (deltaPos2 * deltaUV1.X - deltaPos1 * deltaUV2.X) * r;
+
+				vertices[index0].Tangent = tangent;
+				vertices[index1].Tangent = tangent;
+				vertices[index2].Tangent = tangent;
+
+				vertices[index0].Binormal = bitangent;
+				vertices[index1].Binormal = bitangent;
+				vertices[index2].Binormal = bitangent;
 			}
 
 			for (int i = 0; i < vertices.Length; i++)

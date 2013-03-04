@@ -113,7 +113,6 @@
     <Compile Include="Graphics\Rendering\SceneCuller.cs" />
     <Compile Include="Graphics\Rendering\SceneRenderer.cs" />
     <Compile Include="Graphics\Components\Core.cs" />
-    <Compile Include="Graphics\RenderShaders\PostProcessingShaders\MLAAShader.cs" />
     <Compile Include="Graphics\RenderShaders\SceneShaders\ForwardShader.cs" />
     <Compile Include="Graphics\RenderShaders\SceneShaders\DepthMapShader.cs" />
     <Compile Include="Graphics\SampleRenderProfiles\ForwardRenderer.cs" />
@@ -181,6 +180,7 @@
     <None Include="bin\x86\Debug\MeteorEngine.Content\Fonts\segoeUI.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\Models\ball.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\Models\cube.xnb" />
+    <None Include="bin\x86\Debug\MeteorEngine.Content\Models\sphere.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\null_color.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\null_normal.xnb" />
     <None Include="bin\x86\Debug\MeteorEngine.Content\null_specular.xnb" />

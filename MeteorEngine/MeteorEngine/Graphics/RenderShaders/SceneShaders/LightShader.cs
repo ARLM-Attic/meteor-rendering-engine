@@ -27,8 +27,11 @@ namespace Meteor.Rendering
 		/// Camera to represent viewpoint of light
 		Camera lightCamera;
 
+		/// ShadowMapSize, numCascades, mapsPerRow, and mapsPerCol
+		/// should be the same values as those in DepthMapShader.cs
+
 		/// Texture dimensions for individual shadow cascade
-		const int shadowMapSize = 256;
+		const int shadowMapSize = 768;
 
 		/// Total number of cascades for CSM
 		const int numCascades = 4;
@@ -103,7 +106,7 @@ namespace Meteor.Rendering
 			pointLightEffect.Parameters["halfPixel"].SetValue(halfPixel);
 
 			// Load the point light model
-			sphereModel = content.Load<Model>("ball");
+			sphereModel = content.Load<Model>("sphere");
 		}
 
 		/// <summary>

@@ -69,7 +69,7 @@ namespace Meteor.Resources
 			heightMapTexture = content.Load<Texture2D>(image);
 			mainTexture = content.Load<Texture2D>(baseTexture);
 			blendTexture1 = content.Load<Texture2D>(blendTexture);
-			normalTexture = content.Load<Texture2D>("Textures/earth_normal");
+			normalTexture = content.Load<Texture2D>("Textures/cliff_rock-nrm");
 
 			terrainWidth = heightMapTexture.Width;
 			terrainHeight = heightMapTexture.Height;
@@ -231,6 +231,7 @@ namespace Meteor.Resources
 				// Set camera transformation matrices
 				effect.Parameters["View"].SetValue(camera.view);
 				effect.Parameters["Projection"].SetValue(camera.projection);
+				effect.Parameters["inverseView"].SetValue(Matrix.Invert(camera.view));
 
 				// Additional textures for terrain features
 				effect.Parameters["blendTexture1"].SetValue(blendTexture1);

@@ -118,12 +118,6 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="AreaTexDX9" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>bin\x86\Debug\MeteorEngine.Content\AreaTexDX9.xnb;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="ball" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>bin\x86\Debug\MeteorEngine.Content\Models\ball.xnb;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
   <data name="blur" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>bin\x86\Debug\MeteorEngine.Content\Effects\blur.xnb;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
@@ -132,9 +126,6 @@
   </data>
   <data name="combination" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>bin\x86\Debug\MeteorEngine.Content\Effects\combination.xnb;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="cube" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>bin\x86\Debug\MeteorEngine.Content\Models\cube.xnb;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="defaultFont" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>bin\x86\Debug\MeteorEngine.Content\Fonts\defaultFont.xnb;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
@@ -151,9 +142,6 @@
   <data name="fxaa" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>bin\x86\Debug\MeteorEngine.Content\Effects\fxaa.xnb;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="mlaa" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>bin\x86\Debug\MeteorEngine.Content\Effects\mlaa.xnb;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
   <data name="pointLight" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>bin\x86\Debug\MeteorEngine.Content\Effects\pointLight.xnb;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
@@ -165,6 +153,9 @@
   </data>
   <data name="segoeUI" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>bin\x86\Debug\MeteorEngine.Content\Fonts\segoeUI.xnb;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="sphere" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>bin\x86\Debug\MeteorEngine.Content\Models\sphere.xnb;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="ssao" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>bin\x86\Debug\MeteorEngine.Content\Effects\ssao.xnb;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>

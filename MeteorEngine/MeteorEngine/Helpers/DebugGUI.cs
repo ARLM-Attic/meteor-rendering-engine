@@ -18,6 +18,10 @@ namespace Meteor
 		ContentManager content;
 		ResourceContentManager resxContent;
 
+		/// Camera and scene used to obtain debug info
+		Scene debugScene;
+		Camera debugCamera;
+
 		/// <summary>
 		/// Get mouse and keyboard states
 		/// </summary>
@@ -42,8 +46,9 @@ namespace Meteor
 		{
 			content = new ContentManager(services, "MeteorEngine.Content");
 			resxContent = new ResourceContentManager(services, MeteorContentResource.ResourceManager);
-			renderStats = new RenderStats();
 
+			// Set statistic resources
+			renderStats = new RenderStats();
 			debugString = new StringBuilder(64, 64);
 		}
 

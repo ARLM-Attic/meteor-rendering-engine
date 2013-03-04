@@ -13,9 +13,8 @@ MeteorEngine.Content\Effects\imposter.xnb
 MeteorEngine.Content\Effects\mlaa.xnb
 MeteorEngine.Content\random.xnb
 MeteorEngine.Content\Fonts\segoeUI.xnb
-MeteorEngine.Content\Models\ball.xnb
 MeteorEngine.Content\Fonts\defaultFont.xnb
 MeteorEngine.Content\AreaTexDX9.xnb
-MeteorEngine.Content\Models\cube.xnb
 MeteorEngine.Content\Effects\forwardRender.xnb
 MeteorEngine.Content\Effects\terrainForwardRender.xnb
+MeteorEngine.Content\Models\sphere.xnb

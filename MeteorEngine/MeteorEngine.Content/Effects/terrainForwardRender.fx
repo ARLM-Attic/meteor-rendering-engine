@@ -1,11 +1,18 @@
 //-----------------------------------------
-//	TerrainGBuffer
+// TerrainForwardRender
 //-----------------------------------------
 
 float4x4 World;
 float4x4 View;
 float4x4 Projection;
 float4x4 inverseView;
+
+// Light and camera properties
+float3 CameraPosition;
+float3 lightDirection;
+float3 lightColor;
+float3 ambientTerm;
+float lightIntensity;
 
 float textureScale;
 float mapScale;
@@ -97,28 +104,14 @@ VT_Output VertexShaderTerrain(VT_Input input)
 
 	// calculate tangent space to world space matrix using the world space tangent,
     // binormal, and normal as basis vectors.
-	output.TangentToWorld[0] = mul(normalize(mul(input.tangent, World)), View);
-    output.TangentToWorld[1] = mul(normalize(mul(input.binormal, World)), View);
-    output.TangentToWorld[2] = mul(normalize(mul(input.Normal, World)), View);
+	output.TangentToWorld[0] = normalize(mul(mul(input.tangent, World), View));
+    output.TangentToWorld[1] = normalize(mul(mul(input.binormal, World), View));
+    output.TangentToWorld[2] = normalize(mul(mul(input.Normal, World), View));
 
     return output;
 }
 
 //--- PixelShaders ---//
-
-struct PixelShaderOutput1
-{
-    float4 Normal : COLOR0;
-    float4 Depth : COLOR1;
-    float4 Color : COLOR2;
-	float4 Specular : COLOR3;
-};
-
-struct PixelShaderOutput2
-{
-    float4 Normal : COLOR0;
-    float4 Depth : COLOR1;
-};
 
 float4 TriplanarMapping(VT_Output input, float scale = 1)
 {
@@ -132,7 +125,15 @@ float4 TriplanarMapping(VT_Output input, float scale = 1)
 	mXY /= total;
 	mXZ /= total;
 	mYZ /= total;
-	
+	/*
+	float3 lightDir = -normalize(lightDirection);
+    float3 halfVector = normalize(input.Normal + lightDir);
+	float height = tex2D(diffuseSampler, input.TexCoord).r;
+        
+	float scaleBias = 0.4f;
+    height = height * scaleBias;
+    float2 texCoord = input.TexCoord + (height * halfVector.xy);
+	*/
 	float4 cXY = tex2D(blendSampler1, input.NewPosition.xy / textureScale * scale / 2);
 	float4 cXZ = tex2D(diffuseSampler, input.NewPosition.xz / textureScale * scale);
 	float4 cYZ = tex2D(blendSampler1, input.NewPosition.zy / textureScale * scale / 2);
@@ -163,18 +164,16 @@ float3 TriplanarNormalMapping(VT_Output input, float scale = 1)
 	return normal;
 }
 
-PixelShaderOutput1 PixelTerrainGBuffer(VT_Output input)
+float4 PixelTerrainForwardRender(VT_Output input) : COLOR0
 {
-    PixelShaderOutput1 output = (PixelShaderOutput1)1;
-
-	// Determine diffuse texture color
 	float4 color = TriplanarMapping(input, 4);
 	float4 blendedColor = TriplanarMapping(input, 0.3f);
-	float depth = pow(input.Depth.x / input.Depth.y, 50);
+
+	float depth = pow(abs(input.Depth.x / input.Depth.y), 50);
 
 	// Blend with scaled texture
-	output.Color = lerp(color, blendedColor, depth);
-	output.Color.a = 1;
+	color = lerp(color, blendedColor, depth);
+	color.a = 1;
 
 	// Sample normal map color
 	float3 normal = TriplanarNormalMapping(input, 4);
@@ -186,56 +185,93 @@ PixelShaderOutput1 PixelTerrainGBuffer(VT_Output input)
 
     float3 normalFromMap = mul(normal, input.TangentToWorld);  
 	normalFromMap = normalize(normalFromMap);
-	output.Normal.rgb = 0.5f * (normalFromMap + 1.0f);
+	normalFromMap = 0.5f * (normalFromMap + 1.0f); 
+	  
+	// Get normal data
+	normal = normalize(normalFromMap);
+    
+	// Compute the final specular factor
+	// Compute diffuse light
 
-	// Terrain doesn't need any specular component
-    output.Normal.a = 0;
-	output.Specular = 0;//float4(0.5, 0.5, 0.5, 0.4f);
+	float3 lightDir = -normalize(lightDirection);
+    float ndl = saturate(dot(normal, lightDir));
+	float3 diffuse = ambientTerm + ndl * lightColor;
 
-	// Output Depth
-	output.Depth = input.Depth.x / input.Depth.y; 
-    return output;
+	// Gamma encoding
+	color.rgb *= color.rgb;
+
+	float4 finalColor = float4(color.rgb * diffuse * lightIntensity, 1);
+
+	// Add fog based on exponential depth
+	float4 fogColor = float4(0.3, 0.5, 0.92, 1);
+
+	float4 outDepth = input.Depth.x / input.Depth.y;  
+	if (color.a > 0.499f)
+		finalColor.rgb = lerp(finalColor.rgb, fogColor, pow(abs(outDepth), 1000));
+
+	// Gamma correct inverse
+	finalColor.rgb = pow(finalColor.rgb, 1 / 2.f);
+
+    return finalColor;
 }
 
-PixelShaderOutput2 PixelTerrainSmallGBuffer(VT_Output input)
+float4 PixelTerrainBasic(VT_Output input) : COLOR0
 {
-    PixelShaderOutput2 output = (PixelShaderOutput2)1;
+	float4 color = TriplanarMapping(input, 4);
+	float4 blendedColor = TriplanarMapping(input, 0.3f);
 
-    // Output the normal, in [0,1] space
-    float3 normalFromMap = tex2D(normalMapSampler, input.TexCoord);
+	float depth = pow(abs(input.Depth.x / input.Depth.y), 50);
 
-    normalFromMap = mul(normalFromMap, input.Normal);	
-    normalFromMap = normalize(mul(normalFromMap, View));
-    output.Normal.rgb = 0.5f * (normalFromMap + 1.0f);
+	// Blend with scaled texture
+	color = lerp(color, blendedColor, depth);
+	color.a = 1;
 
-	// Terrain doesn't need any specular component
-    output.Normal.a = 0;
+	// Output the normal, in [0,1] space
+	float3 normalFromMap = input.N;
 
-	// Output Depth
-	output.Depth = input.Depth.x / input.Depth.y; 
-    return output;
+    //get normal into world space  
+	normalFromMap = normalize(mul(normalFromMap, View));
+
+	// Get normal data
+	float3 normal = mul(normalFromMap, inverseView);
+    
+	// Compute the final specular factor
+	// Compute diffuse light
+
+	float3 lightDir = -normalize(lightDirection);
+    float ndl = saturate(dot(normal, lightDir));
+	float3 diffuse = ambientTerm + ndl * lightColor;
+	float4 finalColor = float4(color.rgb * diffuse * lightIntensity, 1);
+
+	// Add fog based on exponential depth
+	float4 fogColor = float4(0.3, 0.5, 0.92, 1);
+
+	float4 outDepth = input.Depth.x / input.Depth.y;  
+	if (color.a > 0.499f)
+		finalColor.rgb = lerp(finalColor.rgb, fogColor, pow(abs(outDepth), 1000));
+
+    return float4(diffuse, 1);
 }
 
 float4 PixelTerrainDiffuse(VT_Output input) : COLOR0
 {
-	float3 h = input.NewPosition.y;
 	float4 color = TriplanarMapping(input, 4);
 	float4 blendedColor = TriplanarMapping(input, 0.3f);
 
-	float depth = pow(input.Depth.x / input.Depth.y, 50);
+	float depth = pow(abs(input.Depth.x / input.Depth.y), 50);
 
 	// Blend with scaled texture
 	color = lerp(color, blendedColor, depth);
 	color.a = 1;
 	 
-	return color;//float4(0, ClipLevel % 2, 1, 1);
+	return color;
 }
 
 /// The following four techniques draw a variation of the GBuffer, 
 /// either with two render targets (light pre-pass) or three render 
 /// targets (deferred) simultaneously.
 
-technique GBufferTerrain
+technique ForwardRenderTerrain
 {
     pass Pass1
     {
@@ -243,19 +279,19 @@ technique GBufferTerrain
 		ZENABLE = True;
 
         VertexShader = compile vs_3_0 VertexShaderTerrain();
-        PixelShader = compile ps_3_0 PixelTerrainGBuffer();
+        PixelShader = compile ps_3_0 PixelTerrainForwardRender();
     }
 }
 
-technique SmallGBufferTerrain
+technique ForwardRenderTerrain_2_0
 {
     pass Pass1
     {
 		CullMode = CCW;
 		ZENABLE = True;
 
-        VertexShader = compile vs_3_0 VertexShaderTerrain();
-        PixelShader = compile ps_3_0 PixelTerrainSmallGBuffer();
+        VertexShader = compile vs_2_0 VertexShaderTerrain();
+        PixelShader = compile ps_2_0 PixelTerrainBasic();
     }
 }
 
@@ -268,8 +304,8 @@ technique DiffuseRenderTerrain
 		CullMode = CCW;
 		ZENABLE = True;
 
-        VertexShader = compile vs_3_0 VertexShaderTerrain();
-        PixelShader = compile ps_3_0 PixelTerrainDiffuse();
+        VertexShader = compile vs_2_0 VertexShaderTerrain();
+        PixelShader = compile ps_2_0 PixelTerrainDiffuse();
     }
 }
 

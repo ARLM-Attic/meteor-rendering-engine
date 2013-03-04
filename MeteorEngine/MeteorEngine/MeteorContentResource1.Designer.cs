@@ -60,20 +60,6 @@ namespace MeteorEngine {
             }
         }
         
-        internal static byte[] AreaTexDX9 {
-            get {
-                object obj = ResourceManager.GetObject("AreaTexDX9", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        internal static byte[] ball {
-            get {
-                object obj = ResourceManager.GetObject("ball", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
         internal static byte[] blur {
             get {
                 object obj = ResourceManager.GetObject("blur", resourceCulture);
@@ -91,13 +77,6 @@ namespace MeteorEngine {
         internal static byte[] combination {
             get {
                 object obj = ResourceManager.GetObject("combination", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        internal static byte[] cube {
-            get {
-                object obj = ResourceManager.GetObject("cube", resourceCulture);
                 return ((byte[])(obj));
             }
         }
@@ -137,13 +116,6 @@ namespace MeteorEngine {
             }
         }
         
-        internal static byte[] mlaa {
-            get {
-                object obj = ResourceManager.GetObject("mlaa", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
         internal static byte[] pointLight {
             get {
                 object obj = ResourceManager.GetObject("pointLight", resourceCulture);
@@ -168,6 +140,13 @@ namespace MeteorEngine {
         internal static byte[] segoeUI {
             get {
                 object obj = ResourceManager.GetObject("segoeUI", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        internal static byte[] sphere {
+            get {
+                object obj = ResourceManager.GetObject("sphere", resourceCulture);
                 return ((byte[])(obj));
             }
         }

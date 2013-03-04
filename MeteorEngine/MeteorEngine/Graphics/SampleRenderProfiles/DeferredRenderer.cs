@@ -36,9 +36,6 @@ namespace Meteor.Rendering
 		/// Depth of field effect
 		DepthOfFieldShader dof;
 
-		/// MLAA effect	
-		MLAAShader mlaa;
-
 		/// SSAO effect
 		SSAOShader ssao;
 
@@ -65,7 +62,6 @@ namespace Meteor.Rendering
 			blur = new BlurShader(this, resxContent);
 			copy = new CopyShader(this, resxContent);
 			bloom = new BloomShader(this, resxContent);
-			mlaa = new MLAAShader(this, resxContent);
 			ssao = new SSAOShader(this, resxContent);
 		}
 
@@ -82,12 +78,11 @@ namespace Meteor.Rendering
 				gBuffer.outputs[3], depth.outputs[0]);
 			composite.SetInputs(scene, camera, 
 				gBuffer.outputs[2], lights.outputs[0], ssao.outputs[0], gBuffer.outputs[1]);
-			mlaa.SetInputs(composite.outputs[0], composite.outputs[0]);
 			copy.SetInputs(composite.outputs);
 			blur.SetInputs(composite.outputs);
 			ssao.SetInputs(scene, camera, gBuffer.outputs[0], gBuffer.outputs[1]);
 			dof.SetInputs(composite.outputs[0], copy.outputs[0], gBuffer.outputs[1]);
-			bloom.SetInputs(composite.outputs);
+			bloom.SetInputs(dof.outputs);
 
 			composite.includeSSAO = false;
 
@@ -107,12 +102,12 @@ namespace Meteor.Rendering
 
 			// Composite drawing
 			composite.Draw();
-			/*
+			
 			// Post effects
 			copy.Draw();
 			blur.Draw();
 			dof.Draw();
-			*/
+			
 			output = bloom.Draw()[0];
 		}
 	}
