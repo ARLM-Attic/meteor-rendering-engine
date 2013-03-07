@@ -9,6 +9,8 @@ float4x4 inverseView;
 
 float textureScale;
 float mapScale;
+float specPower;
+float specIntensity;
 float clipLevel;
 
 texture Texture, NormalMap;
@@ -122,7 +124,7 @@ struct PixelShaderOutput2
 
 float4 TriplanarMapping(VT_Output input, float scale = 1)
 {
-	float tighten = 0.4679f; 
+	float tighten = 0.3679f; 
 
 	float mXY = saturate(abs(input.Normal.z) - tighten);
 	float mXZ = saturate(abs(input.Normal.y) - tighten);
@@ -143,7 +145,7 @@ float4 TriplanarMapping(VT_Output input, float scale = 1)
 
 float3 TriplanarNormalMapping(VT_Output input, float scale = 1)
 {
-	float tighten = 0.4679f; 
+	float tighten = 0.3679f; 
 
 	float mXY = saturate(abs(input.Normal.z) - tighten);
 	float mXZ = saturate(abs(input.Normal.y) - tighten);
@@ -155,11 +157,14 @@ float3 TriplanarNormalMapping(VT_Output input, float scale = 1)
 	mYZ /= total;
 	
 	float3 cXY = tex2D(normalMapSampler, input.NewPosition.xy / textureScale * scale / 2);
-	float3 cXZ = tex2D(normalMapSampler, input.NewPosition.xz / textureScale * scale);
+	float3 cXZ = float3(0, 0, 1);//tex2D(normalMapSampler, input.NewPosition.xz / textureScale * scale);
 	float3 cYZ = tex2D(normalMapSampler, input.NewPosition.zy / textureScale * scale / 2);
 
+	cXY = 2.0f * cXY - 1.0f;
+	cYZ = 2.0f * cYZ - 1.0f;
+
 	float3 normal = cXY * mXY + cXZ * mXZ + cYZ * mYZ;
-	normal.xy *= 2.5;
+	normal.xy *= 1.8f;
 	return normal;
 }
 
@@ -190,7 +195,8 @@ PixelShaderOutput1 PixelTerrainGBuffer(VT_Output input)
 
 	// Terrain doesn't need any specular component
     output.Normal.a = 0;
-	output.Specular = 0;//float4(0.5, 0.5, 0.5, 0.4f);
+	float3 specularIntensity = specIntensity;
+	output.Specular = float4(specularIntensity, specPower);
 
 	// Output Depth
 	output.Depth = input.Depth.x / input.Depth.y; 

@@ -222,6 +222,8 @@ namespace Meteor.Resources
 			effect.Parameters["textureScale"].SetValue(textureScale);
 			effect.Parameters["mapScale"].SetValue(scale);
 			effect.Parameters["clipLevel"].SetValue(0);
+			effect.Parameters["specIntensity"].SetValue(0f);
+			effect.Parameters["specPower"].SetValue(1f);
 
 			// Set world transformation for the map
 			effect.Parameters["World"].SetValue(worldMatrix);

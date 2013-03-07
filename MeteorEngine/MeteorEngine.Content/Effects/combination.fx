@@ -109,6 +109,7 @@ float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 
 	// Gamma correct inverse
 	finalColor.rgb = pow(finalColor.rgb, 1 / 2.f);
+	finalColor.a = 1;
 
 	return finalColor;
 }

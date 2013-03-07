@@ -121,7 +121,7 @@ float2 poissonDisk[24] = {
 	float2(-0.9310728f, 0.3289311f)
 };
 
-#define TOTAL_SAMPLES 20
+#define TOTAL_SAMPLES 10
 
 float3 PoissonDiscFilter(sampler smp, float3 ambient, float2 texCoord, float ourdepth)
 {	
@@ -142,7 +142,7 @@ float3 PoissonDiscFilter(sampler smp, float3 ambient, float2 texCoord, float our
 	}
 
 	shadow /= (TOTAL_SAMPLES + 1);
-	return shadow + ambientTerm;
+	return shadow + ambientTerm * 3;
 }
 
 // Blinn D1 (Phong) specular distribution 

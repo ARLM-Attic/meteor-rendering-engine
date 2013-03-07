@@ -57,7 +57,6 @@ struct PixelShaderOutput1
     float4 Depth : COLOR1;
     float4 Color : COLOR2;
 	float4 Specular : COLOR3;
-	//float Depth2 : DEPTH;
 };
 
 struct PixelShaderOutput2
@@ -106,7 +105,7 @@ PixelShaderOutput2 PixelShaderSmallGBuffer(VertexShaderOutput input)
     float3 normalFromMap = tex2D(normalMapSampler, input.TexCoord);
 
     normalFromMap = mul(normalFromMap, input.TangentToWorld);	
-    normalFromMap = normalize(normalFromMap);
+    //normalFromMap = normalize(normalFromMap);
     output.Normal.rgb = 0.5f * (normalFromMap + 1.0f);
 
 	// Output SpecularPower

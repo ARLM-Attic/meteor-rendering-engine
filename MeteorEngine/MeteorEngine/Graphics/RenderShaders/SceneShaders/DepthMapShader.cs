@@ -140,7 +140,7 @@ namespace Meteor.Rendering
 						CreateLightViewProjMatrix(light.direction, lightCamera);
 						terrainDepthEffect.Parameters["LightViewProj"].SetValue(lightCamera.view * lightCamera.projection);
 
-						// Draw the terrain here
+						// Draw the terrain here if you want self-shadowing
 						//sceneRenderer.DrawTerrainDefault(scene, lightCamera, terrainDepthEffect);
 
 						depthEffect.Parameters["LightViewProj"].SetValue(lightCamera.view * lightCamera.projection);

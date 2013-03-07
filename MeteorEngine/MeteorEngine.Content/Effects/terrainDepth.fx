@@ -10,6 +10,8 @@ float4x4 LightViewProj;
 float textureScale;
 float mapScale;
 float clipLevel;
+float specIntensity;
+float specPower;
 
 texture Texture;
 
