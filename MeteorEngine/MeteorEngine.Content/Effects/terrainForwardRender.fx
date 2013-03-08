@@ -16,6 +16,8 @@ float lightIntensity;
 
 float textureScale;
 float mapScale;
+float specPower;
+float specIntensity;
 float clipLevel;
 
 texture Texture, NormalMap;
@@ -115,7 +117,7 @@ VT_Output VertexShaderTerrain(VT_Input input)
 
 float4 TriplanarMapping(VT_Output input, float scale = 1)
 {
-	float tighten = 0.4679f; 
+	float tighten = 0.3679f; 
 
 	float mXY = saturate(abs(input.Normal.z) - tighten);
 	float mXZ = saturate(abs(input.Normal.y) - tighten);
@@ -125,15 +127,7 @@ float4 TriplanarMapping(VT_Output input, float scale = 1)
 	mXY /= total;
 	mXZ /= total;
 	mYZ /= total;
-	/*
-	float3 lightDir = -normalize(lightDirection);
-    float3 halfVector = normalize(input.Normal + lightDir);
-	float height = tex2D(diffuseSampler, input.TexCoord).r;
-        
-	float scaleBias = 0.4f;
-    height = height * scaleBias;
-    float2 texCoord = input.TexCoord + (height * halfVector.xy);
-	*/
+
 	float4 cXY = tex2D(blendSampler1, input.NewPosition.xy / textureScale * scale / 2);
 	float4 cXZ = tex2D(diffuseSampler, input.NewPosition.xz / textureScale * scale);
 	float4 cYZ = tex2D(blendSampler1, input.NewPosition.zy / textureScale * scale / 2);
@@ -144,7 +138,7 @@ float4 TriplanarMapping(VT_Output input, float scale = 1)
 
 float3 TriplanarNormalMapping(VT_Output input, float scale = 1)
 {
-	float tighten = 0.4679f; 
+	float tighten = 0.3679f; 
 
 	float mXY = saturate(abs(input.Normal.z) - tighten);
 	float mXZ = saturate(abs(input.Normal.y) - tighten);
@@ -156,11 +150,14 @@ float3 TriplanarNormalMapping(VT_Output input, float scale = 1)
 	mYZ /= total;
 	
 	float3 cXY = tex2D(normalMapSampler, input.NewPosition.xy / textureScale * scale / 2);
-	float3 cXZ = tex2D(normalMapSampler, input.NewPosition.xz / textureScale * scale);
+	float3 cXZ = float3(0, 0, 1);//tex2D(normalMapSampler, input.NewPosition.xz / textureScale * scale);
 	float3 cYZ = tex2D(normalMapSampler, input.NewPosition.zy / textureScale * scale / 2);
 
+	cXY = 2.0f * cXY - 1.0f;
+	cYZ = 2.0f * cYZ - 1.0f;
+
 	float3 normal = cXY * mXY + cXZ * mXZ + cYZ * mYZ;
-	normal.xy *= 2.5;
+	normal.xy *= 1.8f;
 	return normal;
 }
 
@@ -185,11 +182,10 @@ float4 PixelTerrainForwardRender(VT_Output input) : COLOR0
 
     float3 normalFromMap = mul(normal, input.TangentToWorld);  
 	normalFromMap = normalize(normalFromMap);
-	normalFromMap = 0.5f * (normalFromMap + 1.0f); 
 	  
 	// Get normal data
-	normal = normalize(normalFromMap);
-    
+	normal = mul(normalFromMap, inverseView);
+
 	// Compute the final specular factor
 	// Compute diffuse light
 
