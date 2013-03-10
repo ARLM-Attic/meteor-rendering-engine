@@ -73,7 +73,7 @@ namespace Meteor
 		/// <summary>
 		/// Checks if a ray intersects the bounding sphere of a model.
 		/// </summary>
-		private bool RayIntersectsModel(Ray ray, InstancedModel instancedModel, 
+		private bool RayIntersectsModel(Ray ray, Meteor.Resources.Model instancedModel, 
 			out Matrix instanceMatrix, out BoundingSphere bSphere)
 		{
 			foreach (MeshInstanceGroup instanceGroup in instancedModel.MeshInstanceGroups.Values)
@@ -145,7 +145,7 @@ namespace Meteor
 			Matrix instanceMatrix = Matrix.Identity;
 			BoundingSphere bSphere;
 
-			foreach (InstancedModel staticModel in debugScene.staticModels.Values)
+			foreach (Meteor.Resources.Model staticModel in debugScene.staticModels.Values)
 			{
 				// Check for cursor picking intersection
 				if (RayIntersectsModel(cursorRay, staticModel, out instanceMatrix, out bSphere))

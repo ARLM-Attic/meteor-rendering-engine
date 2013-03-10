@@ -30,7 +30,7 @@ namespace Meteor.Rendering
 		/// Cull an InstancedModel and its mesh groups.
 		/// </summary>
 
-		public void CullModelInstances(Camera camera, InstancedModel instancedModel)
+		public void CullModelInstances(Camera camera, Model instancedModel)
 		{
 			int meshIndex = 0;
 			foreach (MeshInstanceGroup instanceGroup in instancedModel.MeshInstanceGroups.Values)
@@ -91,18 +91,17 @@ namespace Meteor.Rendering
 
 			CullFromList(camera, scene.staticModels);
 			CullFromList(camera, scene.skinnedModels);
-			CullFromList(camera, scene.blendModels);
 		}
 
 		/// <summary>
 		/// Wrapper to cull meshes from a specified list.
 		/// </summary>
 
-		public void CullFromList(Camera camera, Dictionary<String, InstancedModel> modelList)
+		public void CullFromList(Camera camera, Dictionary<String, Model> modelList)
 		{
 			visibleInstances.Clear();
 
-			foreach (InstancedModel instancedModel in modelList.Values)
+			foreach (Model instancedModel in modelList.Values)
 				CullModelInstances(camera, instancedModel);
 			
 			// Finished culling all models

@@ -26,16 +26,35 @@ namespace Meteor.Resources
 		short[,] heightData;
 
 		/// Amount to scale heightmap by
-		public float scale;
+		public float scale = 1f;
 
 		/// Amount to scale heightmap textures by
 		public float textureScale = 10f;
 
-		/// Primary texture to apply to the terrain mesh
-		Texture2D mainTexture, normalTexture, heightMapTexture;
-		
-		/// Splat textures for additional terrain features
-		Texture2D blendTexture1;
+		/// Basic texture names for terrain
+		public string heightMapTexture { set; get; }
+		public string baseTexture { set; get; }
+		public string steepTexture { set; get; }
+
+		/// Blend texture names for terrain
+		public string blendTexture1 { set; get; }
+		public string blendTexture2 { set; get; }
+
+		/// Normal map texture names for terrain
+		public string baseNormalMap { set; get; }
+		public string baseSteepNormalMap { set; get; }
+
+		/// Primary textures to apply to the terrain mesh
+		Texture2D baseTextureSource;
+		Texture2D steepTextureSource;
+
+		/// Blend textures to apply to the terrain mesh
+		Texture2D blendTexture1Source;
+		Texture2D blendTexture2Source;
+
+		/// Normal map textures to apply to the terrain mesh
+		Texture2D baseNormalMapSource;
+		Texture2D steepNormalMapSource;
 
 		/// The innermost (level 0) geo clipmap to render the terrain with
 		InnerClipmap innerClipMap;
@@ -56,23 +75,21 @@ namespace Meteor.Resources
 		{
 			this.content = content;
 			this.graphicsDevice = device;
-
-			scale = 8f;
 		}
 
 		/// <summary>
 		/// Create a heightmap from a grayscale image
 		/// </summary>
 		
-		public void GenerateFromImage(String image, String baseTexture, String blendTexture)
+		public void GenerateFromImage()
 		{
-			heightMapTexture = content.Load<Texture2D>(image);
-			mainTexture = content.Load<Texture2D>(baseTexture);
-			blendTexture1 = content.Load<Texture2D>(blendTexture);
-			normalTexture = content.Load<Texture2D>("Textures/cliff_rock-nrm");
+			Texture2D heightMapTextureSource = content.Load<Texture2D>(heightMapTexture);
+			baseTextureSource = content.Load<Texture2D>(baseTexture);
+			steepTextureSource = content.Load<Texture2D>(steepTexture);
+			steepNormalMapSource = content.Load<Texture2D>("Textures/cliff_rock-nrm");
 
-			terrainWidth = heightMapTexture.Width;
-			terrainHeight = heightMapTexture.Height;
+			terrainWidth = heightMapTextureSource.Width;
+			terrainHeight = heightMapTextureSource.Height;
 
 			// Calculate heightmap position
 			heightmapPosition.X = -(terrainWidth * scale) / 2;
@@ -80,7 +97,7 @@ namespace Meteor.Resources
 			heightmapPosition.Z = (terrainHeight * scale) / 2;
 
 			Color[] heightMapColors = new Color[terrainWidth * terrainHeight];
-			heightMapTexture.GetData(heightMapColors);
+			heightMapTextureSource.GetData(heightMapColors);
 
 			// Initialize height data values
 			heightData = new short[terrainWidth, terrainHeight];
@@ -213,10 +230,10 @@ namespace Meteor.Resources
 			//rWireframeState.FillMode = FillMode.WireFrame;
 			//graphicsDevice.RasterizerState = rWireframeState;
 
-			effect.Parameters["Texture"].SetValue(mainTexture);
+			effect.Parameters["Texture"].SetValue(baseTextureSource);
 
-			if (normalTexture != null && effect.CurrentTechnique != effect.Techniques["Default"])
-				effect.Parameters["NormalMap"].SetValue(normalTexture);
+			if (steepNormalMapSource != null && effect.CurrentTechnique != effect.Techniques["Default"])
+				effect.Parameters["steepNormalMap"].SetValue(steepNormalMapSource);
 
 			// Special texture effects
 			effect.Parameters["textureScale"].SetValue(textureScale);
@@ -236,7 +253,7 @@ namespace Meteor.Resources
 				effect.Parameters["inverseView"].SetValue(Matrix.Invert(camera.view));
 
 				// Additional textures for terrain features
-				effect.Parameters["blendTexture1"].SetValue(blendTexture1);
+				effect.Parameters["steepTexture"].SetValue(steepTextureSource);
 			}
 
 			int polycount = 0;

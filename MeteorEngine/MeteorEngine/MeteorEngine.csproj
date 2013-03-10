@@ -92,55 +92,135 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Graphics\Components\Cameras\Camera.cs" />
-    <Compile Include="Graphics\Components\Cameras\ChaseCamera.cs" />
-    <Compile Include="Graphics\Components\Cameras\DragCamera.cs" />
-    <Compile Include="Graphics\Components\Cameras\FreeCamera.cs" />
-    <Compile Include="Graphics\Components\DrawableComponent.cs" />
-    <Compile Include="Graphics\Components\Drawables\InnerClipmap.cs" />
-    <Compile Include="Graphics\Components\Drawables\OuterClipmap.cs" />
+    <Compile Include="Graphics\Components\Cameras\Camera.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Graphics\Components\Cameras\ChaseCamera.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Graphics\Components\Cameras\DragCamera.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Graphics\Components\Cameras\FreeCamera.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Graphics\Components\Core.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Graphics\Components\DrawableComponent.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Graphics\Components\Drawables\InnerClipmap.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Graphics\Components\Drawables\InstancedModel.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Graphics\Components\Drawables\MeshInstance.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Graphics\Components\Drawables\InstancedModel.cs" />
-    <Compile Include="Graphics\Rendering\Imposter.cs" />
-    <Compile Include="Graphics\Rendering\ShapeRenderer.cs" />
-    <Compile Include="Graphics\Components\Drawables\Terrain.cs" />
-    <Compile Include="Graphics\Components\Lights\DirectionalLight.cs" />
-    <Compile Include="Graphics\Components\Lights\PointLight.cs" />
-    <Compile Include="Graphics\Components\MeteorComponent.cs" />
-    <Compile Include="Graphics\Rendering\QuadRenderer.cs" />
-    <Compile Include="Graphics\Rendering\SceneCuller.cs" />
-    <Compile Include="Graphics\Rendering\SceneRenderer.cs" />
-    <Compile Include="Graphics\Components\Core.cs" />
-    <Compile Include="Graphics\RenderShaders\SceneShaders\ForwardShader.cs" />
-    <Compile Include="Graphics\RenderShaders\SceneShaders\DepthMapShader.cs" />
-    <Compile Include="Graphics\SampleRenderProfiles\ForwardRenderer.cs" />
-    <Compile Include="Helpers\DebugGUI.cs" />
-    <Compile Include="Helpers\GaussianBlur.cs" />
-    <Compile Include="Helpers\CopyShader.cs" />
-    <Compile Include="Graphics\Rendering\RenderInput.cs" />
-    <Compile Include="Graphics\Rendering\RenderProfile.cs" />
-    <Compile Include="Helpers\StringBuilderNumeric.cs" />
-    <Compile Include="Graphics\RenderShaders\BaseShader.cs" />
-    <Compile Include="Graphics\RenderShaders\PostProcessingShaders\BloomShader.cs" />
-    <Compile Include="Graphics\RenderShaders\PostProcessingShaders\BlurShader.cs" />
-    <Compile Include="Graphics\RenderShaders\PostProcessingShaders\SSAOShader.cs" />
-    <Compile Include="Graphics\RenderShaders\PostProcessingShaders\DepthOfFieldShader.cs" />
-    <Compile Include="Graphics\RenderShaders\PostProcessingShaders\FXAAShader.cs" />
-    <Compile Include="Graphics\RenderShaders\SceneShaders\CompositeShader.cs" />
-    <Compile Include="Graphics\RenderShaders\SceneShaders\DiffuseShader.cs" />
-    <Compile Include="Graphics\RenderShaders\SceneShaders\GBufferShader.cs" />
-    <Compile Include="Graphics\RenderShaders\SceneShaders\LightShader.cs" />
-    <Compile Include="Helpers\RenderStats.cs" />
+    <Compile Include="Graphics\Components\Drawables\OuterClipmap.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Graphics\Components\Drawables\Terrain.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Graphics\Components\Lights\DirectionalLight.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Graphics\Components\Lights\PointLight.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Graphics\Components\MeteorComponent.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Graphics\Components\Scene.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Graphics\Rendering\Imposter.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Graphics\Rendering\QuadRenderer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Graphics\Rendering\RenderInput.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Graphics\Rendering\RenderProfile.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Graphics\Rendering\SceneCuller.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Graphics\Rendering\SceneRenderer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Graphics\Rendering\ShapeRenderer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Graphics\RenderShaders\BaseShader.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Graphics\RenderShaders\PostProcessingShaders\BloomShader.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Graphics\RenderShaders\PostProcessingShaders\BlurShader.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Graphics\RenderShaders\PostProcessingShaders\DepthOfFieldShader.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Graphics\RenderShaders\PostProcessingShaders\FXAAShader.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Graphics\RenderShaders\PostProcessingShaders\SSAOShader.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Graphics\RenderShaders\SceneShaders\CompositeShader.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Graphics\RenderShaders\SceneShaders\DepthMapShader.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Graphics\RenderShaders\SceneShaders\DiffuseShader.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Graphics\RenderShaders\SceneShaders\ForwardShader.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Graphics\RenderShaders\SceneShaders\GBufferShader.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Graphics\RenderShaders\SceneShaders\LightShader.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Graphics\SampleRenderProfiles\DeferredRenderer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Graphics\SampleRenderProfiles\ForwardRenderer.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Graphics\SampleRenderProfiles\LightPrePassRenderer.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Graphics\Components\Scene.cs" />
-    <Compile Include="Helpers\VertexPositionTangent.cs" />
+    <Compile Include="Helpers\CopyShader.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Helpers\DebugGUI.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Helpers\GaussianBlur.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Helpers\RenderStats.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Helpers\StringBuilderNumeric.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Helpers\VertexPositionTangent.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="MeteorContentResource1.Designer.cs">
       <DependentUpon>MeteorContentResource.resx</DependentUpon>
       <DesignTime>True</DesignTime>
@@ -160,41 +240,10 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\AreaTexDX9.xnb" />
-    <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\blur.xnb" />
-    <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\clearGBuffer.xnb" />
-    <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\combination.xnb" />
-    <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\depth.xnb" />
-    <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\directionalLight.xnb" />
-    <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\forward.xnb" />
-    <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\forwardRender.xnb" />
-    <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\fxaa.xnb" />
-    <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\mlaa.xnb" />
-    <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\pointLight.xnb" />
-    <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\renderGBuffer.xnb" />
-    <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\ssao.xnb" />
-    <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\terrainDepth.xnb" />
-    <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\terrainForwardRender.xnb" />
-    <None Include="bin\x86\Debug\MeteorEngine.Content\Effects\terrainGBuffer.xnb" />
-    <None Include="bin\x86\Debug\MeteorEngine.Content\Fonts\defaultFont.xnb" />
-    <None Include="bin\x86\Debug\MeteorEngine.Content\Fonts\segoeUI.xnb" />
-    <None Include="bin\x86\Debug\MeteorEngine.Content\Models\ball.xnb" />
-    <None Include="bin\x86\Debug\MeteorEngine.Content\Models\cube.xnb" />
-    <None Include="bin\x86\Debug\MeteorEngine.Content\Models\sphere.xnb" />
-    <None Include="bin\x86\Debug\MeteorEngine.Content\null_color.xnb" />
-    <None Include="bin\x86\Debug\MeteorEngine.Content\null_normal.xnb" />
-    <None Include="bin\x86\Debug\MeteorEngine.Content\null_specular.xnb" />
-    <None Include="bin\x86\Debug\MeteorEngine.Content\random.xnb" />
-    <None Include="bin\x86\Debug\MeteorEngine.Content\seattle.xnb" />
-    <None Include="bin\x86\Debug\MeteorEngine.Content\skyblue_cube.xnb" />
-    <None Include="bin\x86\Debug\MeteorEngine.Content\skyblue_wrap.xnb" />
-    <None Include="bin\x86\Debug\MeteorEngine.Content\Sunset.xnb" />
-  </ItemGroup>
-  <ItemGroup>
     <EmbeddedResource Include="MeteorContentResource.resx">
+      <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>MeteorContentResource1.Designer.cs</LastGenOutput>
-      <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

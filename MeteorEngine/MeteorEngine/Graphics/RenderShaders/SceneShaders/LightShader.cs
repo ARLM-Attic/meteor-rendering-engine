@@ -7,6 +7,8 @@ using Meteor.Resources;
 
 namespace Meteor.Rendering
 {
+	using XnaModel = Microsoft.Xna.Framework.Graphics.Model;
+
 	class LightShader : BaseShader
 	{
 		/// Light pass
@@ -19,7 +21,7 @@ namespace Meteor.Rendering
 		Effect pointLightEffect;
 
 		/// Sphere used for point lighting
-		Model sphereModel;
+		XnaModel sphereModel;
 
 		/// Debug point lights
 		public bool stippled = false;
@@ -106,7 +108,7 @@ namespace Meteor.Rendering
 			pointLightEffect.Parameters["halfPixel"].SetValue(halfPixel);
 
 			// Load the point light model
-			sphereModel = content.Load<Model>("sphere");
+			sphereModel = content.Load<XnaModel>("sphere");
 		}
 
 		/// <summary>

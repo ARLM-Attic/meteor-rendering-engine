@@ -7,6 +7,8 @@ using SkinnedModel;
 
 namespace Meteor.Resources
 {
+	using XnaModel = Microsoft.Xna.Framework.Graphics.Model;
+
 	/// Data structure to contain all instance data
 	/// and related vertex buffer for instancing
 	public class MeshInstanceGroup
@@ -46,10 +48,13 @@ namespace Meteor.Resources
 	}
 
 
-	public class InstancedModel
+	public class Model
 	{
 		/// Model representing the object
-		public Model model;
+		public object modelTag { private set; get; }
+
+		/// List of ModelMeshes
+		public List<ModelMesh> modelMeshes { private set; get; }
 
 		/// Pointer for the last updated instance
 		private int lastInstance;
@@ -59,6 +64,15 @@ namespace Meteor.Resources
 
 		/// Model's normal/bump map textures
 		public List<Texture2D> normalMapTextures;
+
+		/// Model's scale/rotate/translate parameters
+		public Vector3 translation { set; get; }
+		public Vector3 rotation { set; get; }
+		public float scale = 1;
+
+		/// Model's transformation matrix
+		private Matrix worldTransform;
+		public Matrix World { get { return worldTransform; } }
 
 		/// Array for the instancing groups of each mesh
 		/// Instances are grouped by mesh name
@@ -100,14 +114,16 @@ namespace Meteor.Resources
 		/// <param name="modelName">Model's file name</param>
 		/// <param name="content">The program's ContentManger</param>
 
-		public InstancedModel(Model newModel, GraphicsDevice graphicsDevice)
+		public Model(XnaModel model, GraphicsDevice graphicsDevice)
 		{
-			model = newModel;
+			// Animation data
+			modelTag = model.Tag;
 			animationPlayer = null;
 
 			// Set up model data
 			textures = new List<Texture2D>();
 			normalMapTextures = new List<Texture2D>();
+			modelMeshes = new List<ModelMesh>();
 			meshInstanceGroups = new Dictionary<string, MeshInstanceGroup>();
 
 			// Bounding box data
@@ -125,6 +141,9 @@ namespace Meteor.Resources
 
 				if (mesh.Name == null || mesh.Name == "(null)")
 					meshName = "DefaultName_" + index++;
+
+				// Add to modelMesh list
+				modelMeshes.Add(mesh);
 
 				// Add mesh Instance Group
 				meshInstanceGroups.Add(meshName, new MeshInstanceGroup());
@@ -151,6 +170,11 @@ namespace Meteor.Resources
 					normalMapTextures.Add(meshPart.Effect.Parameters["NormalMap"].GetValueTexture2D());
 				}
 			}
+
+			// Set world transformation
+			worldTransform = Matrix.CreateScale(scale) * 
+				Matrix.CreateFromYawPitchRoll(rotation.Y, rotation.X, rotation.Z) *
+				Matrix.CreateTranslation(translation);
 		}
 
 		/// <summary>
@@ -264,12 +288,12 @@ namespace Meteor.Resources
 		/// Returns the object, useful for adding transformations to this instance.
 		/// </summary>
 
-		public InstancedModel NewInstance(Matrix transform)
+		public Model NewInstance(Matrix transform)
 		{
 			int i = 0;
 			foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups.Values)
 			{
-				instanceGroup.instances.Add(new MeshInstance(model.Meshes[i++].BoundingSphere, transform));
+				instanceGroup.instances.Add(new MeshInstance(modelMeshes[i++].BoundingSphere, transform));
 				instanceGroup.visibleInstances.Add(null);
 
 				Array.Resize(ref instanceGroup.tempTransforms, instanceGroup.tempTransforms.Length + 1);
@@ -283,7 +307,7 @@ namespace Meteor.Resources
 		/// Add a new instance of this model with no transformation.
 		/// </summary>
 
-		public InstancedModel NewInstance()
+		public Model NewInstance()
 		{
 			int i = 0;
 			bool foundExisting = false;
@@ -293,7 +317,7 @@ namespace Meteor.Resources
 				{
 					if (instanceGroup.instances[j] == null)
 					{
-						instanceGroup.instances[j] = new MeshInstance(model.Meshes[i++].BoundingSphere);
+						instanceGroup.instances[j] = new MeshInstance(modelMeshes[i++].BoundingSphere);
 						lastInstance = j;
 						foundExisting = true;
 
@@ -310,7 +334,7 @@ namespace Meteor.Resources
 			foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups.Values)
 			{
 				// We haven't found any null/unused instances so let's just add one now
-				instanceGroup.instances.Add(new MeshInstance(model.Meshes[i++].BoundingSphere));
+				instanceGroup.instances.Add(new MeshInstance(modelMeshes[i++].BoundingSphere));
 				instanceGroup.visibleInstances.Add(null);
 
 				Array.Resize(ref instanceGroup.tempTransforms, instanceGroup.tempTransforms.Length + 1);
@@ -325,7 +349,7 @@ namespace Meteor.Resources
 		/// Returns the object, useful for adding transformations to this instance.
 		/// </summary>
 
-		public InstancedModel NewInstances(int capacity)
+		public Model NewInstances(int capacity)
 		{
 			foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups.Values)
 			{
@@ -372,7 +396,7 @@ namespace Meteor.Resources
 		/// Helper to transform model and chain to another method
 		/// </summary>
 
-		public InstancedModel Transform(Matrix transform)
+		public Model Transform(Matrix transform)
 		{
 			Vector3 scale, translation;
 			Quaternion rotation;
@@ -394,7 +418,7 @@ namespace Meteor.Resources
 		/// Helpers to translate model and chain to another method
 		/// </summary>
 
-		public InstancedModel Translate(float x, float y, float z)
+		public Model Translate(float x, float y, float z)
 		{
 			foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups.Values)
 			{
@@ -407,7 +431,7 @@ namespace Meteor.Resources
 			return this;
 		}
 
-		public InstancedModel Translate(Vector3 translate)
+		public Model Translate(Vector3 translate)
 		{
 			foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups.Values)
 			{
@@ -424,12 +448,12 @@ namespace Meteor.Resources
 		/// Helpers to scale model and chain to another method
 		/// </summary>
 
-		public InstancedModel Scale(float x, float y, float z)
+		public Model Scale(float x, float y, float z)
 		{
 			return this;
 		}
 
-		public InstancedModel Scale(float scale)
+		public Model Scale(float scale)
 		{
 			foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups.Values)
 			{
@@ -446,7 +470,7 @@ namespace Meteor.Resources
 		/// Helper to rotate model and chain to another method
 		/// </summary>
 
-		public InstancedModel Rotate(float x, float y, float z)
+		public Model Rotate(float x, float y, float z)
 		{
 			x = MathHelper.ToRadians(x);
 			y = MathHelper.ToRadians(y);

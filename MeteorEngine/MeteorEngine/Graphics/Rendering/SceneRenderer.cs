@@ -129,10 +129,10 @@ namespace Meteor.Rendering
 			currentEffect.Parameters["Projection"].SetValue(camera.projection);
 			currentEffect.Parameters["CameraPosition"].SetValue(camera.position);
 
-			foreach (InstancedModel instancedModel in scene.staticModels.Values)					
+			foreach (Meteor.Resources.Model instancedModel in scene.staticModels.Values)					
 				scene.visibleMeshes += DrawModel(instancedModel, this.shaderTechnique);
 
-			foreach (InstancedModel skinnedModel in scene.skinnedModels.Values)
+			foreach (Meteor.Resources.Model skinnedModel in scene.skinnedModels.Values)
 				scene.visibleMeshes += DrawModel(skinnedModel, this.shaderTechnique + "Animated");
 
 			scene.totalPolys = totalPolys;
@@ -156,10 +156,10 @@ namespace Meteor.Rendering
 
 			currentEffect = effect;
 
-			foreach (InstancedModel instancedModel in scene.staticModels.Values)
+			foreach (Meteor.Resources.Model instancedModel in scene.staticModels.Values)
 				DrawModel(instancedModel, effect, this.shaderTechnique);
 
-			foreach (InstancedModel skinnedModel in scene.skinnedModels.Values)
+			foreach (Meteor.Resources.Model skinnedModel in scene.skinnedModels.Values)
 				DrawModel(skinnedModel, effect, this.shaderTechnique + "Animated");
 
 			// Finished drawing visible meshes
@@ -210,9 +210,9 @@ namespace Meteor.Rendering
 		/// A bit hacky way to limit bone transforms. Will fix soon.
 		/// </summary>
 
-		private void TrimBoneTransforms(InstancedModel instancedModel)
+		private void TrimBoneTransforms(Meteor.Resources.Model instancedModel)
 		{
-			instancedModel.model.CopyAbsoluteBoneTransformsTo(instancedModel.boneMatrices);
+			//instancedModel.model.CopyAbsoluteBoneTransformsTo(instancedModel.boneMatrices);
 
 			if (instancedModel.animationPlayer != null)
 			{
@@ -228,36 +228,36 @@ namespace Meteor.Rendering
 		/// Draw all visible meshes for this model with camera effect parameters.
 		/// </summary>
 
-		private int DrawModel(InstancedModel instancedModel, String technique)
+		private int DrawModel(Meteor.Resources.Model model, String technique)
 		{
 			UseTechnique(technique);
-			TrimBoneTransforms(instancedModel);
+			TrimBoneTransforms(model);
 
 			int meshIndex = 0;
 			int visibleInstances = 0;
 
-			foreach (MeshInstanceGroup instanceGroup in instancedModel.MeshInstanceGroups.Values)
+			foreach (MeshInstanceGroup instanceGroup in model.MeshInstanceGroups.Values)
 			{
-				instancedModel.PrepareMeshData(graphicsDevice, instanceGroup);
+				model.PrepareMeshData(graphicsDevice, instanceGroup);
 
 				// Retrieve the current mesh from the mesh list
-				ModelMesh mesh = instancedModel.model.Meshes[meshIndex];
-				Matrix world = instancedModel.boneMatrices[mesh.ParentBone.Index];
+				ModelMesh mesh = model.modelMeshes[meshIndex];
+				Matrix world = model.World * model.boneMatrices[mesh.ParentBone.Index];
 
 				// Set world matrix for all mesh parts
 				currentEffect.Parameters["World"].SetValue(world);
 
-				foreach (ModelMeshPart meshPart in instancedModel.model.Meshes[meshIndex].MeshParts)
+				foreach (ModelMeshPart meshPart in model.modelMeshes[meshIndex].MeshParts)
 				{
 					// Set bones if the model is animated
-					if (instancedModel.animationPlayer != null)
+					if (model.animationPlayer != null)
 						currentEffect.Parameters["bones"].SetValue(tempBones);
 
-					Texture2D textureValue = (instancedModel.textures[meshIndex] != null) ?
-						instancedModel.textures[meshIndex] : blankTexture;
+					Texture2D textureValue = (model.textures[meshIndex] != null) ?
+						model.textures[meshIndex] : blankTexture;
 
 					currentEffect.Parameters["Texture"].SetValue(textureValue);
-					currentEffect.Parameters["NormalMap"].SetValue(instancedModel.normalMapTextures[meshIndex]);
+					currentEffect.Parameters["NormalMap"].SetValue(model.normalMapTextures[meshIndex]);
 
 					DrawInstancedMeshPart(meshPart, instanceGroup);
 					meshIndex++;
@@ -273,21 +273,21 @@ namespace Meteor.Rendering
 		/// Draw instanced model with a custom effect without camera parameters
 		/// </summary>	
 
-		private int DrawModel(InstancedModel instancedModel, Effect effect, String technique)
+		private int DrawModel(Meteor.Resources.Model model, Effect effect, String technique)
 		{
 			UseTechnique(technique);
-			TrimBoneTransforms(instancedModel);
+			TrimBoneTransforms(model);
 
 			int meshIndex = 0;
 			int visibleInstances = 0;
 
-			foreach (MeshInstanceGroup instanceGroup in instancedModel.MeshInstanceGroups.Values)
+			foreach (MeshInstanceGroup instanceGroup in model.MeshInstanceGroups.Values)
 			{
-				instancedModel.PrepareMeshData(graphicsDevice, instanceGroup);
+				model.PrepareMeshData(graphicsDevice, instanceGroup);
 
 				// Retrieve the current mesh from the mesh list
-				ModelMesh mesh = instancedModel.model.Meshes[meshIndex];
-				Matrix world = instancedModel.boneMatrices[mesh.ParentBone.Index];
+				ModelMesh mesh = model.modelMeshes[meshIndex];
+				Matrix world = model.World * model.boneMatrices[mesh.ParentBone.Index];
 
 				// Set world matrix for all mesh parts
 				currentEffect.Parameters["World"].SetValue(world);
@@ -295,11 +295,11 @@ namespace Meteor.Rendering
 				foreach (ModelMeshPart meshPart in mesh.MeshParts)
 				{
 					// Set bones if the model is animated
-					if (instancedModel.animationPlayer != null)
+					if (model.animationPlayer != null)
 						currentEffect.Parameters["bones"].SetValue(tempBones);
 
-					Texture2D textureValue = (instancedModel.textures[meshIndex] != null) ?
-						instancedModel.textures[meshIndex] : blankTexture;
+					Texture2D textureValue = (model.textures[meshIndex] != null) ?
+						model.textures[meshIndex] : blankTexture;
 
 					currentEffect.Parameters["Texture"].SetValue(textureValue);
 
@@ -425,14 +425,14 @@ namespace Meteor.Rendering
 				basicEffect.View = camera.view;
 				basicEffect.Projection = camera.projection;
 
-				foreach (InstancedModel instancedModel in scene.staticModels.Values)
+				foreach (Meteor.Resources.Model model in scene.staticModels.Values)
 				{
-					DrawBoundingBoxes(instancedModel, camera);
+					DrawBoundingBoxes(model, camera);
 				}
 
-				foreach (InstancedModel skinnedModel in scene.skinnedModels.Values)
+				foreach (Meteor.Resources.Model model in scene.skinnedModels.Values)
 				{
-					DrawBoundingBoxes(skinnedModel, camera);
+					DrawBoundingBoxes(model, camera);
 				}
 			}
 		}
@@ -441,7 +441,7 @@ namespace Meteor.Rendering
 		/// Draw debug bounding boxes
 		/// </summary>
 		[Conditional("DEBUG")]
-		private void DrawBoundingBoxes(InstancedModel model, Camera camera)
+		private void DrawBoundingBoxes(Meteor.Resources.Model model, Camera camera)
 		{
 			int meshIndex = 0;
 			Viewport v = graphicsDevice.Viewport;
@@ -527,7 +527,7 @@ namespace Meteor.Rendering
 							basicEffect.CurrentTechnique.Passes[i].Apply();
 							graphicsDevice.DrawUserIndexedPrimitives<VertexPositionColor>(
 								PrimitiveType.LineList, model.boxVertices, 0, 8,
-								InstancedModel.bBoxIndices, 0, 12);
+								Meteor.Resources.Model.bBoxIndices, 0, 12);
 						} 
 					}
 

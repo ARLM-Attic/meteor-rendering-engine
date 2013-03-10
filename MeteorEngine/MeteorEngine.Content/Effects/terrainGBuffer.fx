@@ -13,13 +13,10 @@ float specPower;
 float specIntensity;
 float clipLevel;
 
-texture Texture, NormalMap;
-texture blendTexture1, blendTexture2;
-texture heightMapTexture;
+/// Base textures
 
-/// Diffuse and normals
-
-sampler diffuseSampler : register(s0) = sampler_state
+texture Texture, steepTexture;
+sampler baseSampler : register(s0) = sampler_state
 {
     Texture = <Texture>;
 	Filter = MIN_MAG_MIP_LINEAR;
@@ -27,7 +24,16 @@ sampler diffuseSampler : register(s0) = sampler_state
 	AddressV = Wrap;
 };
 
-sampler heightSampler : register(s1) = sampler_state
+sampler baseSteepSampler : register(s1) = sampler_state
+{
+    Texture = <steepTexture>;
+	Filter = MIN_MAG_MIP_LINEAR;
+	AddressU = Wrap;
+	AddressV = Wrap;
+};
+
+texture heightMapTexture;
+sampler heightSampler : register(s2) = sampler_state
 {
     Texture = <heightMapTexture>;
 	Filter = MIN_MAG_MIP_LINEAR;
@@ -35,7 +41,10 @@ sampler heightSampler : register(s1) = sampler_state
 	AddressV = Wrap;
 };
 
-sampler normalMapSampler : register(s2) = sampler_state
+/// Normal map textures
+
+texture NormalMap, steepNormalMap;
+sampler normalMapSampler : register(s3) = sampler_state
 {
     Texture = <NormalMap>;
 	Filter = MIN_MAG_MIP_LINEAR;
@@ -43,8 +52,17 @@ sampler normalMapSampler : register(s2) = sampler_state
 	AddressV = Wrap;
 };
 
+sampler steepNormalMapSampler : register(s4) = sampler_state
+{
+    Texture = <steepNormalMap>;
+	Filter = MIN_MAG_MIP_LINEAR;
+	AddressU = Wrap;
+	AddressV = Wrap;
+};
+
 /// Blend textures
 
+texture blendTexture1;
 sampler blendSampler1 = sampler_state
 {
     Texture = <blendTexture1>;
@@ -135,9 +153,9 @@ float4 TriplanarMapping(VT_Output input, float scale = 1)
 	mXZ /= total;
 	mYZ /= total;
 	
-	float4 cXY = tex2D(blendSampler1, input.NewPosition.xy / textureScale * scale / 2);
-	float4 cXZ = tex2D(diffuseSampler, input.NewPosition.xz / textureScale * scale);
-	float4 cYZ = tex2D(blendSampler1, input.NewPosition.zy / textureScale * scale / 2);
+	float4 cXY = tex2D(baseSteepSampler, input.NewPosition.xy / textureScale * scale / 2);
+	float4 cXZ = tex2D(baseSampler, input.NewPosition.xz / textureScale * scale);
+	float4 cYZ = tex2D(baseSteepSampler, input.NewPosition.zy / textureScale * scale / 2);
 
 	float4 diffuse = cXY * mXY + cXZ * mXZ + cYZ * mYZ;
 	return diffuse;
@@ -156,9 +174,9 @@ float3 TriplanarNormalMapping(VT_Output input, float scale = 1)
 	mXZ /= total;
 	mYZ /= total;
 	
-	float3 cXY = tex2D(normalMapSampler, input.NewPosition.xy / textureScale * scale / 2);
-	float3 cXZ = float3(0, 0, 1);//tex2D(normalMapSampler, input.NewPosition.xz / textureScale * scale);
-	float3 cYZ = tex2D(normalMapSampler, input.NewPosition.zy / textureScale * scale / 2);
+	float3 cXY = tex2D(steepNormalMapSampler, input.NewPosition.xy / textureScale * scale / 2);
+	float3 cXZ = float3(0, 0, 1);
+	float3 cYZ = tex2D(steepNormalMapSampler, input.NewPosition.zy / textureScale * scale / 2);
 
 	cXY = 2.0f * cXY - 1.0f;
 	cYZ = 2.0f * cYZ - 1.0f;
@@ -228,7 +246,7 @@ float4 PixelTerrainDiffuse(VT_Output input) : COLOR0
 	float4 color = TriplanarMapping(input, 4);
 	float4 blendedColor = TriplanarMapping(input, 0.3f);
 
-	float depth = pow(input.Depth.x / input.Depth.y, 50);
+	float depth = pow(abs(input.Depth.x / input.Depth.y), 50);
 
 	// Blend with scaled texture
 	color = lerp(color, blendedColor, depth);

@@ -10,6 +10,8 @@ using SkinnedModel;
 
 namespace Meteor.Resources
 {
+	using XnaModel = Microsoft.Xna.Framework.Graphics.Model;
+
 	public class Scene
 	{
 		/// For loading scene content
@@ -19,9 +21,8 @@ namespace Meteor.Resources
 		GraphicsDevice graphicsDevice;
 
 		/// List of models in the scene
-		public Dictionary<String, InstancedModel> staticModels;
-		public Dictionary<String, InstancedModel> skinnedModels;
-		public Dictionary<String, InstancedModel> blendModels;
+		public Dictionary<String, Model> staticModels;
+		public Dictionary<String, Model> skinnedModels;
 
 		/// Directional light list
 		public List<DirectionLight> directionalLights = new List<DirectionLight>();
@@ -51,9 +52,9 @@ namespace Meteor.Resources
 		}
 
 		/// Skybox mesh
-		InstancedModel skyboxModel;
+		Model skyboxModel;
 
-		public InstancedModel Skybox
+		public Model Skybox
 		{
 			get { return skyboxModel; }
 		}
@@ -75,9 +76,8 @@ namespace Meteor.Resources
 			this.graphicsDevice = graphicsDevice;
 
 			// Set up lists for models
-			staticModels = new Dictionary<string, InstancedModel>();
-			skinnedModels = new Dictionary<string, InstancedModel>();
-			blendModels = new Dictionary<string, InstancedModel>();
+			staticModels = new Dictionary<string, Model>();
+			skinnedModels = new Dictionary<string, Model>();
 		}
 
 		/// <summary>
@@ -96,15 +96,15 @@ namespace Meteor.Resources
 		/// <summary>
 		/// Attempt to find the location of the model to be loaded.
 		/// </summary>
-		private Model FindModel(String directory, String modelPath)
+		private XnaModel FindModel(String directory, String modelPath)
 		{
-			Model model = null;
+			XnaModel model = null;
 			String path = "Models\\" + modelPath;
 
 			if (Directory.Exists(content.RootDirectory + "\\Models\\" + directory))
 				path = "Models\\" + directory + "\\" + modelPath;
 
-			model = content.Load<Model>(path);
+			model = content.Load<XnaModel>(path);
 			return model;
 		}
 
@@ -112,7 +112,7 @@ namespace Meteor.Resources
 		/// Wrapper to find the model with just the file path
 		/// </summary>
 
-		private Model FindModel(String modelPath)
+		private XnaModel FindModel(String modelPath)
 		{
 			return FindModel(modelPath, modelPath);
 		}
@@ -122,9 +122,9 @@ namespace Meteor.Resources
 		/// the same key name as the file for the model
 		/// </summary>
 
-		private InstancedModel AddMeshObject(String directory, String modelPath)
+		private Model AddModel(String directory, String modelPath)
 		{
-			staticModels.Add(modelPath, new InstancedModel(FindModel(directory, modelPath), graphicsDevice));
+			staticModels.Add(modelPath, new Model(FindModel(directory, modelPath), graphicsDevice));
 
 			return staticModels[modelPath];
 		}
@@ -133,16 +133,16 @@ namespace Meteor.Resources
 		/// Wrapper to add a model with a full file path
 		/// </summary>
 
-		private InstancedModel AddModel(String modelPath)
+		private Model AddModel(String modelPath)
 		{
-			return AddMeshObject(modelPath, modelPath);
+			return AddModel(modelPath, modelPath);
 		}
 
 		/// <summary>
 		/// Return a model from the list given the same key
 		/// </summary>
 		/// 
-		public InstancedModel Model(String modelKey)
+		public Model Model(String modelKey)
 		{
 			return (staticModels.ContainsKey(modelKey)) ?
 				staticModels[modelKey] : AddModel(modelKey);
@@ -153,23 +153,25 @@ namespace Meteor.Resources
 		/// the same name key as the file for the model
 		/// </summary>
 
-		public InstancedModel AddSkinnedModel(String modelPath, String take = "Take 001")
+		public Model AddSkinnedModel(String modelPath, String take = "Take 001")
 		{
-			skinnedModels.Add(modelPath, new InstancedModel(FindModel(modelPath), graphicsDevice));
-			InstancedModel instancedModel = skinnedModels[modelPath];
+			Model skinnedModel = new Model(FindModel(modelPath), graphicsDevice);
 
 			// Look up our custom skinning information.
-			SkinningData skinningData = instancedModel.model.Tag as SkinningData;
+			SkinningData skinningData = skinnedModel.modelTag as SkinningData;
 
 			if (skinningData == null)
 				throw new InvalidOperationException
 					("This model does not contain a SkinningData tag.");
 
 			// Create an animation player, and start decoding an animation clip.
-			instancedModel.animationPlayer = new AnimationPlayer(skinningData);
+			skinnedModel.animationPlayer = new AnimationPlayer(skinningData);
 
 			AnimationClip clip = skinningData.AnimationClips[take];
-			instancedModel.animationPlayer.StartClip(clip);
+			skinnedModel.animationPlayer.StartClip(clip);
+
+			// Add to the model list
+			skinnedModels.Add(modelPath, skinnedModel);
 
 			return skinnedModels[modelPath];
 		}
@@ -178,7 +180,7 @@ namespace Meteor.Resources
 		/// Return a model from the list given the same key
 		/// </summary>
 		/// 
-		public InstancedModel SkinnedModel(String modelKey, String take = "Take 001")
+		public Model SkinnedModel(String modelKey, String take = "Take 001")
 		{
 			return (skinnedModels.ContainsKey(modelKey)) ?
 				skinnedModels[modelKey] : AddSkinnedModel(modelKey, take);
@@ -188,22 +190,10 @@ namespace Meteor.Resources
 		/// Helper to add a skybox which will be added to a special Skybox list
 		/// </summary>
 
-		public InstancedModel AddSkybox(String modelPath)
+		public Model AddSkybox(String modelPath)
 		{
-			skyboxModel = new InstancedModel(FindModel(modelPath), graphicsDevice);
+			skyboxModel = new Model(FindModel(modelPath), graphicsDevice);
 			return skyboxModel;
-		}
-
-		/// <summary>
-		/// Helper to add a skybox which will be added to a special Skybox list
-		/// </summary>
-
-		private InstancedModel AddBlendModel(String modelPath)
-		{
-			blendModels.Add(modelPath, new InstancedModel(FindModel(modelPath), graphicsDevice));
-			InstancedModel instancedModel = blendModels[modelPath];
-
-			return blendModels[modelPath];
 		}
 
 		/// <summary>
@@ -211,12 +201,11 @@ namespace Meteor.Resources
 		/// </summary>
 		/// <param name="imagePath"></param>
 
-		public void AddTerrain(String imagePath, String texture, String normalTexture)
+		public void AddTerrain(Terrain terrain)
 		{
 			// Set up terrain map
-			terrain = new Terrain(content, graphicsDevice);
-
-			terrain.GenerateFromImage(imagePath, texture, normalTexture);
+			this.terrain = terrain;
+			this.terrain.GenerateFromImage();
 		}
 
 		/// <summary>
@@ -225,7 +214,7 @@ namespace Meteor.Resources
 
 		public void Update(GameTime gameTime)
 		{
-			foreach (InstancedModel skinnedModel in skinnedModels.Values)
+			foreach (Model skinnedModel in skinnedModels.Values)
 			{
 				if (skinnedModel.animationPlayer != null)
 				{
