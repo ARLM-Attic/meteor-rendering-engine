@@ -17,12 +17,8 @@ namespace Meteor.Resources
 		/// For loading scene content
 		ContentManager content;
 
-		/// Used mainly in vertex buffer creation
-		GraphicsDevice graphicsDevice;
-
 		/// List of models in the scene
-		public Dictionary<String, Model> staticModels;
-		public Dictionary<String, Model> skinnedModels;
+		public Dictionary<String, Model> sceneModels;
 
 		/// Directional light list
 		public List<DirectionLight> directionalLights = new List<DirectionLight>();
@@ -70,14 +66,12 @@ namespace Meteor.Resources
 		/// Create a new scene to reference content with.
 		/// </summary>
 
-		public Scene(ContentManager content, GraphicsDevice graphicsDevice)
+		public Scene(ContentManager content)
 		{
 			this.content = content;
-			this.graphicsDevice = graphicsDevice;
 
 			// Set up lists for models
-			staticModels = new Dictionary<string, Model>();
-			skinnedModels = new Dictionary<string, Model>();
+			sceneModels = new Dictionary<string, Model>();
 		}
 
 		/// <summary>
@@ -118,24 +112,43 @@ namespace Meteor.Resources
 		}
 
 		/// <summary>
+		/// Add a Model to the scene
+		/// </summary>
+
+		public Model Add(String modelPath, Model model)
+		{
+			Model sceneModel = AddModel(modelPath, model);
+			return sceneModel;
+		}
+
+		/// <summary>
 		/// Add model from a specified directory and filename, setting
 		/// the same key name as the file for the model
 		/// </summary>
 
-		private Model AddModel(String directory, String modelPath)
+		private Model AddModel(String directory, String modelPath, Model model = null)
 		{
-			staticModels.Add(modelPath, new Model(FindModel(directory, modelPath), graphicsDevice));
+			if (model != null)
+			{
+				XnaModel sourceModel = FindModel(directory, modelPath);
+				sceneModels.Add(modelPath, model);
+				sceneModels[modelPath].SetModelData(sourceModel);
+			}
+			else
+			{
+				sceneModels.Add(modelPath, new Model(FindModel(directory, modelPath)));
+			}				
 
-			return staticModels[modelPath];
+			return sceneModels[modelPath];
 		}
 
 		/// <summary>
 		/// Wrapper to add a model with a full file path
 		/// </summary>
 
-		private Model AddModel(String modelPath)
+		private Model AddModel(String modelPath, Model model = null)
 		{
-			return AddModel(modelPath, modelPath);
+			return AddModel(modelPath, modelPath, model);
 		}
 
 		/// <summary>
@@ -144,8 +157,8 @@ namespace Meteor.Resources
 		/// 
 		public Model Model(String modelKey)
 		{
-			return (staticModels.ContainsKey(modelKey)) ?
-				staticModels[modelKey] : AddModel(modelKey);
+			return (sceneModels.ContainsKey(modelKey)) ?
+				sceneModels[modelKey] : AddModel(modelKey);
 		}
 
 		/// <summary>
@@ -155,7 +168,7 @@ namespace Meteor.Resources
 
 		public Model AddSkinnedModel(String modelPath, String take = "Take 001")
 		{
-			Model skinnedModel = new Model(FindModel(modelPath), graphicsDevice);
+			Model skinnedModel = new Model(FindModel(modelPath));
 
 			// Look up our custom skinning information.
 			SkinningData skinningData = skinnedModel.modelTag as SkinningData;
@@ -171,9 +184,9 @@ namespace Meteor.Resources
 			skinnedModel.animationPlayer.StartClip(clip);
 
 			// Add to the model list
-			skinnedModels.Add(modelPath, skinnedModel);
+			sceneModels.Add(modelPath, skinnedModel);
 
-			return skinnedModels[modelPath];
+			return sceneModels[modelPath];
 		}
 
 		/// <summary>
@@ -182,8 +195,8 @@ namespace Meteor.Resources
 		/// 
 		public Model SkinnedModel(String modelKey, String take = "Take 001")
 		{
-			return (skinnedModels.ContainsKey(modelKey)) ?
-				skinnedModels[modelKey] : AddSkinnedModel(modelKey, take);
+			return (sceneModels.ContainsKey(modelKey)) ?
+				sceneModels[modelKey] : AddSkinnedModel(modelKey, take);
 		}
 
 		/// <summary>
@@ -192,7 +205,7 @@ namespace Meteor.Resources
 
 		public Model AddSkybox(String modelPath)
 		{
-			skyboxModel = new Model(FindModel(modelPath), graphicsDevice);
+			skyboxModel = new Model(FindModel(modelPath));
 			return skyboxModel;
 		}
 
@@ -214,7 +227,7 @@ namespace Meteor.Resources
 
 		public void Update(GameTime gameTime)
 		{
-			foreach (Model skinnedModel in skinnedModels.Values)
+			foreach (Model skinnedModel in sceneModels.Values)
 			{
 				if (skinnedModel.animationPlayer != null)
 				{

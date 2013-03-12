@@ -10,19 +10,13 @@ using Meteor.Rendering;
 
 namespace Meteor.Rendering
 {
-	public class DeferredRenderer : RenderProfile
+	public class ForwardRenderer : RenderProfile
 	{
 		/// Used for drawing the GBuffer
-		GBufferShader gBuffer;
-
-		/// Used for drawing the light map
-		LightShader lights;
+		ForwardShader forward;
 
 		/// Draws depth map for shadows
 		DepthMapShader depth;
-
-		/// Comination render for final image
-		CompositeShader composite;
 
 		/// Render post process blur
 		BlurShader blur;
@@ -36,14 +30,11 @@ namespace Meteor.Rendering
 		/// Depth of field effect
 		DepthOfFieldShader dof;
 
-		/// SSAO effect
-		SSAOShader ssao;
-
 		/// <summary>
 		/// Load all the renderers needed for this profile
 		/// </summary>
 
-		public DeferredRenderer(GraphicsDevice graphics, 
+		public ForwardRenderer(GraphicsDevice graphics, 
 			ResourceContentManager content) : base(graphics, content) { }
 
 		/// <summary>
@@ -54,15 +45,12 @@ namespace Meteor.Rendering
 		{
 			base.Initialize();
 
-			gBuffer = new GBufferShader(this, resxContent);
-			lights = new LightShader(this, resxContent);
+			forward = new ForwardShader(this, resxContent);
 			depth = new DepthMapShader(this, resxContent);
-			composite = new CompositeShader(this, resxContent);
 			dof = new DepthOfFieldShader(this, resxContent);
 			blur = new BlurShader(this, resxContent);
 			copy = new CopyShader(this, resxContent);
 			bloom = new BloomShader(this, resxContent);
-			ssao = new SSAOShader(this, resxContent);
 		}
 
 		/// <summary>
@@ -72,36 +60,23 @@ namespace Meteor.Rendering
 		public override void MapInputs(Scene scene, Camera camera)
 		{
 			// Map the renderer inputs to outputs
-			gBuffer.SetInputs(scene, camera, null);
+			forward.SetInputs(scene, camera, null);
 			depth.SetInputs(scene, camera, null);
-			lights.SetInputs(scene, camera, gBuffer.outputs[0], gBuffer.outputs[1],
-				gBuffer.outputs[3], depth.outputs[0]);
-			composite.SetInputs(scene, camera, 
-				gBuffer.outputs[2], lights.outputs[0], ssao.outputs[0], gBuffer.outputs[1]);
-			copy.SetInputs(composite.outputs);
-			blur.SetInputs(composite.outputs);
-			ssao.SetInputs(scene, camera, gBuffer.outputs[0], gBuffer.outputs[1]);
-			dof.SetInputs(composite.outputs[0], copy.outputs[0], gBuffer.outputs[1]);
-			bloom.SetInputs(composite.outputs);
-
-			composite.includeSSAO = false;
+			copy.SetInputs(forward.outputs);
+			blur.SetInputs(forward.outputs);
+			bloom.SetInputs(forward.outputs);
 
 			// Set the debug targets
-			debugRenderTargets.Add(gBuffer.outputs[2]);
-			debugRenderTargets.Add(gBuffer.outputs[0]);
-			debugRenderTargets.Add(lights.outputs[0]);
+			debugRenderTargets.Add(forward.outputs[0]);
 			debugRenderTargets.Add(depth.outputs[0]);
 		}
 
 		public override void Draw()
 		{
-			// Create the lighting map
-			gBuffer.Draw();
-			depth.Draw();
-			lights.Draw();
+			// Render the depth shadow maps first
+			//depth.Draw();
+			forward.Draw();
 
-			// Composite drawing
-			composite.Draw();
 			/*
 			// Post effects
 			copy.Draw();

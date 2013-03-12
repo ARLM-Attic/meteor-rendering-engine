@@ -7,10 +7,14 @@ float4x4 View;
 float4x4 Projection;
 float4x4 inverseView;
 
+/// Visual texture features
 float textureScale;
 float mapScale;
 float specPower;
 float specIntensity;
+float bumpIntensity;
+
+/// Debug features
 float clipLevel;
 
 /// Base textures
@@ -124,6 +128,36 @@ VT_Output VertexShaderTerrain(VT_Input input)
     return output;
 }
 
+VT_Output VertexTerrainDebug(VT_Input input)
+{
+    VT_Output output;
+
+	input.Position.y += 0.005f;
+	float4x4 wvp = mul(mul(World, View), Projection);
+
+	// First transform the position onto the screen
+	output.Position = mul(input.Position, wvp);
+	output.NewPosition = input.Position;
+
+	//pass the texture coordinates further
+    output.TexCoord = input.TexCoord;
+
+	output.Normal = normalize(mul(input.Normal, World));
+	output.N = mul(input.Normal, World);
+
+    output.Depth.x = output.Position.z;
+    output.Depth.y = output.Position.w;
+	output.Depth.z = output.Position.z;
+
+	// calculate tangent space to world space matrix using the world space tangent,
+    // binormal, and normal as basis vectors.
+	output.TangentToWorld[0] = normalize(mul(mul(input.tangent, World), View));
+    output.TangentToWorld[1] = normalize(mul(mul(input.binormal, World), View));
+    output.TangentToWorld[2] = normalize(mul(mul(input.Normal, World), View));
+
+    return output;
+}
+
 //--- PixelShaders ---//
 
 struct PixelShaderOutput1
@@ -182,7 +216,7 @@ float3 TriplanarNormalMapping(VT_Output input, float scale = 1)
 	cYZ = 2.0f * cYZ - 1.0f;
 
 	float3 normal = cXY * mXY + cXZ * mXZ + cYZ * mYZ;
-	normal.xy *= 1.8f;
+	normal.xy *= bumpIntensity;
 	return normal;
 }
 
@@ -193,16 +227,16 @@ PixelShaderOutput1 PixelTerrainGBuffer(VT_Output input)
 	// Determine diffuse texture color
 	float4 color = TriplanarMapping(input, 4);
 	float4 blendedColor = TriplanarMapping(input, 0.3f);
-	float depth = pow(input.Depth.x / input.Depth.y, 50);
+	float blendDepth = pow(input.Depth.x / input.Depth.y, 100);
 
 	// Blend with scaled texture
-	output.Color = lerp(color, blendedColor, depth);
+	output.Color = lerp(color, blendedColor, blendDepth);
 	output.Color.a = 1;
 
 	// Sample normal map color
 	float3 normal = TriplanarNormalMapping(input, 4);
 	float3 blendedNormal = TriplanarNormalMapping(input, 0.3f);
-	normal = lerp(normal, blendedNormal, depth);
+	normal = lerp(normal, blendedNormal, blendDepth);
 
 	// Output the normal, in [0,1] space
     // Get normal into world space
@@ -212,7 +246,8 @@ PixelShaderOutput1 PixelTerrainGBuffer(VT_Output input)
 	output.Normal.rgb = 0.5f * (normalFromMap + 1.0f);
 
 	// Terrain doesn't need any specular component
-    output.Normal.a = 0;
+    output.Normal.a = 1;
+
 	float3 specularIntensity = specIntensity;
 	output.Specular = float4(specularIntensity, specPower);
 
@@ -253,6 +288,24 @@ float4 PixelTerrainDiffuse(VT_Output input) : COLOR0
 	color.a = 1;
 	 
 	return color;//float4(0, ClipLevel % 2, 1, 1);
+}
+
+PixelShaderOutput1 PixelTerrainDebug(VT_Output input) : COLOR0
+{
+    PixelShaderOutput1 output = (PixelShaderOutput1)1;
+
+	float3 color = float3(1, 1, 1);
+	output.Color.rgb = color;
+	output.Color.a = 1;
+
+	output.Normal.rgb = float3(0.5, 0.5, 1);
+	output.Normal.a = 0;
+
+	// Output Depth and Specular
+	output.Depth = input.Depth.x / input.Depth.y; 
+	output.Specular = 0;
+
+    return output;
 }
 
 /// The following four techniques draw a variation of the GBuffer, 
@@ -297,3 +350,16 @@ technique DiffuseRenderTerrain
     }
 }
 
+/// Simple rendering mode for debug views
+
+technique DebugTerrain
+{
+    pass Pass1
+    {
+		CullMode = CCW;
+		ZENABLE = True;
+
+        VertexShader = compile vs_2_0 VertexTerrainDebug();
+        PixelShader = compile ps_2_0 PixelTerrainDebug();
+    }
+}

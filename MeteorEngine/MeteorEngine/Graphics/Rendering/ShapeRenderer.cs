@@ -478,11 +478,15 @@ namespace Meteor.Resources
 			boxVertices[34] = new VertexPositionNormalTexture(topRightFront, normalRight, textureTopLeft);
 			boxVertices[35] = new VertexPositionNormalTexture(btmRightBack, normalRight, textureBottomRight);
 
-			VertexBuffer boxVB = new VertexBuffer(graphics, typeof(VertexPositionNormalTexture), boxVertices.Length,
-				BufferUsage.WriteOnly);
-			boxVB.SetData(boxVertices);
+			if (graphics != null)
+			{
+				VertexBuffer boxVB = new VertexBuffer(graphics, typeof(VertexPositionNormalTexture), boxVertices.Length,
+					BufferUsage.WriteOnly);
+				boxVB.SetData(boxVertices);
 
-			return boxVB;
+				return boxVB;
+			}
+			return null;
 		}
 
 		/// <summary>

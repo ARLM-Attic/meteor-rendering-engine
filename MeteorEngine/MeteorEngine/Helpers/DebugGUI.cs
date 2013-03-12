@@ -132,6 +132,17 @@ namespace Meteor
 		}
 
 		/// <summary>
+		/// Draw a StringBuilder string directly on the screen.
+		/// </summary>
+
+		public void DrawText(StringBuilder stringBuilder, Vector2 textPosition)
+		{
+			spriteBatch.Begin();
+			spriteBatch.DrawString(font, stringBuilder, textPosition, Color.White);
+			spriteBatch.End();
+		}
+
+		/// <summary>
 		/// Display the name label(s) of the models in screen space.
 		/// </summary>
 
@@ -145,7 +156,7 @@ namespace Meteor
 			Matrix instanceMatrix = Matrix.Identity;
 			BoundingSphere bSphere;
 
-			foreach (Meteor.Resources.Model staticModel in debugScene.staticModels.Values)
+			foreach (Meteor.Resources.Model staticModel in debugScene.sceneModels.Values)
 			{
 				// Check for cursor picking intersection
 				if (RayIntersectsModel(cursorRay, staticModel, out instanceMatrix, out bSphere))

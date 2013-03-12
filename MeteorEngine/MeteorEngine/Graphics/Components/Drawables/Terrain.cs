@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -25,11 +27,19 @@ namespace Meteor.Resources
 		/// Array to store the data of each map pixel
 		short[,] heightData;
 
+		/// Terrain patch grid dimensions
+		Vector2 gridSize;
+
 		/// Amount to scale heightmap by
 		public float scale = 1f;
 
 		/// Amount to scale heightmap textures by
 		public float textureScale = 10f;
+
+		/// Additional texture features
+		public float specularity { set; get; }
+		public float specularPower { set; get; }
+		public float bumpIntensity { set; get; }
 
 		/// Basic texture names for terrain
 		public string heightMapTexture { set; get; }
@@ -42,28 +52,42 @@ namespace Meteor.Resources
 
 		/// Normal map texture names for terrain
 		public string baseNormalMap { set; get; }
-		public string baseSteepNormalMap { set; get; }
+		public string steepNormalMap { set; get; }
 
 		/// Primary textures to apply to the terrain mesh
-		Texture2D baseTextureSource;
-		Texture2D steepTextureSource;
+		private Texture2D baseTextureSource;
+		private Texture2D steepTextureSource;
 
 		/// Blend textures to apply to the terrain mesh
-		Texture2D blendTexture1Source;
-		Texture2D blendTexture2Source;
+		private Texture2D blendTexture1Source;
+		private Texture2D blendTexture2Source;
 
 		/// Normal map textures to apply to the terrain mesh
-		Texture2D baseNormalMapSource;
-		Texture2D steepNormalMapSource;
+		private Texture2D baseNormalMapSource;
+		private Texture2D steepNormalMapSource;
 
 		/// The innermost (level 0) geo clipmap to render the terrain with
-		InnerClipmap innerClipMap;
+		private InnerClipmap innerClipMap;
 
 		/// The outer geo clipmaps
-		OuterClipmap[] outerClipMaps;
+		private OuterClipmap[] outerClipMaps;
+			
+		/// Grid of terrain patches
+		private TerrainPatch[,] terrainPatches;
+		public TerrainPatch[,] TerrainPatches 
+		{ 
+			get { return terrainPatches; }
+		}
+
+		/// List of visible patches
+		public List<TerrainPatch> visiblePatches;
+		public int totalVisiblePatches = 0;
 
 		/// Location to offset the position of the terrain
-		Vector3 heightmapPosition;
+		private Vector3 heightmapPosition;
+		
+		/// Rasterizer state for debugging
+		private RasterizerState rWireframeState;
 
 		/// <summary>
 		/// Constructor to set up content and default texture
@@ -75,6 +99,9 @@ namespace Meteor.Resources
 		{
 			this.content = content;
 			this.graphicsDevice = device;
+
+			rWireframeState = new RasterizerState();
+			rWireframeState.FillMode = FillMode.WireFrame;
 		}
 
 		/// <summary>
@@ -86,7 +113,7 @@ namespace Meteor.Resources
 			Texture2D heightMapTextureSource = content.Load<Texture2D>(heightMapTexture);
 			baseTextureSource = content.Load<Texture2D>(baseTexture);
 			steepTextureSource = content.Load<Texture2D>(steepTexture);
-			steepNormalMapSource = content.Load<Texture2D>("Textures/cliff_rock-nrm");
+			steepNormalMapSource = content.Load<Texture2D>(steepNormalMap);
 
 			terrainWidth = heightMapTextureSource.Width;
 			terrainHeight = heightMapTextureSource.Height;
@@ -113,8 +140,25 @@ namespace Meteor.Resources
 
 			// Setup the clip maps, and determine how many should be needed to
 			// fit within the bounds of the terrain
-			int clipMapSize = 96;
-			//int numClipMaps = 
+			int clipMapSize = 64;
+			gridSize.X = terrainWidth / TerrainPatch.patchSize;
+			gridSize.Y = terrainHeight / TerrainPatch.patchSize;
+
+			// Create terrain patches
+			terrainPatches = new TerrainPatch[(int)gridSize.X, (int)gridSize.Y];
+			visiblePatches = new List<TerrainPatch>((int)gridSize.X * (int)gridSize.Y);
+
+			for (int i = 0; i < gridSize.Y; i++)
+			{
+				for (int j = 0; j < gridSize.X; j++)
+				{
+					Vector2 offset = new Vector2(j * TerrainPatch.patchSize, i * TerrainPatch.patchSize);
+
+					terrainPatches[j, i] = new TerrainPatch(graphicsDevice, offset);
+					terrainPatches[j, i].UpdateMap(heightData, scale, heightmapPosition);
+					visiblePatches.Add(terrainPatches[j, i]);
+				}
+			}
 
 			innerClipMap = new InnerClipmap(clipMapSize, graphicsDevice);
 			outerClipMaps = new OuterClipmap[3];
@@ -208,12 +252,47 @@ namespace Meteor.Resources
 		}
 
 		public bool textureToggle = false;
+
+		/// <summary>
+		/// Draw in wireframe (activated by debug mode only)
+		/// </summary>
+		[Conditional("DEBUG")]
+		private void DrawWireframe(Camera camera, Effect effect)
+		{
+			// Draw in wireframe mode
+			graphicsDevice.RasterizerState = rWireframeState;
+			effect.CurrentTechnique = effect.Techniques["DebugTerrain"];
+			/*
+			// Set buffers for mipmap terrain patches and draw them
+			for (int i = totalVisiblePatches - 1; i >= 0; i--)
+			{
+				// Color code the clip maps
+				effect.Parameters["clipLevel"].SetValue(0);
+
+				graphicsDevice.Indices = visiblePatches[i].Indices;
+				graphicsDevice.SetVertexBuffer(visiblePatches[i].Vertices);
+
+				foreach (EffectPass pass in effect.CurrentTechnique.Passes)
+				{
+					pass.Apply();
+					graphicsDevice.DrawIndexedPrimitives(
+						PrimitiveType.TriangleList, 0, 0,
+						visiblePatches[i].UpdatedVertices, 0, visiblePatches[i].UpdatedIndices / 3);
+				}
+			}*/
+
+			// Draw bounding boxes
+			for (int i = 0; i < totalVisiblePatches; i++)
+				ShapeRenderer.AddBoundingBox(visiblePatches[i].boundingBox, Color.Red);
+
+			ShapeRenderer.Draw(camera.view, camera.projection);
+		}
 		
 		/// <summary>
 		/// Draw the terrain mesh with the desired effect
 		/// </summary>
 
-		public int Draw(Camera camera, Effect effect, Texture2D texture)
+		public int Draw(Camera camera, Effect effect)
 		{
 			// Do not draw if this buffer isn't currently filled
 			if (innerClipMap.UpdatedIndices == 0)
@@ -223,12 +302,7 @@ namespace Meteor.Resources
 				if (outerMap.UpdatedIndices == 0)
 					return 0;
 
-			Matrix worldMatrix = Matrix.CreateScale(scale);
-			worldMatrix *= Matrix.CreateTranslation(heightmapPosition);
-
-			//RasterizerState rWireframeState = new RasterizerState();
-			//rWireframeState.FillMode = FillMode.WireFrame;
-			//graphicsDevice.RasterizerState = rWireframeState;
+			Matrix worldMatrix = Matrix.CreateScale(scale) * Matrix.CreateTranslation(heightmapPosition);
 
 			effect.Parameters["Texture"].SetValue(baseTextureSource);
 
@@ -239,8 +313,10 @@ namespace Meteor.Resources
 			effect.Parameters["textureScale"].SetValue(textureScale);
 			effect.Parameters["mapScale"].SetValue(scale);
 			effect.Parameters["clipLevel"].SetValue(0);
-			effect.Parameters["specIntensity"].SetValue(0f);
-			effect.Parameters["specPower"].SetValue(1f);
+
+			effect.Parameters["specIntensity"].SetValue(specularity);
+			effect.Parameters["specPower"].SetValue(specularPower);
+			effect.Parameters["bumpIntensity"].SetValue(bumpIntensity);
 
 			// Set world transformation for the map
 			effect.Parameters["World"].SetValue(worldMatrix);
@@ -257,10 +333,35 @@ namespace Meteor.Resources
 			}
 
 			int polycount = 0;
-			int clipLevel = 1;
+			
+			// Set buffers for mipmap terrain patches and draw them
+			for (int i = 0; i < totalVisiblePatches; i++)
+			{
+				// Color code the clip maps
+				effect.Parameters["clipLevel"].SetValue(0);
 
+				graphicsDevice.Indices = visiblePatches[i].Indices;
+				graphicsDevice.SetVertexBuffer(visiblePatches[i].Vertices);
+
+				ShapeRenderer.AddBoundingBox(visiblePatches[i].boundingBox, Color.Red);
+
+				foreach (EffectPass pass in effect.CurrentTechnique.Passes)
+				{
+					pass.Apply();
+					graphicsDevice.DrawIndexedPrimitives(
+						PrimitiveType.TriangleList, 0, 0,
+						visiblePatches[i].UpdatedVertices, 0, visiblePatches[i].UpdatedIndices / 3);
+				}
+
+				// Add to the total number of polygons drawn
+				polycount += (visiblePatches[i].UpdatedIndices / 3);
+			}
+
+			ShapeRenderer.Draw(camera.view, camera.projection);
+
+			/*
 			// Set buffers for outer clip maps and draw them
-			for (int i = outerClipMaps.Length - 1; i >= 0; i-- )
+			for (int i = outerClipMaps.Length - 1; i >= 0; i--)
 			{
 				// Color code the clip maps
 				effect.Parameters["clipLevel"].SetValue(clipLevel++);
@@ -275,18 +376,18 @@ namespace Meteor.Resources
 						PrimitiveType.TriangleList, 0, 0,
 						outerClipMaps[i].UpdatedVertices, 0, outerClipMaps[i].UpdatedIndices / 3);
 				}
+
 				// Add to the total number of polygons drawn
 				polycount += (outerClipMaps[i].UpdatedIndices / 3);
 			}
 
+			// Set vertex and index buffers for the inner clip map and draw it
+			graphicsDevice.Indices = innerClipMap.Indices;
+			graphicsDevice.SetVertexBuffer(innerClipMap.Vertices);
+
 			foreach (EffectPass pass in effect.CurrentTechnique.Passes)
 			{
 				pass.Apply();
-
-				// Set vertex and index buffers for the inner clip map and draw it
-				graphicsDevice.Indices = innerClipMap.Indices;
-				graphicsDevice.SetVertexBuffer(innerClipMap.Vertices);
-
 				graphicsDevice.DrawIndexedPrimitives(
 					PrimitiveType.TriangleList, 0, 0,
 					innerClipMap.UpdatedVertices, 0, innerClipMap.UpdatedIndices / 3);
@@ -294,7 +395,10 @@ namespace Meteor.Resources
 
 			// Add to the total number of polygons drawn;
 			polycount += (innerClipMap.UpdatedIndices / 3);
-
+			*/
+			// Draw in wireframe mode
+			DrawWireframe(camera, effect);
+			
 			// End rendering clipmaps
 			return polycount;
 		}

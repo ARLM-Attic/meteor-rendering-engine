@@ -8,7 +8,50 @@ namespace Meteor.Resources
 	/// Vertex structure for normal mapped meshes
 	/// </summary>
 
-	public struct VertexPositionTangentToWorld
+	public struct VertexPositionColorTextureNormal : IVertexType
+	{
+		public Vector3 Position;
+		public Color Color;
+		public Vector2 TextureCoordinate;
+		public Vector3 Normal;
+
+		public readonly static VertexDeclaration vertexDeclaration = new VertexDeclaration 
+		(
+			new VertexElement(0, VertexElementFormat.Vector3, VertexElementUsage.Position, 0),
+			new VertexElement(sizeof(float) * 3, VertexElementFormat.Vector3, VertexElementUsage.Color, 0),
+			new VertexElement(sizeof(float) * 7, VertexElementFormat.Vector2, VertexElementUsage.TextureCoordinate, 0),
+			new VertexElement(sizeof(float) * 9, VertexElementFormat.Vector3, VertexElementUsage.Normal, 0)
+		);
+
+		public VertexDeclaration VertexDeclaration 
+		{ 
+			get { return vertexDeclaration; }
+		}
+
+		public VertexPositionColorTextureNormal(Vector3 position, Color color, Vector2 textureCoordinate, Vector3 normal)
+		{
+			Position = position;
+			Color = color;
+			TextureCoordinate = textureCoordinate;
+			Normal = normal;
+		}
+
+		public VertexPositionColorTextureNormal(Vector3 position, Vector3 normal, Vector2 textureCoordinate)
+		{
+			Position = position;
+			Color = Color.White;
+			TextureCoordinate = textureCoordinate;
+			Normal = normal;
+		}
+
+		public static int SizeInBytes { get { return sizeof(float) * 12; } }
+	}
+
+	/// <summary>
+	/// Vertex structure for normal mapped meshes
+	/// </summary>
+
+	public struct VertexPositionTangentToWorld : IVertexType
 	{
 		public Vector3 Position;
 		public Vector3 Normal;
@@ -16,7 +59,7 @@ namespace Meteor.Resources
 		public Vector3 Tangent;
 		public Vector3 Binormal;
 
-		public static VertexDeclaration terrainVertexDeclaration = new VertexDeclaration
+		public static VertexDeclaration vertexDeclaration = new VertexDeclaration
 		(
 			new VertexElement(0, VertexElementFormat.Vector3, VertexElementUsage.Position, 0),
 			new VertexElement(sizeof(float) * 3, VertexElementFormat.Vector3, VertexElementUsage.Normal, 0),
@@ -24,6 +67,11 @@ namespace Meteor.Resources
 			new VertexElement(sizeof(float) * 8, VertexElementFormat.Vector3, VertexElementUsage.Tangent, 0),
 			new VertexElement(sizeof(float) * 11, VertexElementFormat.Vector3, VertexElementUsage.Binormal, 0)
 		);
+
+		public VertexDeclaration VertexDeclaration
+		{
+			get { return vertexDeclaration; }
+		}
 
 		public VertexPositionTangentToWorld(Vector3 position, Vector3 normal, Vector2 textureCoordinate,
 			Vector3 tangent, Vector3 binormal)

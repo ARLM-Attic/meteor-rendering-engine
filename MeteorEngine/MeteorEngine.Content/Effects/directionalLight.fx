@@ -121,7 +121,7 @@ float2 poissonDisk[24] = {
 	float2(-0.9310728f, 0.3289311f)
 };
 
-#define TOTAL_SAMPLES 10
+#define TOTAL_SAMPLES 16
 
 float3 PoissonDiscFilter(sampler smp, float3 ambient, float2 texCoord, float ourdepth)
 {	

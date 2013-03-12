@@ -5,16 +5,6 @@ using Microsoft.Xna.Framework;
 namespace Meteor.Resources
 {
 	/// <summary>
-	/// POD Type - Represents a distinct model entity in the world. 
-	/// References a MeshInstance.
-	/// </summary>
-
-	public class MeshObject
-	{
-
-	}
-
-	/// <summary>
 	/// Class which holds and sets up matrix and color info for a mesh instance.
 	/// It also helps update the position of the mesh's BoundingSphere.
 	/// </summary>

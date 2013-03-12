@@ -66,6 +66,7 @@ namespace Meteor.Rendering
 
 			// Cull the objects
 			sceneCuller.CullLights(scene, camera);
+			sceneCuller.CullTerrainPatches(scene, camera);
 			sceneCuller.CullModelMeshes(scene, camera);
 
 			forwardRenderEffect.Parameters["camPosition"].SetValue(camera.position);
@@ -84,11 +85,11 @@ namespace Meteor.Rendering
 				}
 			}
             // Forward render the scene
-			sceneRenderer.UseTechnique("ForwardRenderTerrain");
-			sceneRenderer.DrawTerrain(scene, camera, terrainForwardRenderEffect);
-
 			sceneRenderer.UseTechnique("ForwardRender");
 			sceneRenderer.Draw(scene, camera, forwardRenderEffect);
+
+			sceneRenderer.UseTechnique("ForwardRenderTerrain");
+			sceneRenderer.DrawTerrain(scene, camera, terrainForwardRenderEffect);
 			
 			// Render the skybox and update sampler state
 			graphicsDevice.SamplerStates[0] = SamplerState.LinearClamp;

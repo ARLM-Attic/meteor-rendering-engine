@@ -42,10 +42,7 @@ namespace Meteor.Rendering
 				{
 					// Add mesh and instances to visible list if they're contained in the frustum
 					if (camera.frustum.Contains(meshInstance.BSphere) != ContainmentType.Disjoint)
-					{
-						instanceGroup.visibleInstances[instanceGroup.totalVisible] = meshInstance;
-						instanceGroup.totalVisible++;
-					}
+						instanceGroup.visibleInstances[instanceGroup.totalVisible++] = meshInstance;
 				}
 
 				int fullMeshInstances = 0;
@@ -73,24 +70,28 @@ namespace Meteor.Rendering
 		}
 
 		/// <summary>
-		/// Perform an occlusion query with basic proxy model
+		/// Cull all terrain patches outside the view frustum.
 		/// </summary>
 
-		public void DoOcclusionQuery()
+		public void CullTerrainPatches(Scene scene, Camera camera)
 		{
-			//models.Sort(delegate(BasicModel m1, BasicModel m2) { return m1.Distance.CompareTo(m2.Distance); });	 
+			scene.terrain.totalVisiblePatches = 0;
+
+			foreach (TerrainPatch patch in scene.terrain.TerrainPatches)
+			{
+				if (camera.frustum.Contains(patch.boundingSphere) != ContainmentType.Disjoint)
+					scene.terrain.visiblePatches[scene.terrain.totalVisiblePatches++] = patch;
+			}
 		}
 
 		/// <summary>
-		/// Check all meshes in a scene that are outside the camera view frustum.
+		/// Check all meshes in a scene that are outside the view frustum.
 		/// </summary>
 
 		public void CullModelMeshes(Scene scene, Camera camera)
 		{
 			scene.culledMeshes = 0;
-
-			CullFromList(camera, scene.staticModels);
-			CullFromList(camera, scene.skinnedModels);
+			CullFromList(camera, scene.sceneModels);
 		}
 
 		/// <summary>

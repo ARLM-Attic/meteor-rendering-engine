@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using SkinnedModel;
 
@@ -9,46 +8,7 @@ namespace Meteor.Resources
 {
 	using XnaModel = Microsoft.Xna.Framework.Graphics.Model;
 
-	/// Data structure to contain all instance data
-	/// and related vertex buffer for instancing
-	public class MeshInstanceGroup
-	{
-		/// List of all instances present for this mesh
-		public List<MeshInstance> instances;
-
-		/// List of all visible instances after culling
-		public List<MeshInstance> visibleInstances;
-
-		/// Number of visible instances after culling
-		public int totalVisible = 0;
-
-		/// Temporary transforms for copying
-		public Matrix[] tempTransforms;
-
-		/// Tightest bounding box that fits this mesh
-		public BoundingBox boundingBox;
-
-		/// Vertex buffer for all mesh instances
-		public DynamicVertexBuffer instanceVB;
-
-		/// Name take from the mesh
-		public string meshName;
-
-		/// <summary>
-		/// Default constructor
-		/// </summary>
-		public MeshInstanceGroup()
-		{
-			instances = new List<MeshInstance>();
-			visibleInstances = new List<MeshInstance>();
-			tempTransforms = new Matrix[1];
-
-			meshName = "default";
-		}
-	}
-
-
-	public class Model
+	public class Model : ITransformable
 	{
 		/// Model representing the object
 		public object modelTag { private set; get; }
@@ -64,16 +24,16 @@ namespace Meteor.Resources
 
 		/// Model's normal/bump map textures
 		public List<Texture2D> normalMapTextures;
-
+		
 		/// Model's scale/rotate/translate parameters
 		public Vector3 translation { set; get; }
 		public Vector3 rotation { set; get; }
-		public float scale = 1;
+		public float scale { set; get; }
 
 		/// Model's transformation matrix
-		private Matrix worldTransform;
+		public Matrix worldTransform { protected set; get; }
 		public Matrix World { get { return worldTransform; } }
-
+		
 		/// Array for the instancing groups of each mesh
 		/// Instances are grouped by mesh name
 		Dictionary<string, MeshInstanceGroup> meshInstanceGroups;
@@ -109,18 +69,12 @@ namespace Meteor.Resources
 		public bool useImposters;
 
 		/// <summary>
-		/// Load a model from the ContentManager from a file
+		/// Create an empty Model for loading with later.
 		/// </summary>
-		/// <param name="modelName">Model's file name</param>
-		/// <param name="content">The program's ContentManger</param>
 
-		public Model(XnaModel model, GraphicsDevice graphicsDevice)
+		public Model()
 		{
-			// Animation data
-			modelTag = model.Tag;
-			animationPlayer = null;
-
-			// Set up model data
+			// Set up model lists
 			textures = new List<Texture2D>();
 			normalMapTextures = new List<Texture2D>();
 			modelMeshes = new List<ModelMesh>();
@@ -129,10 +83,53 @@ namespace Meteor.Resources
 			// Bounding box data
 			boxVertices = new VertexPositionColor[BoundingBox.CornerCount];
 
+			// Set world transformation matrix
+			scale = (scale == 0) ? 1f : scale;
+			worldTransform = Matrix.CreateScale(scale) *
+				Matrix.CreateFromYawPitchRoll(rotation.Y, rotation.X, rotation.Z) *
+				Matrix.CreateTranslation(translation);
+		}
+
+		/// <summary>
+		/// Create a Model and set up mesh data.
+		/// </summary>
+
+		public Model(XnaModel model)
+		{
+			// Set up model lists
+			textures = new List<Texture2D>();
+			normalMapTextures = new List<Texture2D>();
+			modelMeshes = new List<ModelMesh>();
+			meshInstanceGroups = new Dictionary<string, MeshInstanceGroup>();
+
+			// Bounding box data
+			boxVertices = new VertexPositionColor[BoundingBox.CornerCount];
+
+			// Set up model mesh and texture data
+			SetModelData(model);
+		}
+
+		/// <summary>
+		/// Set up model mesh and texture data.
+		/// </summary>
+		/// <param name="model"></param>
+
+		public void SetModelData(XnaModel model)
+		{
+			// Set world transformation matrix
+			scale = (scale == 0) ? 1f : scale;
+			worldTransform = Matrix.CreateScale(scale) *
+				Matrix.CreateFromYawPitchRoll(rotation.Y, rotation.X, rotation.Z) *
+				Matrix.CreateTranslation(translation);
+
 			// Add model matrices
 			boneMatrices = new Matrix[model.Bones.Count];
 			model.CopyAbsoluteBoneTransformsTo(boneMatrices);
 			int index = 0;
+
+			// Animation data
+			modelTag = model.Tag;
+			animationPlayer = null;
 
 			// Extract textures and create bounding boxes
 			foreach (ModelMesh mesh in model.Meshes)
@@ -157,11 +154,7 @@ namespace Meteor.Resources
 				meshInstanceGroups[meshName].instances.Add(new MeshInstance(boundingSphere));
 				meshInstanceGroups[meshName].visibleInstances.Add(new MeshInstance(boundingSphere));
 				meshInstanceGroups[meshName].tempTransforms[0] = new Matrix();
-				lastInstance = 0; 
-
-				// Add dynamic vertex buffers
-				meshInstanceGroups[meshName].instanceVB =
-					CreateInstanceVB(graphicsDevice, meshInstanceGroups[meshName].instances);
+				lastInstance = 0;
 
 				// Extract textures from each mesh
 				foreach (ModelMeshPart meshPart in mesh.MeshParts)
@@ -170,11 +163,6 @@ namespace Meteor.Resources
 					normalMapTextures.Add(meshPart.Effect.Parameters["NormalMap"].GetValueTexture2D());
 				}
 			}
-
-			// Set world transformation
-			worldTransform = Matrix.CreateScale(scale) * 
-				Matrix.CreateFromYawPitchRoll(rotation.Y, rotation.X, rotation.Z) *
-				Matrix.CreateTranslation(translation);
 		}
 
 		/// <summary>
@@ -272,10 +260,10 @@ namespace Meteor.Resources
 			graphicsDevice.SetVertexBuffers(null);
 
 			/// Resize the vertex buffer for instances if needed
-			if (totalInstances > instanceGroup.instanceVB.VertexCount)
+			if (instanceGroup.instanceVB == null ||
+				totalInstances > instanceGroup.instanceVB.VertexCount)
 			{
-				instanceGroup.instanceVB =
-					CreateInstanceVB(graphicsDevice, instanceGroup.instances);
+				instanceGroup.instanceVB = CreateInstanceVB(graphicsDevice, instanceGroup.instances);
 			}
 			else
 			{

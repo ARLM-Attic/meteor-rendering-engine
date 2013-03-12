@@ -61,7 +61,7 @@ namespace Meteor.Resources
 			// Create vertex buffer for clip map root
 			vertices = new VertexPositionTangentToWorld[(clipLevelSize + 1) * (clipLevelSize + 1)];
 			clipmapVB = new DynamicVertexBuffer(graphicsDevice,
-				VertexPositionTangentToWorld.terrainVertexDeclaration, vertices.Length, BufferUsage.WriteOnly);
+				VertexPositionTangentToWorld.vertexDeclaration, vertices.Length, BufferUsage.WriteOnly);
 
 			// Create index buffer for clip map root
 			indices = new int[clipLevelSize * clipLevelSize * 6];

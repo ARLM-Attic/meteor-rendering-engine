@@ -129,11 +129,8 @@ namespace Meteor.Rendering
 			currentEffect.Parameters["Projection"].SetValue(camera.projection);
 			currentEffect.Parameters["CameraPosition"].SetValue(camera.position);
 
-			foreach (Meteor.Resources.Model instancedModel in scene.staticModels.Values)					
+			foreach (Meteor.Resources.Model instancedModel in scene.sceneModels.Values)					
 				scene.visibleMeshes += DrawModel(instancedModel, this.shaderTechnique);
-
-			foreach (Meteor.Resources.Model skinnedModel in scene.skinnedModels.Values)
-				scene.visibleMeshes += DrawModel(skinnedModel, this.shaderTechnique + "Animated");
 
 			scene.totalPolys = totalPolys;
 
@@ -150,19 +147,15 @@ namespace Meteor.Rendering
 			Viewport viewport = graphicsDevice.Viewport;
 			viewport.MinDepth = 0.0f;
 			viewport.MaxDepth = farDepth;
+
 			graphicsDevice.Viewport = viewport;
 			graphicsDevice.BlendState = blendState;
 			graphicsDevice.RasterizerState = RasterizerState.CullNone;
 
 			currentEffect = effect;
 
-			foreach (Meteor.Resources.Model instancedModel in scene.staticModels.Values)
+			foreach (Meteor.Resources.Model instancedModel in scene.sceneModels.Values)
 				DrawModel(instancedModel, effect, this.shaderTechnique);
-
-			foreach (Meteor.Resources.Model skinnedModel in scene.skinnedModels.Values)
-				DrawModel(skinnedModel, effect, this.shaderTechnique + "Animated");
-
-			// Finished drawing visible meshes
 		}
 
 		/// <summary>
@@ -192,7 +185,7 @@ namespace Meteor.Rendering
 			if (scene.terrain != null)
 			{
 				effect.CurrentTechnique = effect.Techniques[shaderTechnique];
-				scene.totalPolys += scene.terrain.Draw(camera, effect, blankTexture);
+				scene.totalPolys += scene.terrain.Draw(camera, effect);
 			}
 		}
 
@@ -203,7 +196,7 @@ namespace Meteor.Rendering
 		public void DrawTerrainDefault(Scene scene, Camera camera, Effect effect)
 		{
 			if (scene.terrain != null)
-				scene.totalPolys += scene.terrain.Draw(camera, effect, blankTexture);
+				scene.totalPolys += scene.terrain.Draw(camera, effect);
 		}
 
 		/// <summary>
@@ -230,6 +223,9 @@ namespace Meteor.Rendering
 
 		private int DrawModel(Meteor.Resources.Model model, String technique)
 		{
+			//if (model.animationPlayer != null)
+			//	technique += "Animated";
+
 			UseTechnique(technique);
 			TrimBoneTransforms(model);
 
@@ -238,6 +234,7 @@ namespace Meteor.Rendering
 
 			foreach (MeshInstanceGroup instanceGroup in model.MeshInstanceGroups.Values)
 			{
+				// Create vertex buffer if necessary
 				model.PrepareMeshData(graphicsDevice, instanceGroup);
 
 				// Retrieve the current mesh from the mesh list
@@ -275,6 +272,9 @@ namespace Meteor.Rendering
 
 		private int DrawModel(Meteor.Resources.Model model, Effect effect, String technique)
 		{
+			//if (model.animationPlayer != null)
+			//	technique += "Animated";
+
 			UseTechnique(technique);
 			TrimBoneTransforms(model);
 
@@ -283,6 +283,7 @@ namespace Meteor.Rendering
 
 			foreach (MeshInstanceGroup instanceGroup in model.MeshInstanceGroups.Values)
 			{
+				// Create vertex buffer if necessary
 				model.PrepareMeshData(graphicsDevice, instanceGroup);
 
 				// Retrieve the current mesh from the mesh list
@@ -425,15 +426,8 @@ namespace Meteor.Rendering
 				basicEffect.View = camera.view;
 				basicEffect.Projection = camera.projection;
 
-				foreach (Meteor.Resources.Model model in scene.staticModels.Values)
-				{
+				foreach (Meteor.Resources.Model model in scene.sceneModels.Values)
 					DrawBoundingBoxes(model, camera);
-				}
-
-				foreach (Meteor.Resources.Model model in scene.skinnedModels.Values)
-				{
-					DrawBoundingBoxes(model, camera);
-				}
 			}
 		}
 
