@@ -160,7 +160,7 @@ VT_Output VertexTerrainDebug(VT_Input input)
 
 float4 TriplanarMapping(VT_Output input, float scale = 1)
 {
-	float tighten = 0.4679f; 
+	float tighten = 0.3679f; 
 
 	float mXY = saturate(abs(input.Normal.z) - tighten);
 	float mXZ = saturate(abs(input.Normal.y) - tighten);
@@ -181,7 +181,7 @@ float4 TriplanarMapping(VT_Output input, float scale = 1)
 
 float3 TriplanarNormalMapping(VT_Output input, float scale = 1)
 {
-	float tighten = 0.4679f; 
+	float tighten = 0.3679f; 
 
 	float mXY = saturate(abs(input.Normal.z) - tighten);
 	float mXZ = saturate(abs(input.Normal.y) - tighten);
@@ -206,18 +206,18 @@ float3 TriplanarNormalMapping(VT_Output input, float scale = 1)
 
 float4 PixelTerrainForwardRender(VT_Output input) : COLOR0
 {
-	float4 color = TriplanarMapping(input, 4);
-	float4 blendedColor = TriplanarMapping(input, 0.3f);
+	float4 color = TriplanarMapping(input, 5);
+	float4 blendedColor = TriplanarMapping(input, 0.4f);
 
-	float depth = pow(abs(input.Depth.x / input.Depth.y), 50);
+	float depth = pow(abs(input.Depth.x / input.Depth.y), 35);
 
 	// Blend with scaled texture
 	color = lerp(color, blendedColor, depth);
 	color.a = 1;
 
 	// Sample normal map color
-	float3 normal = TriplanarNormalMapping(input, 4);
-	float3 blendedNormal = TriplanarNormalMapping(input, 0.3f);
+	float3 normal = TriplanarNormalMapping(input, 5);
+	float3 blendedNormal = TriplanarNormalMapping(input, 0.4f);
 	normal = lerp(normal, blendedNormal, depth);
 
 	// Output the normal, in [0,1] space
@@ -244,9 +244,8 @@ float4 PixelTerrainForwardRender(VT_Output input) : COLOR0
 	// Add fog based on exponential depth
 	float4 fogColor = float4(0.3, 0.5, 0.92, 1);
 
-	float4 outDepth = input.Depth.x / input.Depth.y;  
-	if (color.a > 0.499f)
-		finalColor.rgb = lerp(finalColor.rgb, fogColor, pow(abs(outDepth), 1000));
+	float4 outDepth = input.Depth.x / input.Depth.y; 
+	finalColor.rgb = lerp(finalColor.rgb, fogColor, pow(abs(outDepth), 1000));
 
 	// Gamma correct inverse
 	finalColor.rgb = pow(finalColor.rgb, 1 / 2.f);
@@ -256,8 +255,8 @@ float4 PixelTerrainForwardRender(VT_Output input) : COLOR0
 
 float4 PixelTerrainBasic(VT_Output input) : COLOR0
 {
-	float4 color = TriplanarMapping(input, 4);
-	float4 blendedColor = TriplanarMapping(input, 0.3f);
+	float4 color = TriplanarMapping(input, 5);
+	float4 blendedColor = TriplanarMapping(input, 0.4f);
 
 	float depth = pow(abs(input.Depth.x / input.Depth.y), 50);
 

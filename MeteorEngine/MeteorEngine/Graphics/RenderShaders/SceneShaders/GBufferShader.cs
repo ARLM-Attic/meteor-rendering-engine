@@ -76,6 +76,7 @@ namespace Meteor.Rendering
 
 			// Cull the objects
 			sceneCuller.CullLights(scene, camera);
+			sceneCuller.CullTerrainPatches(scene, camera);
 			sceneCuller.CullModelMeshes(scene, camera);
 
 			// Render the scene

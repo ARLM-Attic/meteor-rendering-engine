@@ -110,20 +110,15 @@
     <Compile Include="Graphics\Components\DrawableComponent.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Graphics\Components\Drawables\InnerClipmap.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="Graphics\Components\Drawables\MeshInstance.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Graphics\Components\Drawables\MeshInstanceGroup.cs" />
     <Compile Include="Graphics\Components\Drawables\Model.cs" />
-    <Compile Include="Graphics\Components\Drawables\OuterClipmap.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="Graphics\Components\Drawables\Terrain.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Graphics\Components\Drawables\TerrainMesh.cs" />
     <Compile Include="Graphics\Components\Drawables\TerrainPatch.cs" />
     <Compile Include="Graphics\Components\Drawables\Voxel.cs" />
     <Compile Include="Graphics\Components\ITransformable.cs" />

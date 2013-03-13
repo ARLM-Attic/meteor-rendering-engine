@@ -225,17 +225,17 @@ PixelShaderOutput1 PixelTerrainGBuffer(VT_Output input)
     PixelShaderOutput1 output = (PixelShaderOutput1)1;
 
 	// Determine diffuse texture color
-	float4 color = TriplanarMapping(input, 4);
-	float4 blendedColor = TriplanarMapping(input, 0.3f);
-	float blendDepth = pow(input.Depth.x / input.Depth.y, 100);
+	float4 color = TriplanarMapping(input, 5);
+	float4 blendedColor = TriplanarMapping(input, 0.4f);
+	float blendDepth = pow(input.Depth.x / input.Depth.y, 35);
 
 	// Blend with scaled texture
 	output.Color = lerp(color, blendedColor, blendDepth);
 	output.Color.a = 1;
 
 	// Sample normal map color
-	float3 normal = TriplanarNormalMapping(input, 4);
-	float3 blendedNormal = TriplanarNormalMapping(input, 0.3f);
+	float3 normal = TriplanarNormalMapping(input, 5);
+	float3 blendedNormal = TriplanarNormalMapping(input, 0.4f);
 	normal = lerp(normal, blendedNormal, blendDepth);
 
 	// Output the normal, in [0,1] space

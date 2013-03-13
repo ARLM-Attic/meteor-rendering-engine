@@ -8,7 +8,7 @@ using Microsoft.Xna.Framework.Graphics;
 namespace Meteor.Resources
 {
 	/// <summary>
-	/// Class that stores original terrain heightmap info and clipmaps
+	/// Class that stores original terrain heightmap info and terrain patches
 	/// to visually represent it.
 	/// </summary>
 	
@@ -66,12 +66,6 @@ namespace Meteor.Resources
 		private Texture2D baseNormalMapSource;
 		private Texture2D steepNormalMapSource;
 
-		/// The innermost (level 0) geo clipmap to render the terrain with
-		private InnerClipmap innerClipMap;
-
-		/// The outer geo clipmaps
-		private OuterClipmap[] outerClipMaps;
-			
 		/// Grid of terrain patches
 		private TerrainPatch[,] terrainPatches;
 		public TerrainPatch[,] TerrainPatches 
@@ -140,7 +134,6 @@ namespace Meteor.Resources
 
 			// Setup the clip maps, and determine how many should be needed to
 			// fit within the bounds of the terrain
-			int clipMapSize = 64;
 			gridSize.X = terrainWidth / TerrainPatch.patchSize;
 			gridSize.Y = terrainHeight / TerrainPatch.patchSize;
 
@@ -159,12 +152,6 @@ namespace Meteor.Resources
 					visiblePatches.Add(terrainPatches[j, i]);
 				}
 			}
-
-			innerClipMap = new InnerClipmap(clipMapSize, graphicsDevice);
-			outerClipMaps = new OuterClipmap[3];
-
-			for (int i = 0; i < outerClipMaps.Length; i++)
-				outerClipMaps[i] = new OuterClipmap(i + 1, clipMapSize, graphicsDevice);
 		}
 
 		/// <summary>
@@ -173,11 +160,6 @@ namespace Meteor.Resources
 		public void Update(Vector3 centerPosition)
 		{
 			Vector2 mapCenter = getMapPosition(centerPosition);
-			innerClipMap.UpdateMap(new Vector2(terrainWidth, terrainHeight), mapCenter, heightData);
-
-			// Update the movements of the outer clip maps next
-			for (int i = 0; i < outerClipMaps.Length; i++)
-				outerClipMaps[i].UpdateMap(new Vector2(terrainWidth, terrainHeight), mapCenter, heightData);
 		}
 
 		/// <summary>
@@ -186,10 +168,6 @@ namespace Meteor.Resources
 		public void ForceUpdate(Vector3 centerPosition)
 		{
 			Vector2 mapCenter = getMapPosition(centerPosition);
-			innerClipMap.ForceUpdate(new Vector2(terrainWidth, terrainHeight), mapCenter, heightData);
-
-			foreach(OuterClipmap outerClipMap in outerClipMaps)
-				outerClipMap.ForceUpdate(new Vector2(terrainWidth, terrainHeight), mapCenter, heightData);
 		}
 
 		/// <summary>
@@ -257,7 +235,7 @@ namespace Meteor.Resources
 		/// Draw in wireframe (activated by debug mode only)
 		/// </summary>
 		[Conditional("DEBUG")]
-		private void DrawWireframe(Camera camera, Effect effect)
+		private void DrawDebug(Camera camera, Effect effect)
 		{
 			// Draw in wireframe mode
 			graphicsDevice.RasterizerState = rWireframeState;
@@ -269,18 +247,21 @@ namespace Meteor.Resources
 				// Color code the clip maps
 				effect.Parameters["clipLevel"].SetValue(0);
 
-				graphicsDevice.Indices = visiblePatches[i].Indices;
-				graphicsDevice.SetVertexBuffer(visiblePatches[i].Vertices);
+				int currentMipLevel = visiblePatches[i].currentMipLevel;
+
+				graphicsDevice.Indices = visiblePatches[i].Meshes[currentMipLevel].Indices;
+				graphicsDevice.SetVertexBuffer(visiblePatches[i].Meshes[currentMipLevel].Vertices);
 
 				foreach (EffectPass pass in effect.CurrentTechnique.Passes)
 				{
 					pass.Apply();
 					graphicsDevice.DrawIndexedPrimitives(
 						PrimitiveType.TriangleList, 0, 0,
-						visiblePatches[i].UpdatedVertices, 0, visiblePatches[i].UpdatedIndices / 3);
+						visiblePatches[i].Meshes[currentMipLevel].UpdatedVertices, 0,
+						visiblePatches[i].Meshes[currentMipLevel].UpdatedIndices / 3);
 				}
-			}*/
-
+			}
+			*/
 			// Draw bounding boxes
 			for (int i = 0; i < totalVisiblePatches; i++)
 				ShapeRenderer.AddBoundingBox(visiblePatches[i].boundingBox, Color.Red);
@@ -294,14 +275,6 @@ namespace Meteor.Resources
 
 		public int Draw(Camera camera, Effect effect)
 		{
-			// Do not draw if this buffer isn't currently filled
-			if (innerClipMap.UpdatedIndices == 0)
-				return 0;
-
-			foreach (OuterClipmap outerMap in outerClipMaps)
-				if (outerMap.UpdatedIndices == 0)
-					return 0;
-
 			Matrix worldMatrix = Matrix.CreateScale(scale) * Matrix.CreateTranslation(heightmapPosition);
 
 			effect.Parameters["Texture"].SetValue(baseTextureSource);
@@ -337,11 +310,13 @@ namespace Meteor.Resources
 			// Set buffers for mipmap terrain patches and draw them
 			for (int i = 0; i < totalVisiblePatches; i++)
 			{
-				// Color code the clip maps
+				// Color code the patches
 				effect.Parameters["clipLevel"].SetValue(0);
 
-				graphicsDevice.Indices = visiblePatches[i].Indices;
-				graphicsDevice.SetVertexBuffer(visiblePatches[i].Vertices);
+				int currentMipLevel = visiblePatches[i].currentMipLevel;
+
+				graphicsDevice.Indices = visiblePatches[i].Meshes[currentMipLevel].Indices;
+				graphicsDevice.SetVertexBuffer(visiblePatches[i].Meshes[currentMipLevel].Vertices);
 
 				ShapeRenderer.AddBoundingBox(visiblePatches[i].boundingBox, Color.Red);
 
@@ -350,54 +325,18 @@ namespace Meteor.Resources
 					pass.Apply();
 					graphicsDevice.DrawIndexedPrimitives(
 						PrimitiveType.TriangleList, 0, 0,
-						visiblePatches[i].UpdatedVertices, 0, visiblePatches[i].UpdatedIndices / 3);
+						visiblePatches[i].Meshes[currentMipLevel].UpdatedVertices, 0,
+						visiblePatches[i].Meshes[currentMipLevel].UpdatedIndices / 3);
 				}
 
 				// Add to the total number of polygons drawn
-				polycount += (visiblePatches[i].UpdatedIndices / 3);
+				polycount += (visiblePatches[i].Meshes[currentMipLevel].UpdatedIndices / 3);
 			}
 
 			ShapeRenderer.Draw(camera.view, camera.projection);
 
-			/*
-			// Set buffers for outer clip maps and draw them
-			for (int i = outerClipMaps.Length - 1; i >= 0; i--)
-			{
-				// Color code the clip maps
-				effect.Parameters["clipLevel"].SetValue(clipLevel++);
-
-				graphicsDevice.Indices = outerClipMaps[i].Indices;
-				graphicsDevice.SetVertexBuffer(outerClipMaps[i].Vertices);
-
-				foreach (EffectPass pass in effect.CurrentTechnique.Passes)
-				{
-					pass.Apply();
-					graphicsDevice.DrawIndexedPrimitives(
-						PrimitiveType.TriangleList, 0, 0,
-						outerClipMaps[i].UpdatedVertices, 0, outerClipMaps[i].UpdatedIndices / 3);
-				}
-
-				// Add to the total number of polygons drawn
-				polycount += (outerClipMaps[i].UpdatedIndices / 3);
-			}
-
-			// Set vertex and index buffers for the inner clip map and draw it
-			graphicsDevice.Indices = innerClipMap.Indices;
-			graphicsDevice.SetVertexBuffer(innerClipMap.Vertices);
-
-			foreach (EffectPass pass in effect.CurrentTechnique.Passes)
-			{
-				pass.Apply();
-				graphicsDevice.DrawIndexedPrimitives(
-					PrimitiveType.TriangleList, 0, 0,
-					innerClipMap.UpdatedVertices, 0, innerClipMap.UpdatedIndices / 3);
-			}
-
-			// Add to the total number of polygons drawn;
-			polycount += (innerClipMap.UpdatedIndices / 3);
-			*/
 			// Draw in wireframe mode
-			DrawWireframe(camera, effect);
+			DrawDebug(camera, effect);
 			
 			// End rendering clipmaps
 			return polycount;

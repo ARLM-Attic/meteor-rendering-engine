@@ -73,10 +73,7 @@ namespace Meteor.Rendering
 
 		public override void Draw()
 		{
-			// Render the depth shadow maps first
-			//depth.Draw();
 			forward.Draw();
-
 			/*
 			// Post effects
 			copy.Draw();
