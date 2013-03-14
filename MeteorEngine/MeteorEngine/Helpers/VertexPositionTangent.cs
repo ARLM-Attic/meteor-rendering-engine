@@ -55,17 +55,13 @@ namespace Meteor.Resources
 	{
 		public Vector3 Position;
 		public Vector3 Normal;
-		public Vector2 TextureCoordinate;
 		public Vector3 Tangent;
-		public Vector3 Binormal;
 
 		public static VertexDeclaration vertexDeclaration = new VertexDeclaration
 		(
 			new VertexElement(0, VertexElementFormat.Vector3, VertexElementUsage.Position, 0),
 			new VertexElement(sizeof(float) * 3, VertexElementFormat.Vector3, VertexElementUsage.Normal, 0),
-			new VertexElement(sizeof(float) * 6, VertexElementFormat.Vector2, VertexElementUsage.TextureCoordinate, 0),
-			new VertexElement(sizeof(float) * 8, VertexElementFormat.Vector3, VertexElementUsage.Tangent, 0),
-			new VertexElement(sizeof(float) * 11, VertexElementFormat.Vector3, VertexElementUsage.Binormal, 0)
+			new VertexElement(sizeof(float) * 6, VertexElementFormat.Vector3, VertexElementUsage.Tangent, 0)
 		);
 
 		public VertexDeclaration VertexDeclaration
@@ -73,25 +69,20 @@ namespace Meteor.Resources
 			get { return vertexDeclaration; }
 		}
 
-		public VertexPositionTangentToWorld(Vector3 position, Vector3 normal, Vector2 textureCoordinate,
-			Vector3 tangent, Vector3 binormal)
+		public VertexPositionTangentToWorld(Vector3 position, Vector3 normal, Vector3 tangent)
 		{
 			Position = position;
 			Normal = normal;
-			TextureCoordinate = textureCoordinate;
 			Tangent = tangent;
-			Binormal = binormal;
 		}
 
-		public VertexPositionTangentToWorld(Vector3 position, Vector3 normal, Vector2 textureCoordinate)
+		public VertexPositionTangentToWorld(Vector3 position, Vector3 normal)
 		{
 			Position = position;
 			Normal = normal;
-			TextureCoordinate = textureCoordinate;
 			Tangent = Vector3.Zero;
-			Binormal = Vector3.Zero;
 		}
 
-		public static int SizeInBytes { get { return sizeof(float) * 14; } }
+		public static int SizeInBytes { get { return sizeof(float) * 9; } }
 	}
 }

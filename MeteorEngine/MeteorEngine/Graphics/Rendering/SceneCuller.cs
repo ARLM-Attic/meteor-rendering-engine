@@ -79,8 +79,19 @@ namespace Meteor.Rendering
 
 			foreach (TerrainPatch patch in scene.terrain.TerrainPatches)
 			{
+				patch.currentMipLevel = 0;
 				if (camera.frustum.Contains(patch.boundingSphere) != ContainmentType.Disjoint)
 					scene.terrain.visiblePatches[scene.terrain.totalVisiblePatches++] = patch;
+
+				float distance = Vector3.Distance(camera.position, patch.center);
+
+				// Update LOD for this patch
+				if (distance > 1200 * scene.terrain.scale)
+					patch.currentMipLevel = 3;
+				else if (distance > 450 * scene.terrain.scale)
+					patch.currentMipLevel = 2;
+				else if(distance > 180 * scene.terrain.scale)
+					patch.currentMipLevel = 1;
 			}
 		}
 

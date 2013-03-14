@@ -80,31 +80,6 @@ namespace Meteor
 			scenes = new List<Scene>();
 		}
 
-		/// <summary>
-		/// Constructor with a default scene
-		/// </summary>
-
-        public Core(IServiceProvider services, Scene scene)
-            : base(services)
-        {
-			content = new ContentManager(services, "MeteorEngine.Content");
-			resxContent = new ResourceContentManager(services, MeteorContentResource.ResourceManager);
-			renderStats = new RenderStats();
-
-			currentRenderProfile = null;
-			renderProfiles = new List<RenderProfile>();
-			debugString = new StringBuilder(64, 64);
-
-            // Setup rendering components
-			cameras = new List<Camera>();
-			scenes = new List<Scene>();
-        }
-
-		public override void Initialize()
-		{
-			base.Initialize();
-		}
-
 		public Scene AddScene(Scene scene)
 		{
 			scenes.Add(scene);

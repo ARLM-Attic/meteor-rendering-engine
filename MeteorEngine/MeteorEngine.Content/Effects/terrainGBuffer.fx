@@ -81,20 +81,17 @@ struct VT_Input
 {
     float4 Position : POSITION0;
     float3 Normal : NORMAL0;
-    float2 TexCoord : TEXCOORD0;
-    float3 binormal : BINORMAL0;
-    float3 tangent : TANGENT0;
+    float3 Tangent : TANGENT0;
 };
 
 struct VT_Output
 {
     float4 Position : POSITION0;
-    float2 TexCoord : TEXCOORD0;
-    float3 Depth : TEXCOORD1;
-	float3 Normal : TEXCOORD2;
-	float4 NewPosition : TEXCOORD3;
-	float3 N : TEXCOORD4;
-    float3x3 TangentToWorld	: TEXCOORD5;
+    float3 Depth : TEXCOORD0;
+	float3 Normal : TEXCOORD1;
+	float4 NewPosition : TEXCOORD2;
+	float3 N : TEXCOORD3;
+    float3x3 TangentToWorld	: TEXCOORD4;
 };
 
 //--- VertexShaders ---//
@@ -109,9 +106,7 @@ VT_Output VertexShaderTerrain(VT_Input input)
 	output.Position = mul(input.Position, wvp);
 	output.NewPosition = input.Position;
 
-	//pass the texture coordinates further
-    output.TexCoord = input.TexCoord;
-
+	// Pass the normal and depth
 	output.Normal = normalize(mul(input.Normal, World));
 	output.N = mul(input.Normal, World);
 
@@ -121,8 +116,11 @@ VT_Output VertexShaderTerrain(VT_Input input)
 
 	// calculate tangent space to world space matrix using the world space tangent,
     // binormal, and normal as basis vectors.
-	output.TangentToWorld[0] = mul(normalize(mul(input.tangent, World)), View);
-    output.TangentToWorld[1] = mul(normalize(mul(input.binormal, World)), View);
+
+	float3 bitangent = cross(input.Normal, input.Tangent);
+
+	output.TangentToWorld[0] = mul(normalize(mul(input.Tangent, World)), View);
+    output.TangentToWorld[1] = mul(normalize(mul(bitangent, World)), View);
     output.TangentToWorld[2] = mul(normalize(mul(input.Normal, World)), View);
 
     return output;
@@ -139,9 +137,7 @@ VT_Output VertexTerrainDebug(VT_Input input)
 	output.Position = mul(input.Position, wvp);
 	output.NewPosition = input.Position;
 
-	//pass the texture coordinates further
-    output.TexCoord = input.TexCoord;
-
+	// Pass the normal and depth
 	output.Normal = normalize(mul(input.Normal, World));
 	output.N = mul(input.Normal, World);
 
@@ -151,8 +147,11 @@ VT_Output VertexTerrainDebug(VT_Input input)
 
 	// calculate tangent space to world space matrix using the world space tangent,
     // binormal, and normal as basis vectors.
-	output.TangentToWorld[0] = normalize(mul(mul(input.tangent, World), View));
-    output.TangentToWorld[1] = normalize(mul(mul(input.binormal, World), View));
+
+	float3 bitangent = cross(input.Normal, input.Tangent);
+
+	output.TangentToWorld[0] = normalize(mul(mul(input.Tangent, World), View));
+    output.TangentToWorld[1] = normalize(mul(mul(bitangent, World), View));
     output.TangentToWorld[2] = normalize(mul(mul(input.Normal, World), View));
 
     return output;
@@ -261,7 +260,7 @@ PixelShaderOutput2 PixelTerrainSmallGBuffer(VT_Output input)
     PixelShaderOutput2 output = (PixelShaderOutput2)1;
 
     // Output the normal, in [0,1] space
-    float3 normalFromMap = tex2D(normalMapSampler, input.TexCoord);
+    float3 normalFromMap = float3(0.5, 0.5, 1);//tex2D(normalMapSampler, input.TexCoord);
 
     normalFromMap = mul(normalFromMap, input.Normal);	
     normalFromMap = normalize(mul(normalFromMap, View));
@@ -290,7 +289,7 @@ float4 PixelTerrainDiffuse(VT_Output input) : COLOR0
 	return color;//float4(0, ClipLevel % 2, 1, 1);
 }
 
-PixelShaderOutput1 PixelTerrainDebug(VT_Output input) : COLOR0
+PixelShaderOutput1 PixelTerrainDebug(VT_Output input)
 {
     PixelShaderOutput1 output = (PixelShaderOutput1)1;
 

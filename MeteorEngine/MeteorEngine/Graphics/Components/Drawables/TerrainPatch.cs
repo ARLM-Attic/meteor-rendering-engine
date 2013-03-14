@@ -12,7 +12,7 @@ namespace Meteor.Resources
 	public class TerrainPatch
 	{
 		/// Center of the patch
-		private Vector2 center;
+		public Vector3 center { private set; get; }
 
 		/// Absolute location in the heightmap
 		private Vector2 mapOffset;
@@ -25,10 +25,10 @@ namespace Meteor.Resources
 		private Vector3 bboxMax;
 
 		/// Height and width in segments
-		public readonly static int patchSize = 32;
+		public readonly static int patchSize = 64;
 
 		/// Number of terrain LODs
-		public readonly static int mipLevels = 1;
+		public readonly static int mipLevels = 4;
 
 		/// LOD meshes for this patch
 		private TerrainMesh[] meshes;
@@ -57,11 +57,11 @@ namespace Meteor.Resources
 		/// Update vertex data for this patch.
 		/// </summary>
 
-		public void UpdateMap(short[,] heightData, float scale, Vector3 position)
+		public void UpdateMap(short[,] heightData, float scale, Vector3 position, ushort[][] indices)
 		{
 			// Create the meshes and bounding volumes
 			for (int i = 0; i < mipLevels; i++)
-				meshes[i].UpdateMesh(heightData, mapOffset, i);
+				meshes[i].UpdateMesh(heightData, mapOffset, i, indices[i]);
 
 			SetBoundingVolumes(scale, position);
 		}
@@ -101,6 +101,9 @@ namespace Meteor.Resources
 
 			bboxMin = Vector3.Transform(bboxMin, bboxTransform);
 			bboxMax = Vector3.Transform(bboxMax, bboxTransform);
+
+			// Calculate the center point
+			center = (bboxMin + bboxMax) / 2;
 
 			boundingBox = new BoundingBox(bboxMin, bboxMax);
 			boundingSphere = BoundingSphere.CreateFromBoundingBox(boundingBox);

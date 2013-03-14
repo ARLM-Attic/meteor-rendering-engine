@@ -79,6 +79,19 @@ namespace Meteor.Resources
 
 		/// Location to offset the position of the terrain
 		private Vector3 heightmapPosition;
+
+		/// Number of terrain LODs
+		public readonly static int mipLevels = 4;
+
+		/// Index buffer for mipmaps
+		private IndexBuffer[] patchIndexBuffers;
+		public IndexBuffer[] Indices
+		{
+			get { return patchIndexBuffers; }
+		}
+
+		/// Array for mesh indices
+		private ushort[][] indices;
 		
 		/// Rasterizer state for debugging
 		private RasterizerState rWireframeState;
@@ -137,6 +150,13 @@ namespace Meteor.Resources
 			gridSize.X = terrainWidth / TerrainPatch.patchSize;
 			gridSize.Y = terrainHeight / TerrainPatch.patchSize;
 
+			// Create index buffers for each patch LOD
+			indices = new ushort[mipLevels][];
+			patchIndexBuffers = new IndexBuffer[mipLevels];
+
+			for (int i = 0; i < mipLevels; i++)
+				SetUpIndices(i);
+
 			// Create terrain patches
 			terrainPatches = new TerrainPatch[(int)gridSize.X, (int)gridSize.Y];
 			visiblePatches = new List<TerrainPatch>((int)gridSize.X * (int)gridSize.Y);
@@ -148,7 +168,7 @@ namespace Meteor.Resources
 					Vector2 offset = new Vector2(j * TerrainPatch.patchSize, i * TerrainPatch.patchSize);
 
 					terrainPatches[j, i] = new TerrainPatch(graphicsDevice, offset);
-					terrainPatches[j, i].UpdateMap(heightData, scale, heightmapPosition);
+					terrainPatches[j, i].UpdateMap(heightData, scale, heightmapPosition, indices);
 					visiblePatches.Add(terrainPatches[j, i]);
 				}
 			}
@@ -229,7 +249,47 @@ namespace Meteor.Resources
 			return height + heightmapPosition.Y;
 		}
 
-		public bool textureToggle = false;
+		/// <summary>
+		/// Get the vertex indices for the terrain mesh
+		/// </summary>
+
+		private void SetUpIndices(int mipLevel)
+		{
+			short meshSize = (short)TerrainPatch.patchSize;
+
+			for (int i = mipLevel; i > 0; i--)
+				meshSize /= 2;
+
+			meshSize += 1;
+			ushort updatedIndices = 0;
+
+			// Create and assign indices for this LOD
+			indices[mipLevel] = new ushort[meshSize * meshSize * 6];
+			patchIndexBuffers[mipLevel] = new IndexBuffer(graphicsDevice, typeof(short),
+				indices[mipLevel].Length, BufferUsage.WriteOnly);
+
+			for (short y = 0; y < meshSize - 1; y++)
+			{
+				for (short x = 0; x < meshSize - 1; x++)
+				{
+					int lowerLeft = (y * meshSize) + x;
+					int lowerRight = (y * meshSize) + (x + 1);
+					int topLeft = ((y + 1) * meshSize) + x;
+					int topRight = ((y + 1) * meshSize) + (x + 1);
+
+					indices[mipLevel][updatedIndices++] = (ushort)topLeft;
+					indices[mipLevel][updatedIndices++] = (ushort)lowerRight;
+					indices[mipLevel][updatedIndices++] = (ushort)lowerLeft;
+
+					indices[mipLevel][updatedIndices++] = (ushort)topLeft;
+					indices[mipLevel][updatedIndices++] = (ushort)topRight;
+					indices[mipLevel][updatedIndices++] = (ushort)lowerRight;
+				}
+			}
+
+			// Done creating indices, add them to the buffer
+			patchIndexBuffers[mipLevel].SetData(indices[mipLevel], 0, updatedIndices);
+		}
 
 		/// <summary>
 		/// Draw in wireframe (activated by debug mode only)
@@ -240,7 +300,7 @@ namespace Meteor.Resources
 			// Draw in wireframe mode
 			graphicsDevice.RasterizerState = rWireframeState;
 			effect.CurrentTechnique = effect.Techniques["DebugTerrain"];
-			/*
+			
 			// Set buffers for mipmap terrain patches and draw them
 			for (int i = totalVisiblePatches - 1; i >= 0; i--)
 			{
@@ -249,7 +309,7 @@ namespace Meteor.Resources
 
 				int currentMipLevel = visiblePatches[i].currentMipLevel;
 
-				graphicsDevice.Indices = visiblePatches[i].Meshes[currentMipLevel].Indices;
+				graphicsDevice.Indices = patchIndexBuffers[currentMipLevel]; //visiblePatches[i].Meshes[currentMipLevel].Indices;
 				graphicsDevice.SetVertexBuffer(visiblePatches[i].Meshes[currentMipLevel].Vertices);
 
 				foreach (EffectPass pass in effect.CurrentTechnique.Passes)
@@ -258,15 +318,15 @@ namespace Meteor.Resources
 					graphicsDevice.DrawIndexedPrimitives(
 						PrimitiveType.TriangleList, 0, 0,
 						visiblePatches[i].Meshes[currentMipLevel].UpdatedVertices, 0,
-						visiblePatches[i].Meshes[currentMipLevel].UpdatedIndices / 3);
+						patchIndexBuffers[currentMipLevel].IndexCount / 3);
 				}
 			}
-			*/
+			
 			// Draw bounding boxes
-			for (int i = 0; i < totalVisiblePatches; i++)
-				ShapeRenderer.AddBoundingBox(visiblePatches[i].boundingBox, Color.Red);
+			//for (int i = 0; i < totalVisiblePatches; i++)
+			//	ShapeRenderer.AddBoundingBox(visiblePatches[i].boundingBox, Color.Red);
 
-			ShapeRenderer.Draw(camera.view, camera.projection);
+			//ShapeRenderer.Draw(camera.view, camera.projection);
 		}
 		
 		/// <summary>
@@ -315,10 +375,8 @@ namespace Meteor.Resources
 
 				int currentMipLevel = visiblePatches[i].currentMipLevel;
 
-				graphicsDevice.Indices = visiblePatches[i].Meshes[currentMipLevel].Indices;
+				graphicsDevice.Indices = patchIndexBuffers[currentMipLevel];//visiblePatches[i].Meshes[currentMipLevel].Indices;
 				graphicsDevice.SetVertexBuffer(visiblePatches[i].Meshes[currentMipLevel].Vertices);
-
-				ShapeRenderer.AddBoundingBox(visiblePatches[i].boundingBox, Color.Red);
 
 				foreach (EffectPass pass in effect.CurrentTechnique.Passes)
 				{
@@ -326,14 +384,12 @@ namespace Meteor.Resources
 					graphicsDevice.DrawIndexedPrimitives(
 						PrimitiveType.TriangleList, 0, 0,
 						visiblePatches[i].Meshes[currentMipLevel].UpdatedVertices, 0,
-						visiblePatches[i].Meshes[currentMipLevel].UpdatedIndices / 3);
+						patchIndexBuffers[currentMipLevel].IndexCount / 3);
 				}
 
 				// Add to the total number of polygons drawn
-				polycount += (visiblePatches[i].Meshes[currentMipLevel].UpdatedIndices / 3);
+				polycount += (patchIndexBuffers[currentMipLevel].IndexCount / 3);
 			}
-
-			ShapeRenderer.Draw(camera.view, camera.projection);
 
 			// Draw in wireframe mode
 			DrawDebug(camera, effect);
