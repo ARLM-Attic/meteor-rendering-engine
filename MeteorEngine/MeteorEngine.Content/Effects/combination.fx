@@ -105,7 +105,7 @@ float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 
 	float depth = tex2D(depthSampler, input.TexCoord);
 	if (diffuse.a > 0.499f)
-		finalColor.rgb = lerp(finalColor.rgb, fogColor, pow(depth, 2000));
+		finalColor.rgb = lerp(finalColor.rgb, fogColor, pow(depth, 1250));
 
 	// Gamma correct inverse
 	finalColor.rgb = pow(finalColor.rgb, 1 / 2.f);

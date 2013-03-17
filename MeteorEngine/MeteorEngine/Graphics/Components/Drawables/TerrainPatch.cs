@@ -14,8 +14,9 @@ namespace Meteor.Resources
 		/// Center of the patch
 		public Vector3 center { private set; get; }
 
-		/// Absolute location in the heightmap
-		private Vector2 mapOffset;
+		/// Absolute and relative locations in the heightmap
+		public Vector2 mapOffset { private set; get; }
+		public Vector3 worldOffset { private set; get; }
 
 		/// Bounding box extents
 		public BoundingBox boundingBox { private set; get; }
@@ -29,6 +30,10 @@ namespace Meteor.Resources
 
 		/// Number of terrain LODs
 		public readonly static int mipLevels = 4;
+
+		/// Direct neighbors for this patch
+		/// 0 - north, 1 - south, 2 - west, 3 - east
+		public TerrainPatch[] neighbors;
 
 		/// LOD meshes for this patch
 		private TerrainMesh[] meshes;
@@ -46,18 +51,21 @@ namespace Meteor.Resources
 
 		public TerrainPatch(GraphicsDevice graphicsDevice, Vector2 offset)
 		{
+			neighbors = new TerrainPatch[4];
+
 			meshes = new TerrainMesh[mipLevels];
 			mapOffset = offset;
+			worldOffset = new Vector3(mapOffset.X * patchSize, 0f, -mapOffset.Y * patchSize);
 
 			for (int i = 0; i < mipLevels; i++)
-				meshes[i] = new TerrainMesh(graphicsDevice, i);
+				meshes[i] = new TerrainMesh(graphicsDevice, this, i);
 		}
 
 		/// <summary>
 		/// Update vertex data for this patch.
 		/// </summary>
 
-		public void UpdateMap(short[,] heightData, float scale, Vector3 position, ushort[][] indices)
+		public void UpdateMap(ushort[,] heightData, float scale, Vector3 position, ushort[][] indices)
 		{
 			// Create the meshes and bounding volumes
 			for (int i = 0; i < mipLevels; i++)
@@ -72,9 +80,9 @@ namespace Meteor.Resources
 
 		private void SetBoundingVolumes(float terrainScale, Vector3 terrainPosition)
 		{
-			int left = (int)mapOffset.X;
+			int left = (int)mapOffset.X * TerrainPatch.patchSize;
 			int right = left + TerrainPatch.patchSize;
-			int top = (int)mapOffset.Y;
+			int top = (int)mapOffset.Y * TerrainPatch.patchSize;
 			int bottom = top + TerrainPatch.patchSize;
 
 			float minY = 1000000;

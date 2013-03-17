@@ -50,18 +50,17 @@ namespace Meteor.Resources
 	/// <summary>
 	/// Vertex structure for normal mapped meshes
 	/// </summary>
+	/// 
 
-	public struct VertexPositionTangentToWorld : IVertexType
+	public struct VertexPositionNormal : IVertexType
 	{
 		public Vector3 Position;
 		public Vector3 Normal;
-		public Vector3 Tangent;
 
 		public static VertexDeclaration vertexDeclaration = new VertexDeclaration
 		(
 			new VertexElement(0, VertexElementFormat.Vector3, VertexElementUsage.Position, 0),
-			new VertexElement(sizeof(float) * 3, VertexElementFormat.Vector3, VertexElementUsage.Normal, 0),
-			new VertexElement(sizeof(float) * 6, VertexElementFormat.Vector3, VertexElementUsage.Tangent, 0)
+			new VertexElement(sizeof(float) * 3, VertexElementFormat.Vector3, VertexElementUsage.Normal, 0)
 		);
 
 		public VertexDeclaration VertexDeclaration
@@ -69,20 +68,12 @@ namespace Meteor.Resources
 			get { return vertexDeclaration; }
 		}
 
-		public VertexPositionTangentToWorld(Vector3 position, Vector3 normal, Vector3 tangent)
+		public VertexPositionNormal(Vector3 position, Vector3 normal)
 		{
 			Position = position;
 			Normal = normal;
-			Tangent = tangent;
 		}
 
-		public VertexPositionTangentToWorld(Vector3 position, Vector3 normal)
-		{
-			Position = position;
-			Normal = normal;
-			Tangent = Vector3.Zero;
-		}
-
-		public static int SizeInBytes { get { return sizeof(float) * 9; } }
+		public static int SizeInBytes { get { return sizeof(float) * 6; } }
 	}
 }

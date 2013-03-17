@@ -1,79 +1,8 @@
 //-----------------------------------------
-//	TerrainGBuffer
+// TerrainGBuffer
 //-----------------------------------------
 
-float4x4 World;
-float4x4 View;
-float4x4 Projection;
-float4x4 inverseView;
-
-/// Visual texture features
-float textureScale;
-float mapScale;
-float specPower;
-float specIntensity;
-float bumpIntensity;
-
-/// Debug features
-float clipLevel;
-
-/// Base textures
-
-texture Texture, steepTexture;
-sampler baseSampler : register(s0) = sampler_state
-{
-    Texture = <Texture>;
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Wrap;
-	AddressV = Wrap;
-};
-
-sampler baseSteepSampler : register(s1) = sampler_state
-{
-    Texture = <steepTexture>;
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Wrap;
-	AddressV = Wrap;
-};
-
-texture heightMapTexture;
-sampler heightSampler : register(s2) = sampler_state
-{
-    Texture = <heightMapTexture>;
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Wrap;
-	AddressV = Wrap;
-};
-
-/// Normal map textures
-
-texture NormalMap, steepNormalMap;
-sampler normalMapSampler : register(s3) = sampler_state
-{
-    Texture = <NormalMap>;
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Wrap;
-	AddressV = Wrap;
-};
-
-sampler steepNormalMapSampler : register(s4) = sampler_state
-{
-    Texture = <steepNormalMap>;
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Wrap;
-	AddressV = Wrap;
-};
-
-/// Blend textures
-
-texture blendTexture1;
-sampler blendSampler1 = sampler_state
-{
-    Texture = <blendTexture1>;
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Wrap;
-	AddressV = Wrap;
-};
+#include "terrainConstants.fxh"
 
 /// Vertex structs
 
@@ -81,7 +10,6 @@ struct VT_Input
 {
     float4 Position : POSITION0;
     float3 Normal : NORMAL0;
-    float3 Tangent : TANGENT0;
 };
 
 struct VT_Output
@@ -90,13 +18,12 @@ struct VT_Output
     float3 Depth : TEXCOORD0;
 	float3 Normal : TEXCOORD1;
 	float4 NewPosition : TEXCOORD2;
-	float3 N : TEXCOORD3;
-    float3x3 TangentToWorld	: TEXCOORD4;
+    float3x3 TangentToWorld	: TEXCOORD3;
 };
 
 //--- VertexShaders ---//
 
-VT_Output VertexShaderTerrain(VT_Input input)
+VT_Output VertexShaderTerrain(VT_Input input, uniform float yOffset = 0)
 {
     VT_Output output;
 
@@ -104,11 +31,10 @@ VT_Output VertexShaderTerrain(VT_Input input)
 
 	// First transform the position onto the screen
 	output.Position = mul(input.Position, wvp);
-	output.NewPosition = input.Position;
+	output.NewPosition = mul(input.Position, World) / 10.f;// mapScale;
 
 	// Pass the normal and depth
 	output.Normal = normalize(mul(input.Normal, World));
-	output.N = mul(input.Normal, World);
 
     output.Depth.x = output.Position.z;
     output.Depth.y = output.Position.w;
@@ -117,42 +43,16 @@ VT_Output VertexShaderTerrain(VT_Input input)
 	// calculate tangent space to world space matrix using the world space tangent,
     // binormal, and normal as basis vectors.
 
-	float3 bitangent = cross(input.Normal, input.Tangent);
+	float3 c1 = cross(input.Normal, float3(0, 0, 1));
+	float3 c2 = cross(input.Normal, float3(0, 1, 0));
 
-	output.TangentToWorld[0] = mul(normalize(mul(input.Tangent, World)), View);
+	// Calculate tangent
+	float3 tangent = (distance(c1, 0) > distance(c2, 0)) ? c1 : c2;
+	float3 bitangent = cross(input.Normal, tangent);
+
+	output.TangentToWorld[0] = mul(normalize(mul(tangent, World)), View);
     output.TangentToWorld[1] = mul(normalize(mul(bitangent, World)), View);
     output.TangentToWorld[2] = mul(normalize(mul(input.Normal, World)), View);
-
-    return output;
-}
-
-VT_Output VertexTerrainDebug(VT_Input input)
-{
-    VT_Output output;
-
-	input.Position.y += 0.005f;
-	float4x4 wvp = mul(mul(World, View), Projection);
-
-	// First transform the position onto the screen
-	output.Position = mul(input.Position, wvp);
-	output.NewPosition = input.Position;
-
-	// Pass the normal and depth
-	output.Normal = normalize(mul(input.Normal, World));
-	output.N = mul(input.Normal, World);
-
-    output.Depth.x = output.Position.z;
-    output.Depth.y = output.Position.w;
-	output.Depth.z = output.Position.z;
-
-	// calculate tangent space to world space matrix using the world space tangent,
-    // binormal, and normal as basis vectors.
-
-	float3 bitangent = cross(input.Normal, input.Tangent);
-
-	output.TangentToWorld[0] = normalize(mul(mul(input.Tangent, World), View));
-    output.TangentToWorld[1] = normalize(mul(mul(bitangent, World), View));
-    output.TangentToWorld[2] = normalize(mul(mul(input.Normal, World), View));
 
     return output;
 }
@@ -175,7 +75,7 @@ struct PixelShaderOutput2
 
 float4 TriplanarMapping(VT_Output input, float scale = 1)
 {
-	float tighten = 0.3679f; 
+	float tighten = 0.4679f; 
 
 	float mXY = saturate(abs(input.Normal.z) - tighten);
 	float mXZ = saturate(abs(input.Normal.y) - tighten);
@@ -186,9 +86,9 @@ float4 TriplanarMapping(VT_Output input, float scale = 1)
 	mXZ /= total;
 	mYZ /= total;
 	
-	float4 cXY = tex2D(baseSteepSampler, input.NewPosition.xy / textureScale * scale / 2);
+	float4 cXY = tex2D(baseSteepSampler, input.NewPosition.xy / textureScale * scale);
 	float4 cXZ = tex2D(baseSampler, input.NewPosition.xz / textureScale * scale);
-	float4 cYZ = tex2D(baseSteepSampler, input.NewPosition.zy / textureScale * scale / 2);
+	float4 cYZ = tex2D(baseSteepSampler, input.NewPosition.zy / textureScale * scale);
 
 	float4 diffuse = cXY * mXY + cXZ * mXZ + cYZ * mYZ;
 	return diffuse;
@@ -196,7 +96,7 @@ float4 TriplanarMapping(VT_Output input, float scale = 1)
 
 float3 TriplanarNormalMapping(VT_Output input, float scale = 1)
 {
-	float tighten = 0.3679f; 
+	float tighten = 0.4679f; 
 
 	float mXY = saturate(abs(input.Normal.z) - tighten);
 	float mXZ = saturate(abs(input.Normal.y) - tighten);
@@ -207,9 +107,9 @@ float3 TriplanarNormalMapping(VT_Output input, float scale = 1)
 	mXZ /= total;
 	mYZ /= total;
 	
-	float3 cXY = tex2D(steepNormalMapSampler, input.NewPosition.xy / textureScale * scale / 2);
+	float3 cXY = tex2D(steepNormalMapSampler, input.NewPosition.xy / textureScale * scale);
 	float3 cXZ = float3(0, 0, 1);
-	float3 cYZ = tex2D(steepNormalMapSampler, input.NewPosition.zy / textureScale * scale / 2);
+	float3 cYZ = tex2D(steepNormalMapSampler, input.NewPosition.zy / textureScale * scale);
 
 	cXY = 2.0f * cXY - 1.0f;
 	cYZ = 2.0f * cYZ - 1.0f;
@@ -224,17 +124,23 @@ PixelShaderOutput1 PixelTerrainGBuffer(VT_Output input)
     PixelShaderOutput1 output = (PixelShaderOutput1)1;
 
 	// Determine diffuse texture color
-	float4 color = TriplanarMapping(input, 5);
-	float4 blendedColor = TriplanarMapping(input, 0.4f);
-	float blendDepth = pow(input.Depth.x / input.Depth.y, 35);
+	float4 color = TriplanarMapping(input, 2); // close
+	float4 blendedColor = TriplanarMapping(input, 0.3f); // far
+	float4 blendedColor2 = TriplanarMapping(input, 0.22f);
+
+	float blendDepth = pow(input.Depth.x / input.Depth.y, 2 * textureScale);
 
 	// Blend with scaled texture
+	blendedColor = lerp(blendedColor, blendedColor2, 0.5f);
 	output.Color = lerp(color, blendedColor, blendDepth);
 	output.Color.a = 1;
 
 	// Sample normal map color
-	float3 normal = TriplanarNormalMapping(input, 5);
-	float3 blendedNormal = TriplanarNormalMapping(input, 0.4f);
+	float3 normal = TriplanarNormalMapping(input, 2);
+	float3 blendedNormal = TriplanarNormalMapping(input, 0.3f);
+	float3 blendedNormal2 = TriplanarNormalMapping(input, 0.22f);
+
+	blendedNormal = lerp(blendedNormal, blendedNormal2, 0.5f);
 	normal = lerp(normal, blendedNormal, blendDepth);
 
 	// Output the normal, in [0,1] space
@@ -358,7 +264,7 @@ technique DebugTerrain
 		CullMode = CCW;
 		ZENABLE = True;
 
-        VertexShader = compile vs_2_0 VertexTerrainDebug();
+        VertexShader = compile vs_2_0 VertexShaderTerrain(0.05f);
         PixelShader = compile ps_2_0 PixelTerrainDebug();
     }
 }

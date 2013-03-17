@@ -200,7 +200,7 @@
     <Compile Include="Graphics\SampleRenderProfiles\LightPrePassRenderer.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Graphics\TextureCollection.cs" />
+    <Compile Include="Graphics\Components\TextureCollection.cs" />
     <Compile Include="Helpers\CopyShader.cs">
       <SubType>Code</SubType>
     </Compile>

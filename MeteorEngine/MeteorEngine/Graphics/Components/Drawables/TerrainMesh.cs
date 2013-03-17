@@ -23,22 +23,31 @@ namespace Meteor.Resources
 		/// the vertices that have changed since the last frame, for quicker
 		/// vertex buffer insertion.
 		/// </summary>
-		public VertexPositionTangentToWorld[] vertices { private set; get; }
+		public VertexPositionNormal[] vertices { private set; get; }
 		private ushort updatedVertices;
 		public ushort UpdatedVertices
 		{
 			get { return updatedVertices; }
 		}
 
+		// Terrain patch that this mesh belongs to.
+		TerrainPatch terrainPatch;
+
 		// Extents of this mesh
 		short meshSize;
+
+		// Level of detail for this mesh
+		int mipLevel;
 
 		/// <summary>
 		/// Constructor to set up mesh
 		/// </summary>
 
-		public TerrainMesh(GraphicsDevice graphicsDevice, int mipLevel)
+		public TerrainMesh(GraphicsDevice graphicsDevice, TerrainPatch patch, int level)
 		{
+			terrainPatch = patch;
+			mipLevel = level;
+
 			int scale = 1;
 			for (int i = mipLevel; i > 0; i--)
 				scale *= 2;
@@ -46,16 +55,16 @@ namespace Meteor.Resources
 			meshSize = (short)(TerrainPatch.patchSize / scale + 1);
 
 			// Create vertex buffer for this mipmap
-			vertices = new VertexPositionTangentToWorld[meshSize * meshSize];
+			vertices = new VertexPositionNormal[meshSize * meshSize];
 			patchVertexBuffer = new DynamicVertexBuffer(graphicsDevice,
-				VertexPositionTangentToWorld.vertexDeclaration, vertices.Length, BufferUsage.WriteOnly);
+				VertexPositionNormal.vertexDeclaration, vertices.Length, BufferUsage.WriteOnly);
 		}
 
 		/// <summary>
 		/// Update vertex data for this mesh.
 		/// </summary>
 
-		public void UpdateMesh(short[,] heightData, Vector2 offset, int mipLevel, ushort[] indices)
+		public void UpdateMesh(ushort[,] heightData, Vector2 offset, int mipLevel, ushort[] indices)
 		{
 			// Create vertex data
 			SetUpVertices(heightData, offset, mipLevel);
@@ -70,26 +79,26 @@ namespace Meteor.Resources
 		/// Calculate the vertex positions that need to be updated.
 		/// </summary>
 
-		private void SetUpVertices(short[,] heightData, Vector2 mapOffset, int mipLevel)
+		private void SetUpVertices(ushort[,] heightData, Vector2 mapOffset, int mipLevel)
 		{
-			int left = (int)mapOffset.X;
+			int left = (int)mapOffset.X * TerrainPatch.patchSize;
 			int right = left + TerrainPatch.patchSize + 1;
-			int top = (int)mapOffset.Y;
+			int top = (int)mapOffset.Y * TerrainPatch.patchSize;
 			int bottom = top + TerrainPatch.patchSize + 1;
 
 			int index = 0;
 
 			// Determine what vertices to skip (if any) for creating this mesh
 			int next = 1;
-			for (int i = mipLevel; i > 0; i--)
+			for (int m = mipLevel; m > 0; m--)
 				next *= 2;
 
-			for (int y = top; y < bottom; y += next)
+			for (int y = top, i = 0; y < bottom; y += next, i += next)
 			{
-				for (int x = left; x < right; x += next)
+				for (int x = left, j = 0; x < right; x += next, j += next)
 				{
-					float height = heightData[x, y] / 4.0f;
-					vertices[index].Position = new Vector3(x, height, -y);
+					float height = heightData[x, y] / 256f;
+					vertices[index].Position = new Vector3(j, height, -i);
 
 					updatedVertices++;
 					index++;
@@ -126,15 +135,24 @@ namespace Meteor.Resources
 			for (int i = 0; i < vertices.Length; i++)
 			{
 				vertices[i].Normal.Normalize();
+				
+				// Fix side edges
+				if (i % meshSize == meshSize - 1 && terrainPatch.mapOffset.X < Terrain.gridSize.X - 1)
+				{
+					int adjacent = i - (meshSize - 1);
+					TerrainMesh adjacentMesh = terrainPatch.neighbors[3].Meshes[mipLevel];
+					vertices[i].Normal = adjacentMesh.vertices[adjacent].Normal;
+				}
 
-				Vector3 c1 = Vector3.Cross(vertices[i].Normal, Vector3.UnitZ);
-				Vector3 c2 = Vector3.Cross(vertices[i].Normal, Vector3.UnitY);
-				Vector3 tangent = Vector3.Zero;
-
-				// Calculate tangent
-				tangent = (Vector3.Distance(c1, Vector3.Zero) > Vector3.Distance(c2, Vector3.Zero)) ? c1 : c2;
-				vertices[i].Tangent = tangent;
+				// Fix top and bottom edges
+				if (i / meshSize == meshSize - 1 && terrainPatch.mapOffset.Y < Terrain.gridSize.Y - 1)
+				{
+					int adjacent = i - (meshSize * (meshSize - 1));
+					TerrainMesh adjacentMesh = terrainPatch.neighbors[1].Meshes[mipLevel];
+					vertices[i].Normal = adjacentMesh.vertices[adjacent].Normal;
+				}
 			}
+			// Finish reading normals
 		}
 	}
 }

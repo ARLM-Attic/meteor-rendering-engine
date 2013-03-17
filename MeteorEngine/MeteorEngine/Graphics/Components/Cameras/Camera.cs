@@ -51,7 +51,7 @@ namespace Meteor.Resources
 		}
 
         public float nearPlaneDistance = 2.5f;
-        public float farPlaneDistance = 8000f;
+        public float farPlaneDistance = 25000f;
 		public float nearSplitPlaneDistance;
 		public float farSplitPlaneDistance;
 

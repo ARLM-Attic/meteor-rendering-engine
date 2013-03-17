@@ -12,6 +12,7 @@ float mapScale;
 float clipLevel;
 float specIntensity;
 float specPower;
+float bumpIntensity;
 
 texture Texture;
 

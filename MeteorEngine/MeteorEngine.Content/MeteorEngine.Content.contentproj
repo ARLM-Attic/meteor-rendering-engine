@@ -204,6 +204,11 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Effects\terrainConstants.fxh">
+      <Name>terrainConstants</Name>
+      <Importer>EffectImporter</Importer>
+      <Processor>EffectProcessor</Processor>
+    </None>
     <None Include="Effects\vertexInstanced.fxh">
       <Name>vertexInstanced</Name>
       <Importer>EffectImporter</Importer>

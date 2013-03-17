@@ -91,6 +91,7 @@ namespace Meteor
 		public void RemoveScenes()
 		{
 			scenes.Clear();
+			currentScene = null;
 		}
 
 		public Camera AddCamera(Camera camera)
@@ -251,7 +252,7 @@ namespace Meteor
             if (rtIndex == 1)
                 DrawDebugData();
 
-			if (debugText == true)
+			if (debugText == true && currentScene != null)
 				DrawDebugText(renderStats.frameRate, (int)renderStats.totalFrames);
 
 			base.Draw(gameTime);

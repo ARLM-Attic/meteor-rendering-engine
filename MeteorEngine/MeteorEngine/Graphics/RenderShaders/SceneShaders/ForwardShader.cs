@@ -70,6 +70,7 @@ namespace Meteor.Rendering
 			sceneCuller.CullModelMeshes(scene, camera);
 
 			forwardRenderEffect.Parameters["camPosition"].SetValue(camera.position);
+			terrainForwardRenderEffect.Parameters["CameraPosition"].SetValue(camera.position);
 
 			foreach (Effect renderEffect in renderEffects)
 			{

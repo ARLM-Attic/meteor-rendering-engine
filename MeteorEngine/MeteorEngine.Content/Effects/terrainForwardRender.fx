@@ -2,85 +2,15 @@
 // TerrainForwardRender
 //-----------------------------------------
 
-float4x4 World;
-float4x4 View;
-float4x4 Projection;
-float4x4 inverseView;
+#include "terrainConstants.fxh"
 
 // Light and camera properties
+
 float3 CameraPosition;
 float3 lightDirection;
 float3 lightColor;
 float3 ambientTerm;
 float lightIntensity;
-
-/// Visual texture features
-float textureScale;
-float mapScale;
-float specPower;
-float specIntensity;
-float bumpIntensity;
-
-/// Debug features
-float clipLevel;
-
-/// Base textures
-
-texture Texture, steepTexture;
-sampler baseSampler : register(s0) = sampler_state
-{
-    Texture = <Texture>;
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Wrap;
-	AddressV = Wrap;
-};
-
-sampler baseSteepSampler : register(s1) = sampler_state
-{
-    Texture = <steepTexture>;
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Wrap;
-	AddressV = Wrap;
-};
-
-texture heightMapTexture;
-sampler heightSampler : register(s2) = sampler_state
-{
-    Texture = <heightMapTexture>;
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Wrap;
-	AddressV = Wrap;
-};
-
-/// Normal map textures
-
-texture NormalMap, steepNormalMap;
-sampler normalMapSampler : register(s3) = sampler_state
-{
-    Texture = <NormalMap>;
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Wrap;
-	AddressV = Wrap;
-};
-
-sampler steepNormalMapSampler : register(s4) = sampler_state
-{
-    Texture = <steepNormalMap>;
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Wrap;
-	AddressV = Wrap;
-};
-
-/// Blend textures
-
-texture blendTexture1;
-sampler blendSampler1 = sampler_state
-{
-    Texture = <blendTexture1>;
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Wrap;
-	AddressV = Wrap;
-};
 
 /// Vertex structs
 
@@ -88,29 +18,30 @@ struct VT_Input
 {
     float4 Position : POSITION0;
     float3 Normal : NORMAL0;
-    float3 Tangent : TANGENT0;
 };
 
 struct VT_Output
 {
     float4 Position : POSITION0;
+	float4 Color : COLOR;
     float3 Depth : TEXCOORD1;
 	float3 Normal : TEXCOORD2;
 	float4 NewPosition : TEXCOORD3;
-    float3x3 TangentToWorld	: TEXCOORD5;
+    float3x3 TangentToWorld	: TEXCOORD4;
 };
 
 //--- VertexShaders ---//
 
-VT_Output VertexShaderTerrain(VT_Input input)
+VT_Output VertexShaderTerrain(VT_Input input, uniform float yOffset = 0)
 {
     VT_Output output;
 
+	input.Position.y += yOffset;
 	float4x4 wvp = mul(mul(World, View), Projection);
 
 	// First transform the position onto the screen
 	output.Position = mul(input.Position, wvp);
-	output.NewPosition = input.Position;
+	output.NewPosition = mul(input.Position, World) / 10.f;
 
 	// Pass the normal and depth
 	output.Normal = normalize(mul(input.Normal, World));
@@ -119,77 +50,55 @@ VT_Output VertexShaderTerrain(VT_Input input)
 	// calculate tangent space to world space matrix using the world space tangent,
     // binormal, and normal as basis vectors.
 		
-	float3 bitangent = cross(input.Normal, input.Tangent);
+	float3 c1 = cross(input.Normal, float3(0, 0, 1));
+	float3 c2 = cross(input.Normal, float3(0, 1, 0));
 
-	output.TangentToWorld[0] = normalize(mul(mul(input.Tangent, World), View));
+	// Calculate tangent
+	float3 tangent = (distance(c1, 0) > distance(c2, 0)) ? c1 : c2;
+	float3 bitangent = cross(input.Normal, tangent);
+
+	output.TangentToWorld[0] = normalize(mul(mul(tangent, World), View));
     output.TangentToWorld[1] = normalize(mul(mul(bitangent, World), View));
     output.TangentToWorld[2] = normalize(mul(mul(input.Normal, World), View));
 
-    return output;
-}
-
-VT_Output VertexTerrainDebug(VT_Input input)
-{
-    VT_Output output;
-
-	input.Position.y += 0.005f;
-	float4x4 wvp = mul(mul(World, View), Projection);
-
-	// First transform the position onto the screen
-	output.Position = mul(input.Position, wvp);
-	output.NewPosition = input.Position;
-
-	// Pass the normal and depth
-	output.Normal = normalize(mul(input.Normal, World));
-    output.Depth.xyz = output.Position.zwz;
-
-	// Calculate tangent space to world space matrix using the world space tangent,
-    // binormal, and normal as basis vectors.
-
-	float3 bitangent = cross(input.Normal, input.Tangent);
-
-	output.TangentToWorld[0] = normalize(mul(mul(input.Tangent, World), View));
-    output.TangentToWorld[1] = normalize(mul(mul(bitangent, World), View));
-    output.TangentToWorld[2] = normalize(mul(mul(input.Normal, World), View));
+	output.Color = 1;
 
     return output;
 }
 
 //--- PixelShaders ---//
 
-float4 TriplanarMapping(VT_Output input, float scale = 1)
+float3 BlendWeights(float3 normal)
 {
-	float tighten = 0.3679f; 
+	float tighten = 0.4679f; 
 
-	float mXY = saturate(abs(input.Normal.z) - tighten);
-	float mXZ = saturate(abs(input.Normal.y) - tighten);
-	float mYZ = saturate(abs(input.Normal.x) - tighten);
+	float mXY = saturate(abs(normal.z) - tighten);
+	float mXZ = saturate(abs(normal.y) - tighten);
+	float mYZ = saturate(abs(normal.x) - tighten);
 
 	float total = mXY + mXZ + mYZ;
 	mXY /= total;
 	mXZ /= total;
 	mYZ /= total;
+
+	return float3(mXY, mXZ, mYZ);
+}
+
+float4 TriplanarMapping(VT_Output input, float scale = 1)
+{
+	float3 m = BlendWeights(input.Normal);
 
 	float4 cXY = tex2D(baseSteepSampler, input.NewPosition.xy / textureScale * scale);
 	float4 cXZ = tex2D(baseSampler, input.NewPosition.xz / textureScale * scale);
 	float4 cYZ = tex2D(baseSteepSampler, input.NewPosition.zy / textureScale * scale);
 
-	float4 diffuse = cXY * mXY + cXZ * mXZ + cYZ * mYZ;
+	float4 diffuse = cXY * m.x + cXZ * m.y + cYZ * m.z;
 	return diffuse;
 }
 
 float3 TriplanarNormalMapping(VT_Output input, float scale = 1)
 {
-	float tighten = 0.3679f; 
-
-	float mXY = saturate(abs(input.Normal.z) - tighten);
-	float mXZ = saturate(abs(input.Normal.y) - tighten);
-	float mYZ = saturate(abs(input.Normal.x) - tighten);
-
-	float total = mXY + mXZ + mYZ;
-	mXY /= total;
-	mXZ /= total;
-	mYZ /= total;
+	float3 m = BlendWeights(input.Normal);
 	
 	float3 cXY = tex2D(steepNormalMapSampler, input.NewPosition.xy / textureScale * scale);
 	float3 cXZ = float3(0, 0, 1);
@@ -198,7 +107,7 @@ float3 TriplanarNormalMapping(VT_Output input, float scale = 1)
 	cXY = 2.0f * cXY - 1.0f;
 	cYZ = 2.0f * cYZ - 1.0f;
 
-	float3 normal = cXY * mXY + cXZ * mXZ + cYZ * mYZ;
+	float3 normal = cXY * m.x + cXZ * m.y + cYZ * m.z;
 	normal.xy *= bumpIntensity;
 	return normal;
 }
@@ -207,16 +116,21 @@ float4 PixelTerrainForwardRender(VT_Output input) : COLOR0
 {
 	float4 color = TriplanarMapping(input, 2.f);
 	float4 blendedColor = TriplanarMapping(input, 0.3f);
+	float4 blendedColor2 = TriplanarMapping(input, 0.22f);
 
-	float depth = pow(abs(input.Depth.x / input.Depth.y), 4 * textureScale);
+	float depth = pow(abs(input.Depth.x / input.Depth.y), 2 * textureScale);
 
 	// Blend with scaled texture
+	blendedColor = lerp(blendedColor, blendedColor2, 0.5f);
 	color = lerp(color, blendedColor, depth);
 	color.a = 1;
 
 	// Sample normal map color
 	float3 normal = TriplanarNormalMapping(input, 2.f);
 	float3 blendedNormal = TriplanarNormalMapping(input, 0.3f);
+	float3 blendedNormal2 = TriplanarNormalMapping(input, 0.22f);
+
+	blendedNormal = lerp(blendedNormal, blendedNormal2, 0.5f);
 	normal = lerp(normal, blendedNormal, depth);
 
 	// Output the normal, in [0,1] space
@@ -244,7 +158,7 @@ float4 PixelTerrainForwardRender(VT_Output input) : COLOR0
 	float4 fogColor = float4(0.3, 0.5, 0.92, 1);
 
 	float4 outDepth = input.Depth.x / input.Depth.y; 
-	finalColor.rgb = lerp(finalColor.rgb, fogColor, pow(abs(outDepth), 2000));
+	finalColor.rgb = lerp(finalColor.rgb, fogColor, pow(abs(outDepth), 1250));
 
 	// Gamma correct inverse
 	finalColor.rgb = pow(finalColor.rgb, 1 / 2.f);
@@ -284,16 +198,15 @@ float4 PixelTerrainBasic(VT_Output input) : COLOR0
 	float4 fogColor = float4(0.3, 0.5, 0.92, 1);
 
 	float4 outDepth = input.Depth.x / input.Depth.y;  
-	if (color.a > 0.499f)
-		finalColor.rgb = lerp(finalColor.rgb, fogColor, pow(abs(outDepth), 1000));
+	finalColor.rgb = lerp(finalColor.rgb, fogColor, pow(abs(outDepth), 1250));
 
     return float4(diffuse, 1);
 }
 
 float4 PixelTerrainDebug(VT_Output input) : COLOR0
 {
-	float3 color = float3(1, 1, 1);
-    return float4(color, 1);
+	float4 color = input.Color;
+    return color;
 }
 
 /// The following two techniques draw a variation of the terrain,
@@ -306,6 +219,7 @@ technique ForwardRenderTerrain
     {
 		CullMode = CCW;
 		ZENABLE = True;
+		AlphaBlendEnable = False;
 
         VertexShader = compile vs_3_0 VertexShaderTerrain();
         PixelShader = compile ps_3_0 PixelTerrainForwardRender();
@@ -333,7 +247,7 @@ technique DebugTerrain
 		CullMode = CCW;
 		ZENABLE = True;
 
-        VertexShader = compile vs_2_0 VertexTerrainDebug();
+        VertexShader = compile vs_2_0 VertexShaderTerrain(0.05f);
         PixelShader = compile ps_2_0 PixelTerrainDebug();
     }
 }

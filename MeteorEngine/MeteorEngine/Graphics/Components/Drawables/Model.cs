@@ -353,14 +353,17 @@ namespace Meteor.Resources
 		/// <summary>
 		/// Set a world transform for all meshes of an instance
 		/// </summary>
-		/*
-		public MeshInstance UpdateInstance(int index, Matrix worldTransform)
+
+		public Model Update(Matrix worldTransform)
 		{
 			foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups.Values)
-				instanceGroup.instances[instanceGroup.instances.Count - 1].UpdateTransform(worldTransform);
+			{
+				int last = instanceGroup.instances.Count - 1;
+				instanceGroup.instances[last].UpdateTransform(worldTransform);
+			}
 
-			return meshInstanceGroups[0].instances[0];
-		} */
+			return this;
+		}
 
 		/// <summary>
 		/// Returns the last instance of this model.

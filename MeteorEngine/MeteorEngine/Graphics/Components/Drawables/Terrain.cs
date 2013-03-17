@@ -25,10 +25,10 @@ namespace Meteor.Resources
 		int terrainHeight;
 
 		/// Array to store the data of each map pixel
-		short[,] heightData;
+		ushort[,] heightData;
 
 		/// Terrain patch grid dimensions
-		Vector2 gridSize;
+		public static Vector2 gridSize;
 
 		/// Amount to scale heightmap by
 		public float scale = 1f;
@@ -78,7 +78,7 @@ namespace Meteor.Resources
 		public int totalVisiblePatches = 0;
 
 		/// Location to offset the position of the terrain
-		private Vector3 heightmapPosition;
+		public Vector3 mapPosition { private set; get; }
 
 		/// Number of terrain LODs
 		public readonly static int mipLevels = 4;
@@ -92,6 +92,10 @@ namespace Meteor.Resources
 
 		/// Array for mesh indices
 		private ushort[][] indices;
+
+		/// Total terrain patches built in the process
+		public int patchesBuilt { private set; get; }
+		public int nextPatch { private set; get; }
 		
 		/// Rasterizer state for debugging
 		private RasterizerState rWireframeState;
@@ -125,28 +129,29 @@ namespace Meteor.Resources
 			terrainWidth = heightMapTextureSource.Width;
 			terrainHeight = heightMapTextureSource.Height;
 
-			// Calculate heightmap position
-			heightmapPosition.X = -(terrainWidth * scale) / 2;
-			heightmapPosition.Y = -40f * scale;
-			heightmapPosition.Z = (terrainHeight * scale) / 2;
-
 			Color[] heightMapColors = new Color[terrainWidth * terrainHeight];
 			heightMapTextureSource.GetData(heightMapColors);
 
 			// Initialize height data values
-			heightData = new short[terrainWidth, terrainHeight];
+			heightData = new ushort[terrainWidth, terrainHeight];
 
 			// Add the height values from the map
 			for (int x = 0; x < terrainWidth; x++)
 			{
 				for (int y = 0; y < terrainHeight; y++)
 				{
-					heightData[x, y] = (short)(heightMapColors[x + y * terrainWidth].R);
+					heightData[x, y] = (ushort)(heightMapColors[x + y * terrainWidth].R);
+					heightData[x, y] <<= 7;
 				}
 			}
 
-			// Setup the clip maps, and determine how many should be needed to
-			// fit within the bounds of the terrain
+			// Calculate heightmap position
+			mapPosition = new Vector3(
+				-(terrainWidth * scale) / 2,
+				-40f * scale,
+				(terrainHeight * scale) / 2);
+
+			// Determine how many tiles should be needed to fit within the bounds of the terrain
 			gridSize.X = terrainWidth / TerrainPatch.patchSize;
 			gridSize.Y = terrainHeight / TerrainPatch.patchSize;
 
@@ -161,33 +166,111 @@ namespace Meteor.Resources
 			terrainPatches = new TerrainPatch[(int)gridSize.X, (int)gridSize.Y];
 			visiblePatches = new List<TerrainPatch>((int)gridSize.X * (int)gridSize.Y);
 
-			for (int i = 0; i < gridSize.Y; i++)
-			{
-				for (int j = 0; j < gridSize.X; j++)
-				{
-					Vector2 offset = new Vector2(j * TerrainPatch.patchSize, i * TerrainPatch.patchSize);
+			nextPatch = (int)(gridSize.X * gridSize.Y) - 1;
+			patchesBuilt = 0;
+		}
 
-					terrainPatches[j, i] = new TerrainPatch(graphicsDevice, offset);
-					terrainPatches[j, i].UpdateMap(heightData, scale, heightmapPosition, indices);
-					visiblePatches.Add(terrainPatches[j, i]);
+		/// <summary>
+		/// Build the array of terrain patches to draw with
+		/// </summary>
+
+		private void BuildTerrainTiles()
+		{
+			// Iterate backwards because we need to grab neighboring edges for normals
+			for (int i = (int)(gridSize.X * gridSize.Y) - 1; i >= 0; i--)
+			{
+				int x = i % (int)gridSize.X;
+				int y = i / (int)gridSize.Y;
+
+				Vector2 offset = new Vector2(x, y);
+				TerrainPatch currentPatch = new TerrainPatch(graphicsDevice, offset);
+
+				// find south and east neighbors
+				if (y < gridSize.Y - 1) currentPatch.neighbors[1] = terrainPatches[y + 1, x];
+				if (x < gridSize.X - 1) currentPatch.neighbors[3] = terrainPatches[y, x + 1];
+
+				currentPatch.UpdateMap(heightData, scale, mapPosition, indices);
+
+				terrainPatches[y, x] = currentPatch;
+				visiblePatches.Add(terrainPatches[y, x]);
+			}
+
+			// Second pass, find its other neighbors
+			/*
+			for (int y = 0; y < gridSize.Y; y++)
+			{
+				for (int x = 0; x < gridSize.X; x++)
+				{
+					TerrainPatch currentPatch = terrainPatches[x, y];
+
+					// Find north and west neighbors
+					if (y > 0)	currentPatch.neighbors[0] = terrainPatches[y - 1, x];
+					if (x > 0)	currentPatch.neighbors[2] = terrainPatches[y, x - 1];
+				}
+			}*/
+		}
+
+		public bool BuildTerrainTiles(int tilesToBuild = 100)
+		{
+			// Iterate backwards because we need to grab neighboring edges for normals
+			for (int i = 0; i < tilesToBuild; i++)
+			{
+				int x = nextPatch % (int)gridSize.X;
+				int y = nextPatch / (int)gridSize.Y;
+
+				Vector2 offset = new Vector2(x, y);
+				TerrainPatch currentPatch = new TerrainPatch(graphicsDevice, offset);
+
+				// find south and east neighbors
+				if (y < gridSize.Y - 1) currentPatch.neighbors[1] = terrainPatches[y + 1, x];
+				if (x < gridSize.X - 1) currentPatch.neighbors[3] = terrainPatches[y, x + 1];
+
+				currentPatch.UpdateMap(heightData, scale, mapPosition, indices);
+
+				terrainPatches[y, x] = currentPatch;
+				visiblePatches.Add(terrainPatches[y, x]);
+
+				nextPatch--;
+				patchesBuilt++;
+
+				// Finish updating this frame
+				if (patchesBuilt == (gridSize.X * gridSize.Y))
+				{
+					// All patches have been built
+					return true;
 				}
 			}
+			return false;
 		}
 
 		/// <summary>
-		/// Re-create the terrain mesh with the current parameters.
+		/// Get heightmap data as an array of floats.
 		/// </summary>
-		public void Update(Vector3 centerPosition)
+
+		public float[,] HeightDataFloats()
 		{
-			Vector2 mapCenter = getMapPosition(centerPosition);
+			float[,] floatHeights = new float[terrainHeight, terrainWidth];
+
+			for (int y = 0; y < terrainHeight; y++)
+				for (int x = 0; x < terrainWidth; x++)
+					floatHeights[y, x] = heightData[y, x];
+
+			return floatHeights;
 		}
 
 		/// <summary>
-		/// Force an update in case the mesh data needs to be recovered.
+		/// Force a rebuild of vertex data for the terrain.
 		/// </summary>
-		public void ForceUpdate(Vector3 centerPosition)
+
+		public void Rebuild()
 		{
-			Vector2 mapCenter = getMapPosition(centerPosition);
+			for (int y = (int)gridSize.Y - 1; y >= 0; y--)
+			{
+				for (int x = (int)gridSize.X - 1; x >= 0; x--)
+				{
+					terrainPatches[y, x].UpdateMap(heightData, scale, mapPosition, indices);
+				}
+			}
 		}
 
 		/// <summary>
@@ -196,7 +279,7 @@ namespace Meteor.Resources
 
 		public Vector2 getMapPosition(Vector3 position)
 		{
-			Vector3 positionOnMap = position - heightmapPosition;
+			Vector3 positionOnMap = position - mapPosition;
 			positionOnMap.Z = -positionOnMap.Z;
 
 			int left, top;
@@ -216,7 +299,7 @@ namespace Meteor.Resources
 
 		public float GetHeight(Vector3 position)
 		{
-			Vector3 positionOnMap = position - heightmapPosition;
+			Vector3 positionOnMap = position - mapPosition;
 			positionOnMap.Z = -positionOnMap.Z;
 
 			int left, top;
@@ -236,17 +319,17 @@ namespace Meteor.Resources
 
 			// normalize the height positions and interpolate them.
 			float topHeight = MathHelper.Lerp(
-				heightData[left, top] / 4.0f, 
-				heightData[left + 1, top] / 4.0f, xNormalized);
+				heightData[left, top] / 256f,
+				heightData[left + 1, top] / 256f, xNormalized);
 
 			float bottomHeight = MathHelper.Lerp(
-				heightData[left, top + 1] / 4.0f, 
-				heightData[left + 1, top + 1] / 4.0f, xNormalized);
+				heightData[left, top + 1] / 256f,
+				heightData[left + 1, top + 1] / 256f, xNormalized);
 
 			float height = MathHelper.Lerp(topHeight, bottomHeight, zNormalized);
 
 			height *= scale;
-			return height + heightmapPosition.Y;
+			return height + mapPosition.Y;
 		}
 
 		/// <summary>
@@ -304,12 +387,17 @@ namespace Meteor.Resources
 			// Set buffers for mipmap terrain patches and draw them
 			for (int i = totalVisiblePatches - 1; i >= 0; i--)
 			{
+				// Set world transformation for the map
+				Vector3 location = mapPosition + (visiblePatches[i].worldOffset * scale);
+				Matrix worldMatrix = Matrix.CreateScale(scale) * Matrix.CreateTranslation(location);
+				effect.Parameters["World"].SetValue(worldMatrix);
+
 				// Color code the clip maps
 				effect.Parameters["clipLevel"].SetValue(0);
 
 				int currentMipLevel = visiblePatches[i].currentMipLevel;
 
-				graphicsDevice.Indices = patchIndexBuffers[currentMipLevel]; //visiblePatches[i].Meshes[currentMipLevel].Indices;
+				graphicsDevice.Indices = patchIndexBuffers[currentMipLevel];
 				graphicsDevice.SetVertexBuffer(visiblePatches[i].Meshes[currentMipLevel].Vertices);
 
 				foreach (EffectPass pass in effect.CurrentTechnique.Passes)
@@ -323,10 +411,10 @@ namespace Meteor.Resources
 			}
 			
 			// Draw bounding boxes
-			//for (int i = 0; i < totalVisiblePatches; i++)
-			//	ShapeRenderer.AddBoundingBox(visiblePatches[i].boundingBox, Color.Red);
+			for (int i = 0; i < totalVisiblePatches; i++)
+				ShapeRenderer.AddBoundingBox(visiblePatches[i].boundingBox, Color.Red);
 
-			//ShapeRenderer.Draw(camera.view, camera.projection);
+			ShapeRenderer.Draw(camera.view, camera.projection);
 		}
 		
 		/// <summary>
@@ -335,8 +423,6 @@ namespace Meteor.Resources
 
 		public int Draw(Camera camera, Effect effect)
 		{
-			Matrix worldMatrix = Matrix.CreateScale(scale) * Matrix.CreateTranslation(heightmapPosition);
-
 			effect.Parameters["Texture"].SetValue(baseTextureSource);
 
 			if (steepNormalMapSource != null && effect.CurrentTechnique != effect.Techniques["Default"])
@@ -350,9 +436,6 @@ namespace Meteor.Resources
 			effect.Parameters["specIntensity"].SetValue(specularity);
 			effect.Parameters["specPower"].SetValue(specularPower);
 			effect.Parameters["bumpIntensity"].SetValue(bumpIntensity);
-
-			// Set world transformation for the map
-			effect.Parameters["World"].SetValue(worldMatrix);
 
 			if (effect.CurrentTechnique != effect.Techniques["Default"])
 			{
@@ -370,12 +453,16 @@ namespace Meteor.Resources
 			// Set buffers for mipmap terrain patches and draw them
 			for (int i = 0; i < totalVisiblePatches; i++)
 			{
+				// Set world transformation for the map
+				Vector3 location = mapPosition + (visiblePatches[i].worldOffset * scale);
+				Matrix worldMatrix = Matrix.CreateScale(scale) * Matrix.CreateTranslation(location);
+				effect.Parameters["World"].SetValue(worldMatrix);
+
 				// Color code the patches
-				effect.Parameters["clipLevel"].SetValue(0);
-
 				int currentMipLevel = visiblePatches[i].currentMipLevel;
+				effect.Parameters["clipLevel"].SetValue(currentMipLevel);
 
-				graphicsDevice.Indices = patchIndexBuffers[currentMipLevel];//visiblePatches[i].Meshes[currentMipLevel].Indices;
+				graphicsDevice.Indices = patchIndexBuffers[currentMipLevel];
 				graphicsDevice.SetVertexBuffer(visiblePatches[i].Meshes[currentMipLevel].Vertices);
 
 				foreach (EffectPass pass in effect.CurrentTechnique.Passes)

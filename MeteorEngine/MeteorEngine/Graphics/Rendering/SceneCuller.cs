@@ -75,10 +75,17 @@ namespace Meteor.Rendering
 
 		public void CullTerrainPatches(Scene scene, Camera camera)
 		{
+			if (scene.terrain == null)
+				return;
+
+			// Reset visible area
 			scene.terrain.totalVisiblePatches = 0;
 
 			foreach (TerrainPatch patch in scene.terrain.TerrainPatches)
 			{
+				if (patch == null)
+					continue;
+
 				patch.currentMipLevel = 0;
 				if (camera.frustum.Contains(patch.boundingSphere) != ContainmentType.Disjoint)
 					scene.terrain.visiblePatches[scene.terrain.totalVisiblePatches++] = patch;
@@ -86,7 +93,7 @@ namespace Meteor.Rendering
 				float distance = Vector3.Distance(camera.position, patch.center);
 
 				// Update LOD for this patch
-				if (distance > 1200 * scene.terrain.scale)
+				if (distance > 1000 * scene.terrain.scale)
 					patch.currentMipLevel = 3;
 				else if (distance > 450 * scene.terrain.scale)
 					patch.currentMipLevel = 2;
