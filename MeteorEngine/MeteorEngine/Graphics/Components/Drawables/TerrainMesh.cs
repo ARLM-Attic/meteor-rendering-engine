@@ -34,7 +34,7 @@ namespace Meteor.Resources
 		TerrainPatch terrainPatch;
 
 		// Extents of this mesh
-		short meshSize;
+		public short meshSize { private set; get; }
 
 		// Level of detail for this mesh
 		int mipLevel;
@@ -81,10 +81,12 @@ namespace Meteor.Resources
 
 		private void SetUpVertices(ushort[,] heightData, Vector2 mapOffset, int mipLevel)
 		{
+			int fullMeshSize = TerrainPatch.patchSize + 1;
+
 			int left = (int)mapOffset.X * TerrainPatch.patchSize;
-			int right = left + TerrainPatch.patchSize + 1;
+			int right = left + fullMeshSize;
 			int top = (int)mapOffset.Y * TerrainPatch.patchSize;
-			int bottom = top + TerrainPatch.patchSize + 1;
+			int bottom = top + fullMeshSize;
 
 			int index = 0;
 
@@ -97,8 +99,11 @@ namespace Meteor.Resources
 			{
 				for (int x = left, j = 0; x < right; x += next, j += next)
 				{
-					float height = heightData[x, y] / 256f;
-					vertices[index].Position = new Vector3(j, height, -i);
+					ushort height = (ushort)(heightData[x, y] / 256);
+					ushort vertexID = (ushort)(i * fullMeshSize + j);
+
+					vertices[index].VertexID = vertexID;
+					vertices[index].VertexHeight = height;
 
 					updatedVertices++;
 					index++;
@@ -113,6 +118,8 @@ namespace Meteor.Resources
 
 		private void CalculateNormals(ushort[] indices)
 		{
+			int fullMeshSize = TerrainPatch.patchSize + 1;
+			
 			for (int i = 0; i < vertices.Length; i++)
 				vertices[i].Normal = new Vector3(0, 0, 0);
 
@@ -122,8 +129,27 @@ namespace Meteor.Resources
 				int index1 = indices[i * 3 + 1];
 				int index2 = indices[i * 3 + 2];
 
-				Vector3 side1 = vertices[index0].Position - vertices[index2].Position;
-				Vector3 side2 = vertices[index0].Position - vertices[index1].Position;
+				Vector3 vertexPos0 = new Vector3
+				(
+					vertices[index0].VertexID % fullMeshSize,
+					vertices[index0].VertexHeight,
+					-(int)(vertices[index0].VertexID / fullMeshSize)
+				);
+				Vector3 vertexPos1 = new Vector3
+				(
+					vertices[index1].VertexID % fullMeshSize,
+					vertices[index1].VertexHeight,
+					-(int)(vertices[index1].VertexID / fullMeshSize)
+				);
+				Vector3 vertexPos2 = new Vector3
+				(
+					vertices[index2].VertexID % fullMeshSize,
+					vertices[index2].VertexHeight,
+					-(int)(vertices[index2].VertexID / fullMeshSize)
+				);
+
+				Vector3 side1 = vertexPos0 - vertexPos2;
+				Vector3 side2 = vertexPos0 - vertexPos1;
 				Vector3 normal = Vector3.Cross(side1, side2);
 
 				vertices[index0].Normal += normal;

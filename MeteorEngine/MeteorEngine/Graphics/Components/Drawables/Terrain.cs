@@ -36,6 +36,9 @@ namespace Meteor.Resources
 		/// Amount to scale heightmap textures by
 		public float textureScale = 10f;
 
+		/// Set whether to render for shadow mapping
+		public bool castsShadows = false;
+
 		/// Additional texture features
 		public float specularity { set; get; }
 		public float specularPower { set; get; }
@@ -90,13 +93,13 @@ namespace Meteor.Resources
 			get { return patchIndexBuffers; }
 		}
 
-		/// Array for mesh indices
-		private ushort[][] indices;
-
 		/// Total terrain patches built in the process
 		public int patchesBuilt { private set; get; }
 		public int nextPatch { private set; get; }
-		
+
+		/// Array for mesh indices
+		private ushort[][] indices;
+
 		/// Rasterizer state for debugging
 		private RasterizerState rWireframeState;
 
@@ -383,6 +386,7 @@ namespace Meteor.Resources
 			// Draw in wireframe mode
 			graphicsDevice.RasterizerState = rWireframeState;
 			effect.CurrentTechnique = effect.Techniques["DebugTerrain"];
+			effect.Parameters["meshSize"].SetValue(TerrainPatch.patchSize + 1);
 			
 			// Set buffers for mipmap terrain patches and draw them
 			for (int i = totalVisiblePatches - 1; i >= 0; i--)
@@ -392,10 +396,10 @@ namespace Meteor.Resources
 				Matrix worldMatrix = Matrix.CreateScale(scale) * Matrix.CreateTranslation(location);
 				effect.Parameters["World"].SetValue(worldMatrix);
 
+				int currentMipLevel = visiblePatches[i].currentMipLevel;
+
 				// Color code the clip maps
 				effect.Parameters["clipLevel"].SetValue(0);
-
-				int currentMipLevel = visiblePatches[i].currentMipLevel;
 
 				graphicsDevice.Indices = patchIndexBuffers[currentMipLevel];
 				graphicsDevice.SetVertexBuffer(visiblePatches[i].Meshes[currentMipLevel].Vertices);
@@ -431,6 +435,7 @@ namespace Meteor.Resources
 			// Special texture effects
 			effect.Parameters["textureScale"].SetValue(textureScale);
 			effect.Parameters["mapScale"].SetValue(scale);
+			effect.Parameters["meshSize"].SetValue(TerrainPatch.patchSize + 1);
 			effect.Parameters["clipLevel"].SetValue(0);
 
 			effect.Parameters["specIntensity"].SetValue(specularity);

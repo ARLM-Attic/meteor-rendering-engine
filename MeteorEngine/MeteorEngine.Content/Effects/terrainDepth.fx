@@ -9,6 +9,7 @@ float4x4 LightViewProj;
 
 float textureScale;
 float mapScale;
+float meshSize;
 float clipLevel;
 float specIntensity;
 float specPower;
@@ -37,7 +38,13 @@ VertexShaderOutput DepthMapVS(VertexShaderInput input)
 
 	float4x4 wvp = mul(World, LightViewProj);
 
-	output.position = mul(input.position, wvp);
+	float4 localPosition;
+	localPosition.x = input.position.x % meshSize;
+	localPosition.y = input.position.y;
+	localPosition.z = -(int)(input.position.x / meshSize);
+	localPosition.w = 1;
+
+	output.position = mul(localPosition, wvp);
 	output.depth = output.position.z;
 	
 	return output;

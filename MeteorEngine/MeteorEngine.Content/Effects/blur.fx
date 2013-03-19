@@ -114,18 +114,20 @@ const float far = 0.99999f;
 
 float4 DepthOfFieldFull(VertexShaderOutput input) : COLOR0
 {
-	half4 sharpScene = tex2D(diffuseSampler, input.TexCoord);
-	half4 blurScene = tex2D(blurSampler, input.TexCoord);
+	float4 sharpScene = tex2D(diffuseSampler, input.TexCoord);
+	float4 blurScene = tex2D(blurSampler, input.TexCoord);
 	float depthVal = tex2D(depthSampler, input.TexCoord);
 	
 	half dFar = far / (far - near);
 	half fSceneZ = (-near * dFar) / (depthVal - dFar);
 	float blurFactor = saturate(abs(fSceneZ - focalDistance) / focalRange);
 
-	//sharpScene.a = 1;
-	//blurScene.a = 1;
+	float2 dist = input.TexCoord - 0.5f;
+	dist.x = 1 - dot(dist, dist);
+	float4 color = lerp(blurScene, sharpScene, blurFactor);
+	color.rgb *= saturate(pow(dist.x, 0.f));
 
-	return lerp (blurScene, sharpScene, blurFactor);
+	return color;//lerp (blurScene, sharpScene, blurFactor);
 }
 
 float4 DepthOfFieldImproved(VertexShaderOutput input) : COLOR0

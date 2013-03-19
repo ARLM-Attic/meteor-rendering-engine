@@ -17,10 +17,10 @@ namespace Meteor.Rendering
         Effect blurEffect;
 
 		/// Focal distance
-		public float focalDistance = 0.01f;
+		public float focalDistance = 0.15f;
 
 		/// Range of focus
-		public float focalRange = 0.25f;
+		public float focalRange = 0.5f;
 
 		public DepthOfFieldShader(RenderProfile profile, ResourceContentManager content)
             : base(profile, content)

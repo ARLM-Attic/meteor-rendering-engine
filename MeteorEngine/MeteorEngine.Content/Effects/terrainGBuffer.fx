@@ -30,15 +30,18 @@ VT_Output VertexShaderTerrain(VT_Input input, uniform float yOffset = 0)
 	float4x4 wvp = mul(mul(World, View), Projection);
 
 	// First transform the position onto the screen
-	output.Position = mul(input.Position, wvp);
-	output.NewPosition = mul(input.Position, World) / 10.f;// mapScale;
+	float4 localPosition;
+	localPosition.x = input.Position.x % meshSize;
+	localPosition.y = input.Position.y;
+	localPosition.z = -(int)(input.Position.x / meshSize);
+	localPosition.w = 1;
+
+	output.Position = mul(localPosition, wvp);
+	output.NewPosition = mul(localPosition, World) / 10.f;
 
 	// Pass the normal and depth
 	output.Normal = normalize(mul(input.Normal, World));
-
-    output.Depth.x = output.Position.z;
-    output.Depth.y = output.Position.w;
-	output.Depth.z = output.Position.z;
+	output.Depth.xyz = output.Position.zwz;
 
 	// calculate tangent space to world space matrix using the world space tangent,
     // binormal, and normal as basis vectors.

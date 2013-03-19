@@ -33,7 +33,7 @@ namespace Meteor.Rendering
 		/// should be the same values as those in DepthMapShader.cs
 
 		/// Texture dimensions for individual shadow cascade
-		const int shadowMapSize = 1280;
+		const int shadowMapSize = 800;
 
 		/// Total number of cascades for CSM
 		const int numCascades = 4;

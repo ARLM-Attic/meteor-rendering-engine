@@ -90,7 +90,7 @@ namespace Meteor.Resources
 
 			for (int index = 0; index < meshes[0].vertices.Length; index++)
 			{
-				float height = meshes[0].vertices[index].Position.Y;
+				float height = meshes[0].vertices[index].VertexHeight;
 
 				minY = (minY > height) ? height : minY;
 				maxY = (maxY < height) ? height : maxY;
