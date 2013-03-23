@@ -64,11 +64,12 @@ namespace Meteor.Resources
 		/// Update vertex data for this mesh.
 		/// </summary>
 
-		public void UpdateMesh(ushort[,] heightData, Vector2 offset, int mipLevel, ushort[] indices)
+		public void UpdateMesh(
+			ushort[,] heightData, float heightScale, Vector2 offset, int mipLevel, ushort[] indices)
 		{
 			// Create vertex data
 			SetUpVertices(heightData, offset, mipLevel);
-			CalculateNormals(indices);
+			CalculateNormals(indices, heightScale);
 
 			// Set vertex and index buffers
 			if (updatedVertices > 0)
@@ -116,12 +117,15 @@ namespace Meteor.Resources
 		/// Find the normals for each mesh vertex
 		/// </summary>
 
-		private void CalculateNormals(ushort[] indices)
+		private void CalculateNormals(ushort[] indices, float heightScale)
 		{
 			int fullMeshSize = TerrainPatch.patchSize + 1;
-			
+
+			// store temporary normals
+			Vector3[] vertexNormals = new Vector3[vertices.Length];
+
 			for (int i = 0; i < vertices.Length; i++)
-				vertices[i].Normal = new Vector3(0, 0, 0);
+				vertexNormals[i] = new Vector3(0.5f, 0.5f, 1f);
 
 			for (int i = 0; i < indices.Length / 3; i++)
 			{
@@ -132,19 +136,19 @@ namespace Meteor.Resources
 				Vector3 vertexPos0 = new Vector3
 				(
 					vertices[index0].VertexID % fullMeshSize,
-					vertices[index0].VertexHeight,
+					vertices[index0].VertexHeight * heightScale,
 					-(int)(vertices[index0].VertexID / fullMeshSize)
 				);
 				Vector3 vertexPos1 = new Vector3
 				(
 					vertices[index1].VertexID % fullMeshSize,
-					vertices[index1].VertexHeight,
+					vertices[index1].VertexHeight * heightScale,
 					-(int)(vertices[index1].VertexID / fullMeshSize)
 				);
 				Vector3 vertexPos2 = new Vector3
 				(
 					vertices[index2].VertexID % fullMeshSize,
-					vertices[index2].VertexHeight,
+					vertices[index2].VertexHeight * heightScale,
 					-(int)(vertices[index2].VertexID / fullMeshSize)
 				);
 
@@ -152,31 +156,66 @@ namespace Meteor.Resources
 				Vector3 side2 = vertexPos0 - vertexPos1;
 				Vector3 normal = Vector3.Cross(side1, side2);
 
-				vertices[index0].Normal += normal;
-				vertices[index1].Normal += normal;
-				vertices[index2].Normal += normal;
+				vertexNormals[index0] += normal;
+				vertexNormals[index1] += normal;
+				vertexNormals[index2] += normal;
 			}
+
+			float epsilon = 0.0000001f;
 
 			// Correct normalization
 			for (int i = 0; i < vertices.Length; i++)
 			{
-				vertices[i].Normal.Normalize();
+				vertexNormals[i].Normalize();
 				
-				// Fix side edges
+				// Fix side edges and we're done for this vertex
 				if (i % meshSize == meshSize - 1 && terrainPatch.mapOffset.X < Terrain.gridSize.X - 1)
 				{
 					int adjacent = i - (meshSize - 1);
 					TerrainMesh adjacentMesh = terrainPatch.neighbors[3].Meshes[mipLevel];
-					vertices[i].Normal = adjacentMesh.vertices[adjacent].Normal;
+					vertices[i].NormalX = adjacentMesh.vertices[adjacent].NormalX;
+					vertices[i].NormalY = adjacentMesh.vertices[adjacent].NormalY;
+
+					continue;
 				}
 
-				// Fix top and bottom edges
+				// Fix top and bottom edges and we're done for this vertex
 				if (i / meshSize == meshSize - 1 && terrainPatch.mapOffset.Y < Terrain.gridSize.Y - 1)
 				{
 					int adjacent = i - (meshSize * (meshSize - 1));
 					TerrainMesh adjacentMesh = terrainPatch.neighbors[1].Meshes[mipLevel];
-					vertices[i].Normal = adjacentMesh.vertices[adjacent].Normal;
+					vertices[i].NormalX = adjacentMesh.vertices[adjacent].NormalX;
+					vertices[i].NormalY = adjacentMesh.vertices[adjacent].NormalY;
+
+					continue;
 				}
+
+				// Encode normal into 2 components
+
+				Vector2 projectedNormal;
+				float absZ = Math.Abs(vertexNormals[i].Z) + 1.0f;
+				projectedNormal.X = vertexNormals[i].X / absZ;
+				projectedNormal.Y = vertexNormals[i].Y / absZ;
+
+				// Convert unit circle to square
+				// We add epsilon to avoid division by zero
+
+				float d = Math.Abs(projectedNormal.X) + Math.Abs(projectedNormal.Y) + epsilon;
+				float r = Vector2.Distance(projectedNormal, Vector2.Zero);
+				Vector2 q = projectedNormal * r / d;
+
+				// Mirror triangles to outer edge if z is negative
+
+				float negativeZ = Math.Max(-Math.Sign(vertexNormals[i].Z), 0f);
+				Vector2 qSign = new Vector2(Math.Sign(q.X), Math.Sign(q.Y));
+				qSign.X = Math.Sign(qSign.X + 0.5f);
+				qSign.Y = Math.Sign(qSign.Y + 0.5f);
+
+				// Reflection: qr = q - 2 * n * (dot (q, n) - d) / dot (n, n)
+
+				q -= negativeZ * (float)(Vector2.Dot(q, qSign) - 1.0) * qSign;
+				vertices[i].NormalX = (short)(q.X * 32767);
+				vertices[i].NormalY = (short)(q.Y * 32767);
 			}
 			// Finish reading normals
 		}

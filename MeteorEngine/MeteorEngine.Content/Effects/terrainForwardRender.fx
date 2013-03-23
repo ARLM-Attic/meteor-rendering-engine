@@ -3,6 +3,7 @@
 //-----------------------------------------
 
 #include "terrainConstants.fxh"
+#include "vertexTerrain.fxh"
 
 // Light and camera properties
 
@@ -12,71 +13,11 @@ float3 lightColor;
 float3 ambientTerm;
 float lightIntensity;
 
-/// Vertex structs
-
-struct VT_Input
-{
-    float4 Position : POSITION0;
-    float3 Normal : NORMAL0;
-};
-
-struct VT_Output
-{
-    float4 Position : POSITION0;
-	float4 Color : COLOR;
-    float3 Depth : TEXCOORD1;
-	float3 Normal : TEXCOORD2;
-	float4 NewPosition : TEXCOORD3;
-    float3x3 TangentToWorld	: TEXCOORD4;
-};
-
-//--- VertexShaders ---//
-
-VT_Output VertexShaderTerrain(VT_Input input, uniform float yOffset = 0)
-{
-    VT_Output output;
-
-	input.Position.y += yOffset;
-	float4x4 wvp = mul(mul(World, View), Projection);
-
-	// First transform the position onto the screen
-	float4 localPosition;
-	localPosition.x = input.Position.x % meshSize;
-	localPosition.y = input.Position.y;
-	localPosition.z = -(int)(input.Position.x / meshSize);
-	localPosition.w = 1;
-
-	output.Position = mul(localPosition, wvp);
-	output.NewPosition = mul(localPosition, World) / 10.f;
-
-	// Pass the normal and depth
-	output.Normal = normalize(mul(input.Normal, World));
-    output.Depth.xyz = output.Position.zwz;
-
-	// calculate tangent space to world space matrix using the world space tangent,
-    // binormal, and normal as basis vectors.
-		
-	float3 c1 = cross(input.Normal, float3(0, 0, 1));
-	float3 c2 = cross(input.Normal, float3(0, 1, 0));
-
-	// Calculate tangent
-	float3 tangent = (distance(c1, 0) > distance(c2, 0)) ? c1 : c2;
-	float3 bitangent = cross(input.Normal, tangent);
-
-	output.TangentToWorld[0] = normalize(mul(mul(tangent, World), View));
-    output.TangentToWorld[1] = normalize(mul(mul(bitangent, World), View));
-    output.TangentToWorld[2] = normalize(mul(mul(input.Normal, World), View));
-
-	output.Color = 1;
-
-    return output;
-}
-
-//--- PixelShaders ---//
+/// PixelShaders
 
 float3 BlendWeights(float3 normal)
 {
-	float tighten = 0.4679f; 
+	float tighten = 0.34679f; 
 
 	float mXY = saturate(abs(normal.z) - tighten);
 	float mXZ = saturate(abs(normal.y) - tighten);

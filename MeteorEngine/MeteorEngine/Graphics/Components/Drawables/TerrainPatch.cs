@@ -65,20 +65,21 @@ namespace Meteor.Resources
 		/// Update vertex data for this patch.
 		/// </summary>
 
-		public void UpdateMap(ushort[,] heightData, float scale, Vector3 position, ushort[][] indices)
+		public void UpdateMap(
+			ushort[,] heightData, float scale, float heightScale, Vector3 position, ushort[][] indices)
 		{
 			// Create the meshes and bounding volumes
 			for (int i = 0; i < mipLevels; i++)
-				meshes[i].UpdateMesh(heightData, mapOffset, i, indices[i]);
+				meshes[i].UpdateMesh(heightData, heightScale, mapOffset, i, indices[i]);
 
-			SetBoundingVolumes(scale, position);
+			SetBoundingVolumes(scale, heightScale, position);
 		}
 
 		/// <summary>
 		/// Create the BoundingBox and BoundingSphere for this patch.
 		/// </summary>
 
-		private void SetBoundingVolumes(float terrainScale, Vector3 terrainPosition)
+		private void SetBoundingVolumes(float terrainScale, float heightScale, Vector3 terrainPosition)
 		{
 			int left = (int)mapOffset.X * TerrainPatch.patchSize;
 			int right = left + TerrainPatch.patchSize;
@@ -97,8 +98,8 @@ namespace Meteor.Resources
 			}
 
 			// Adjust bounding box extents
-			bboxMin = new Vector3(left, minY, top);
-			bboxMax = new Vector3(right, maxY, bottom);
+			bboxMin = new Vector3(left, minY * heightScale, top);
+			bboxMax = new Vector3(right, maxY * heightScale, bottom);
 
 			Vector3 scale = new Vector3(terrainScale);
 			scale.Z = -scale.Z;

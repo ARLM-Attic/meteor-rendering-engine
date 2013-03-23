@@ -216,7 +216,7 @@
     <Compile Include="Helpers\StringBuilderNumeric.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Helpers\VertexPositionTangent.cs">
+    <Compile Include="Graphics\Components\CustomVertexFormats.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="MeteorContentResource1.Designer.cs">

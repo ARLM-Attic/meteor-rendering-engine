@@ -3,62 +3,7 @@
 //-----------------------------------------
 
 #include "terrainConstants.fxh"
-
-/// Vertex structs
-
-struct VT_Input
-{
-    float4 Position : POSITION0;
-    float3 Normal : NORMAL0;
-};
-
-struct VT_Output
-{
-    float4 Position : POSITION0;
-    float3 Depth : TEXCOORD0;
-	float3 Normal : TEXCOORD1;
-	float4 NewPosition : TEXCOORD2;
-    float3x3 TangentToWorld	: TEXCOORD3;
-};
-
-//--- VertexShaders ---//
-
-VT_Output VertexShaderTerrain(VT_Input input, uniform float yOffset = 0)
-{
-    VT_Output output;
-
-	float4x4 wvp = mul(mul(World, View), Projection);
-
-	// First transform the position onto the screen
-	float4 localPosition;
-	localPosition.x = input.Position.x % meshSize;
-	localPosition.y = input.Position.y;
-	localPosition.z = -(int)(input.Position.x / meshSize);
-	localPosition.w = 1;
-
-	output.Position = mul(localPosition, wvp);
-	output.NewPosition = mul(localPosition, World) / 10.f;
-
-	// Pass the normal and depth
-	output.Normal = normalize(mul(input.Normal, World));
-	output.Depth.xyz = output.Position.zwz;
-
-	// calculate tangent space to world space matrix using the world space tangent,
-    // binormal, and normal as basis vectors.
-
-	float3 c1 = cross(input.Normal, float3(0, 0, 1));
-	float3 c2 = cross(input.Normal, float3(0, 1, 0));
-
-	// Calculate tangent
-	float3 tangent = (distance(c1, 0) > distance(c2, 0)) ? c1 : c2;
-	float3 bitangent = cross(input.Normal, tangent);
-
-	output.TangentToWorld[0] = mul(normalize(mul(tangent, World)), View);
-    output.TangentToWorld[1] = mul(normalize(mul(bitangent, World)), View);
-    output.TangentToWorld[2] = mul(normalize(mul(input.Normal, World)), View);
-
-    return output;
-}
+#include "vertexTerrain.fxh"
 
 //--- PixelShaders ---//
 
@@ -78,7 +23,7 @@ struct PixelShaderOutput2
 
 float4 TriplanarMapping(VT_Output input, float scale = 1)
 {
-	float tighten = 0.4679f; 
+	float tighten = 0.34679f; 
 
 	float mXY = saturate(abs(input.Normal.z) - tighten);
 	float mXZ = saturate(abs(input.Normal.y) - tighten);
@@ -99,7 +44,7 @@ float4 TriplanarMapping(VT_Output input, float scale = 1)
 
 float3 TriplanarNormalMapping(VT_Output input, float scale = 1)
 {
-	float tighten = 0.4679f; 
+	float tighten = 0.34679f; 
 
 	float mXY = saturate(abs(input.Normal.z) - tighten);
 	float mXZ = saturate(abs(input.Normal.y) - tighten);

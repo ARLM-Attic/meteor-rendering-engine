@@ -30,14 +30,20 @@ namespace Meteor.Resources
 		/// Terrain patch grid dimensions
 		public static Vector2 gridSize;
 
-		/// Amount to scale heightmap by
+		/// Amount to scale terrain mesh
 		public float scale = 1f;
 
-		/// Amount to scale heightmap textures by
+		/// Amount to scale heightmap textures
 		public float textureScale = 10f;
+
+		/// Amount to scale height values
+		public float heightScale = 1f;
 
 		/// Set whether to render for shadow mapping
 		public bool castsShadows = false;
+
+		/// Set for debugging mesh features
+		public int debug = 0;
 
 		/// Additional texture features
 		public float specularity { set; get; }
@@ -144,7 +150,7 @@ namespace Meteor.Resources
 				for (int y = 0; y < terrainHeight; y++)
 				{
 					heightData[x, y] = (ushort)(heightMapColors[x + y * terrainWidth].R);
-					heightData[x, y] <<= 7;
+					heightData[x, y] <<= 8;
 				}
 			}
 
@@ -177,7 +183,7 @@ namespace Meteor.Resources
 		/// Build the array of terrain patches to draw with
 		/// </summary>
 
-		private void BuildTerrainTiles()
+		public void BuildTerrainTiles()
 		{
 			// Iterate backwards because we need to grab neighboring edges for normals
 			for (int i = (int)(gridSize.X * gridSize.Y) - 1; i >= 0; i--)
@@ -192,7 +198,7 @@ namespace Meteor.Resources
 				if (y < gridSize.Y - 1) currentPatch.neighbors[1] = terrainPatches[y + 1, x];
 				if (x < gridSize.X - 1) currentPatch.neighbors[3] = terrainPatches[y, x + 1];
 
-				currentPatch.UpdateMap(heightData, scale, mapPosition, indices);
+				currentPatch.UpdateMap(heightData, scale, heightScale, mapPosition, indices);
 
 				terrainPatches[y, x] = currentPatch;
 				visiblePatches.Add(terrainPatches[y, x]);
@@ -228,7 +234,7 @@ namespace Meteor.Resources
 				if (y < gridSize.Y - 1) currentPatch.neighbors[1] = terrainPatches[y + 1, x];
 				if (x < gridSize.X - 1) currentPatch.neighbors[3] = terrainPatches[y, x + 1];
 
-				currentPatch.UpdateMap(heightData, scale, mapPosition, indices);
+				currentPatch.UpdateMap(heightData, scale, heightScale, mapPosition, indices);
 
 				terrainPatches[y, x] = currentPatch;
 				visiblePatches.Add(terrainPatches[y, x]);
@@ -271,7 +277,7 @@ namespace Meteor.Resources
 			{
 				for (int x = (int)gridSize.X - 1; x >= 0; x--)
 				{
-					terrainPatches[y, x].UpdateMap(heightData, scale, mapPosition, indices);
+					terrainPatches[y, x].UpdateMap(heightData, scale, heightScale, mapPosition, indices);
 				}
 			}
 		}
@@ -329,6 +335,9 @@ namespace Meteor.Resources
 				heightData[left, top + 1] / 256f,
 				heightData[left + 1, top + 1] / 256f, xNormalized);
 
+			topHeight *= heightScale;
+			bottomHeight *= heightScale;
+
 			float height = MathHelper.Lerp(topHeight, bottomHeight, zNormalized);
 
 			height *= scale;
@@ -383,6 +392,15 @@ namespace Meteor.Resources
 		[Conditional("DEBUG")]
 		private void DrawDebug(Camera camera, Effect effect)
 		{
+			// Draw bounding boxes
+			for (int i = 0; i < totalVisiblePatches; i++)
+				ShapeRenderer.AddBoundingBox(visiblePatches[i].boundingBox, Color.Red);
+
+			ShapeRenderer.Draw(camera.view, camera.projection);
+
+			if (debug == 1)
+				return;
+
 			// Draw in wireframe mode
 			graphicsDevice.RasterizerState = rWireframeState;
 			effect.CurrentTechnique = effect.Techniques["DebugTerrain"];
@@ -413,12 +431,6 @@ namespace Meteor.Resources
 						patchIndexBuffers[currentMipLevel].IndexCount / 3);
 				}
 			}
-			
-			// Draw bounding boxes
-			for (int i = 0; i < totalVisiblePatches; i++)
-				ShapeRenderer.AddBoundingBox(visiblePatches[i].boundingBox, Color.Red);
-
-			ShapeRenderer.Draw(camera.view, camera.projection);
 		}
 		
 		/// <summary>
@@ -432,12 +444,14 @@ namespace Meteor.Resources
 			if (steepNormalMapSource != null && effect.CurrentTechnique != effect.Techniques["Default"])
 				effect.Parameters["steepNormalMap"].SetValue(steepNormalMapSource);
 
-			// Special texture effects
+			// Terrain transformation parameters
 			effect.Parameters["textureScale"].SetValue(textureScale);
 			effect.Parameters["mapScale"].SetValue(scale);
+			effect.Parameters["heightScale"].SetValue(heightScale);
 			effect.Parameters["meshSize"].SetValue(TerrainPatch.patchSize + 1);
 			effect.Parameters["clipLevel"].SetValue(0);
 
+			// Special texture effects
 			effect.Parameters["specIntensity"].SetValue(specularity);
 			effect.Parameters["specPower"].SetValue(specularPower);
 			effect.Parameters["bumpIntensity"].SetValue(bumpIntensity);
@@ -484,7 +498,9 @@ namespace Meteor.Resources
 			}
 
 			// Draw in wireframe mode
-			DrawDebug(camera, effect);
+			if (debug > 2) debug = 0;
+			if (debug > 0)
+				DrawDebug(camera, effect);
 			
 			// End rendering clipmaps
 			return polycount;

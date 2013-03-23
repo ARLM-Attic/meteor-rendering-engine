@@ -11,6 +11,7 @@ float4x4 inverseView;
 
 float textureScale;
 float mapScale;
+float heightScale;
 float meshSize;
 float specPower;
 float specIntensity;
