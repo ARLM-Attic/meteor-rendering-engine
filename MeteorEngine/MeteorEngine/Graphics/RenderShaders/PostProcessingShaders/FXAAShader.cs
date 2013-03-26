@@ -19,7 +19,7 @@ namespace Meteor.Rendering
 		/// Combines lights with diffuse color
 		Effect fxaaEffect;
 
-		public FXAAShader(RenderProfile profile, ResourceContentManager content)
+		public FXAAShader(RenderProfile profile, ContentManager content)
 			: base(profile, content) 
 		{
 			// Light and combined effect targets
@@ -44,7 +44,7 @@ namespace Meteor.Rendering
 		/// Draw the anti-aliasing effect
 		/// </summary>
 
-		public override RenderTarget2D[] Draw()
+		public RenderTarget2D[] Draw()
 		{
 			renderStopWatch.Start();
 

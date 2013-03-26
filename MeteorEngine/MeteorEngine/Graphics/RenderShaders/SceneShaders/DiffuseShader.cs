@@ -16,7 +16,7 @@ namespace Meteor.Rendering
 		Effect gBufferEffect;
 		Effect terrainGBufferEffect;
 
-        public DiffuseShader(RenderProfile profile, ResourceContentManager content)
+        public DiffuseShader(RenderProfile profile, ContentManager content)
             : base(profile, content) 
 		{
 			hasSceneInput = true;
@@ -45,7 +45,7 @@ namespace Meteor.Rendering
         /// Simply draw the scene to the render target
         /// </summary> 
 
-        public override RenderTarget2D[] Draw()
+        public RenderTarget2D[] Draw(Scene scene, Camera camera)
         {
 			renderStopWatch.Reset();
 			renderStopWatch.Restart();

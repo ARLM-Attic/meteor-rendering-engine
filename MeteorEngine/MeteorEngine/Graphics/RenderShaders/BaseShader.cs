@@ -25,7 +25,6 @@ namespace Meteor.Rendering
 
 		// Useful for all DrawableComponents
 		protected ContentManager content;
-		protected ResourceContentManager resxContent;
 
 		public bool hasSceneInput;
 		protected Stopwatch renderStopWatch;
@@ -36,17 +35,15 @@ namespace Meteor.Rendering
 		// Graphics device for rendering
 		protected GraphicsDevice graphicsDevice;
 
-		// Scene to use for rendering
-		protected Scene scene;
-
-		// Camera to use for input
-		protected Camera camera;
-
 		// Render target inputs
 		protected RenderTarget2D[] inputTargets;
 
 		// Render target outputs
 		protected RenderTarget2D[] outputTargets;
+
+		// Effect file locations
+		protected List<String> effectFiles;
+		private String effectPrefix = "Effects/";
 
 		// How much to upscale some rendertargets
 		// and downscale to the render buffer
@@ -72,15 +69,24 @@ namespace Meteor.Rendering
 			}
 		}
 
+		protected Effect LoadEffect(String effectName)
+		{
+#if XNA
+			return content.Load<Effect>(effectName);
+#elif MONOGAME
+			return content.Load<Effect>(effectPrefix + "forwardRender");
+#endif
+		}
+
 		/// <summary>
 		/// Base renderer where custom RenderTasks derive from, with their
 		/// own set of Scenes and render targets for inputs and outputs.
 		/// </summary> 
 
-		public BaseShader(RenderProfile profile, ResourceContentManager content)
+		public BaseShader(RenderProfile profile, ContentManager content)
 		{
 			hasSceneInput = true;
-			this.resxContent = content;
+			this.content = content;
 
 			graphicsDevice = profile.graphicsDevice;
 
@@ -130,18 +136,6 @@ namespace Meteor.Rendering
 		}
 
 		/// <summary>
-		/// Apply scene, camera and render target inputs from other sources.
-		/// </summary> 
-
-		public void SetInputs(Scene scene, Camera camera, params RenderTarget2D[] targets)
-		{
-			this.scene = scene;
-			this.camera = camera;
-
-			SetInputs(targets);
-		}
-
-		/// <summary>
 		/// Send the outputs to a destination SceneRenderer.
 		/// </summary> 
 
@@ -160,20 +154,6 @@ namespace Meteor.Rendering
 
 			if (srcInput != null && destInput != null)
 				destInput = srcInput;
-		}
-
-		public abstract RenderTarget2D[] Draw();
-
-		/// <summary>
-		/// Get rid of the render targets associated with this renderer.
-		/// </summary> 
-
-		public void DisposeResources()
-		{
-			foreach (RenderTargetInput input in renderInputs.Values)
-			{
-				//input.target.Dispose();
-			}
 		}
 	}
 }

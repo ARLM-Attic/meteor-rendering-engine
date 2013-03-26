@@ -20,6 +20,7 @@ namespace Meteor.Rendering
 
 		EffectParameter diffuseMap;
 		EffectParameter blurMap;
+		EffectParameter halfPixelParam;
 
 		/// Final combined pass
 		RenderTarget2D[] finalRT;
@@ -33,7 +34,7 @@ namespace Meteor.Rendering
 		Effect blurEffect;
 		GaussianBlur blur;
 
-		public BloomShader(RenderProfile profile, ResourceContentManager content)
+		public BloomShader(RenderProfile profile, ContentManager content)
 			: base(profile, content)
 		{
 			finalRT = new RenderTarget2D[3];
@@ -48,7 +49,7 @@ namespace Meteor.Rendering
 				backBufferHeight / 4, SurfaceFormat.Rgba1010102, DepthFormat.None);
 
 			// Load the shader effects
-			blurEffect = content.Load<Effect>("blur");
+			blurEffect = LoadEffect("blur");
 			blur = new GaussianBlur(backBufferWidth, backBufferHeight, 0.5f, blurEffect);
 
 			// Set shader parameters
@@ -64,9 +65,12 @@ namespace Meteor.Rendering
 			// Texture parameters
 			diffuseMap = blurEffect.Parameters["diffuseMap"];
 			blurMap = blurEffect.Parameters["blurMap"];
+			halfPixelParam = blurEffect.Parameters["halfPixel"];
 
 			threshold.SetValue(0.75f);
 			bloomIntensity.SetValue(1f);
+			halfPixelParam.SetValue(halfPixel);
+
 			saturation.SetValue(1.25f);
 			contrast.SetValue(1.05f);
 		}
@@ -75,7 +79,7 @@ namespace Meteor.Rendering
 		/// Draw the blur effect
 		/// </summary>
 
-		public override RenderTarget2D[] Draw()
+		public RenderTarget2D[] Draw()
 		{
 			int totalPasses;
 			renderStopWatch.Start();

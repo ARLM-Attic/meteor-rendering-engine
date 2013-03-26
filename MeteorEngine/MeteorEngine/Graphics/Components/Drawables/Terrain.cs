@@ -14,11 +14,8 @@ namespace Meteor.Resources
 	
 	public class Terrain
 	{
-		/// Graphics device to set map data
-		GraphicsDevice graphicsDevice;
-
 		/// Content manager to load images
-		ContentManager content;
+		ContentManager terrainContent;
 
 		/// Heightmap dimensions
 		int terrainWidth;
@@ -108,6 +105,7 @@ namespace Meteor.Resources
 
 		/// Rasterizer state for debugging
 		private RasterizerState rWireframeState;
+		private GraphicsDeviceManager graphics;
 
 		/// <summary>
 		/// Constructor to set up content and default texture
@@ -115,25 +113,35 @@ namespace Meteor.Resources
 		/// <param name="content"></param>
 		/// <param name="device"></param>
 
-		public Terrain(ContentManager content, GraphicsDevice device)
+		public Terrain(GraphicsDevice graphicsDevice)
 		{
-			this.content = content;
-			this.graphicsDevice = device;
-
 			rWireframeState = new RasterizerState();
 			rWireframeState.FillMode = FillMode.WireFrame;
+
+			// Create index buffers for each patch LOD
+			indices = new ushort[mipLevels][];
+			patchIndexBuffers = new IndexBuffer[mipLevels];
+
+			for (int i = 0; i < mipLevels; i++)
+				SetUpIndices(graphicsDevice, i);
+		}
+
+		public Terrain(GraphicsDeviceManager graphics)
+		{
+			// TODO: Complete member initialization
+			this.graphics = graphics;
 		}
 
 		/// <summary>
 		/// Create a heightmap from a grayscale image
 		/// </summary>
 		
-		public void GenerateFromImage()
+		public void GenerateFromImage(IServiceProvider services)
 		{
-			Texture2D heightMapTextureSource = content.Load<Texture2D>(heightMapTexture);
-			baseTextureSource = content.Load<Texture2D>(baseTexture);
-			steepTextureSource = content.Load<Texture2D>(steepTexture);
-			steepNormalMapSource = content.Load<Texture2D>(steepNormalMap);
+			terrainContent = new ContentManager(services, "Content");
+
+			// First load the height map so we can get rid of it soon afterwards.
+			Texture2D heightMapTextureSource = terrainContent.Load<Texture2D>(heightMapTexture);
 
 			terrainWidth = heightMapTextureSource.Width;
 			terrainHeight = heightMapTextureSource.Height;
@@ -156,20 +164,19 @@ namespace Meteor.Resources
 
 			// Calculate heightmap position
 			mapPosition = new Vector3(
-				-(terrainWidth * scale) / 2,
-				-40f * scale,
+				-(terrainWidth * scale) / 2, -40f * scale,
 				(terrainHeight * scale) / 2);
+
+			// Heightmap source no longer needed. Now load the textures.
+			terrainContent.Unload();
+
+			baseTextureSource = terrainContent.Load<Texture2D>(baseTexture);
+			steepTextureSource = terrainContent.Load<Texture2D>(steepTexture);
+			steepNormalMapSource = terrainContent.Load<Texture2D>(steepNormalMap);
 
 			// Determine how many tiles should be needed to fit within the bounds of the terrain
 			gridSize.X = terrainWidth / TerrainPatch.patchSize;
 			gridSize.Y = terrainHeight / TerrainPatch.patchSize;
-
-			// Create index buffers for each patch LOD
-			indices = new ushort[mipLevels][];
-			patchIndexBuffers = new IndexBuffer[mipLevels];
-
-			for (int i = 0; i < mipLevels; i++)
-				SetUpIndices(i);
 
 			// Create terrain patches
 			terrainPatches = new TerrainPatch[(int)gridSize.X, (int)gridSize.Y];
@@ -179,11 +186,8 @@ namespace Meteor.Resources
 			patchesBuilt = 0;
 		}
 
-		/// <summary>
-		/// Build the array of terrain patches to draw with
-		/// </summary>
-
-		public void BuildTerrainTiles()
+		/*
+		public void BuildMeshData(GraphicsDevice graphicsDevice)
 		{
 			// Iterate backwards because we need to grab neighboring edges for normals
 			for (int i = (int)(gridSize.X * gridSize.Y) - 1; i >= 0; i--)
@@ -216,10 +220,14 @@ namespace Meteor.Resources
 					if (y > 0)	currentPatch.neighbors[0] = terrainPatches[y - 1, x];
 					if (x > 0)	currentPatch.neighbors[2] = terrainPatches[y, x - 1];
 				}
-			}*/
+			}
 		}
+		*/
+		/// <summary>
+		/// Build the array of terrain patches to draw with
+		/// </summary>
 
-		public bool BuildTerrainTiles(int tilesToBuild = 100)
+		public bool BuildMeshData(GraphicsDevice graphicsDevice, int tilesToBuild = 10)
 		{
 			// Iterate backwards because we need to grab neighboring edges for normals
 			for (int i = 0; i < tilesToBuild; i++)
@@ -265,21 +273,6 @@ namespace Meteor.Resources
 					floatHeights[y, x] = heightData[y, x];
 
 			return floatHeights;
-		}
-
-		/// <summary>
-		/// Force a rebuild of vertex data for the terrain.
-		/// </summary>
-
-		public void Rebuild()
-		{
-			for (int y = (int)gridSize.Y - 1; y >= 0; y--)
-			{
-				for (int x = (int)gridSize.X - 1; x >= 0; x--)
-				{
-					terrainPatches[y, x].UpdateMap(heightData, scale, heightScale, mapPosition, indices);
-				}
-			}
 		}
 
 		/// <summary>
@@ -345,10 +338,40 @@ namespace Meteor.Resources
 		}
 
 		/// <summary>
+		/// Get the interpolated position from an intersecting ray.
+		/// </summary>
+
+		public Vector3 GetPosition(Ray ray)
+		{
+			Vector3 rayOrigin = ray.Position;
+			Vector3 rayDirection = ray.Direction;
+
+			// Move ray to local space
+
+			// readjust coordinate origin
+			//rayOrigin.X += terrainWidth / 2;
+			//rayOrigin.Z += terrainHeight / 2;
+
+			// scale down to vertex level
+			//rayOrigin /= scale;
+			//rayDirection /= scale;
+			//rayDirection.Normalize();
+
+			Ray localRay = new Ray(rayOrigin, rayDirection);
+
+			foreach(TerrainPatch patch in visiblePatches)
+			{
+				float? intersect = localRay.Intersects(patch.boundingBox);
+				patch.active = (intersect != null);
+			}
+			return Vector3.Zero;
+		}
+
+		/// <summary>
 		/// Get the vertex indices for the terrain mesh
 		/// </summary>
 
-		private void SetUpIndices(int mipLevel)
+		private void SetUpIndices(GraphicsDevice graphicsDevice, int mipLevel)
 		{
 			short meshSize = (short)TerrainPatch.patchSize;
 
@@ -390,11 +413,14 @@ namespace Meteor.Resources
 		/// Draw in wireframe (activated by debug mode only)
 		/// </summary>
 		[Conditional("DEBUG")]
-		private void DrawDebug(Camera camera, Effect effect)
+		private void DrawDebug(GraphicsDevice graphicsDevice, Camera camera, Effect effect)
 		{
 			// Draw bounding boxes
 			for (int i = 0; i < totalVisiblePatches; i++)
-				ShapeRenderer.AddBoundingBox(visiblePatches[i].boundingBox, Color.Red);
+			{
+				Color color = (visiblePatches[i].active) ? Color.Yellow : Color.Red;
+				ShapeRenderer.AddBoundingBox(visiblePatches[i].boundingBox, color);
+			}			
 
 			ShapeRenderer.Draw(camera.view, camera.projection);
 
@@ -427,7 +453,7 @@ namespace Meteor.Resources
 					pass.Apply();
 					graphicsDevice.DrawIndexedPrimitives(
 						PrimitiveType.TriangleList, 0, 0,
-						visiblePatches[i].Meshes[currentMipLevel].UpdatedVertices, 0,
+						visiblePatches[i].Meshes[currentMipLevel].updatedVertices, 0,
 						patchIndexBuffers[currentMipLevel].IndexCount / 3);
 				}
 			}
@@ -437,7 +463,7 @@ namespace Meteor.Resources
 		/// Draw the terrain mesh with the desired effect
 		/// </summary>
 
-		public int Draw(Camera camera, Effect effect)
+		public int Draw(GraphicsDevice graphicsDevice, Camera camera, Effect effect)
 		{
 			effect.Parameters["Texture"].SetValue(baseTextureSource);
 
@@ -477,9 +503,9 @@ namespace Meteor.Resources
 				Matrix worldMatrix = Matrix.CreateScale(scale) * Matrix.CreateTranslation(location);
 				effect.Parameters["World"].SetValue(worldMatrix);
 
-				// Color code the patches
+				// Color the patches
 				int currentMipLevel = visiblePatches[i].currentMipLevel;
-				effect.Parameters["clipLevel"].SetValue(currentMipLevel);
+				effect.Parameters["clipLevel"].SetValue(visiblePatches[i].active);
 
 				graphicsDevice.Indices = patchIndexBuffers[currentMipLevel];
 				graphicsDevice.SetVertexBuffer(visiblePatches[i].Meshes[currentMipLevel].Vertices);
@@ -489,7 +515,7 @@ namespace Meteor.Resources
 					pass.Apply();
 					graphicsDevice.DrawIndexedPrimitives(
 						PrimitiveType.TriangleList, 0, 0,
-						visiblePatches[i].Meshes[currentMipLevel].UpdatedVertices, 0,
+						visiblePatches[i].Meshes[currentMipLevel].updatedVertices, 0,
 						patchIndexBuffers[currentMipLevel].IndexCount / 3);
 				}
 
@@ -500,7 +526,7 @@ namespace Meteor.Resources
 			// Draw in wireframe mode
 			if (debug > 2) debug = 0;
 			if (debug > 0)
-				DrawDebug(camera, effect);
+				DrawDebug(graphicsDevice, camera, effect);
 			
 			// End rendering clipmaps
 			return polycount;

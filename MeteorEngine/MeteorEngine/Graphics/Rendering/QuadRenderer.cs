@@ -104,8 +104,11 @@ namespace Meteor.Resources
 
 		public void SetVertices(Vector2 v1, Vector2 v2)
 		{
+#if XNA
 			device.SetVertexBuffers(null);
-
+#elif MONOGAME
+			device.SetVertexBuffer(null);
+#endif
 			verts[0].Position.X = v2.X;
 			verts[0].Position.Y = v1.Y;
 
@@ -154,7 +157,7 @@ namespace Meteor.Resources
 		/// <summary>
 		/// Use instanced rendering
 		/// </summary>
-
+#if XNA
 		public void RenderInstanced(DynamicVertexBuffer dynamicVertexBuffer, int totalInstances)
 		{
 			// Tell the GPU to read from both the model vertex buffer plus our instanceVertexBuffer
@@ -168,5 +171,6 @@ namespace Meteor.Resources
 			device.DrawInstancedPrimitives(PrimitiveType.TriangleList, 0, 0, 
 				4, 0, 2, totalInstances);
 		}
+#endif
     }
 }

@@ -8,24 +8,37 @@ namespace Meteor.Resources
 	public class RenderStats
 	{
 		/// Framerate measuring
-		float frameCounter;
+		private float frameCounter;
 		public float frameRate;
 		public long totalFrames;
 
 		/// Measure how much time since past update
-		TimeSpan elapsedTime;
+		private TimeSpan elapsedTime;
 
 		/// Specific time to update at certain intervals
-		TimeSpan frameStepTime;
+		private TimeSpan frameStepTime;
 
 		/// Timer to track rendering time
-		Stopwatch gpuWatch;
-		double gpuTime;
+		private Stopwatch gpuWatch;
+		private double gpuTime;
+
+		/// Total number of triangles rendered
+		public int totalTriangles { private set; get; }
+
+		/// Number of visible lights drawn
+		public int totalLights { private set; get; }
+
+		/// Number of visible meshes (as instances) drawn
+		public int visibleMeshes { private set; get; }
 
 		public double GpuTime
 		{
 			get { return gpuTime; }
 		}
+
+		/// <summary>
+		/// Create a new render stopwatch
+		/// </summary>
 
 		public RenderStats()
 		{
@@ -54,10 +67,30 @@ namespace Meteor.Resources
 			}
 		}
 
+		/// <summary>
+		/// Collect rendering statistics for a scene
+		/// </summary>
+
+		public void SceneStats(Scene scene)
+		{
+			totalTriangles += scene.totalPolys;
+			totalLights += scene.totalLights;
+			visibleMeshes += scene.visibleMeshes;
+		}
+
+		/// <summary>
+		/// Restart the counter
+		/// </summary>
+
 		public void Finish()
 		{
 			frameCounter++;
             totalFrames++;
+
+			// Reset geometry stats
+			totalTriangles = 0;
+			totalLights = 0;
+			visibleMeshes = 0;
 
 			gpuWatch.Reset();
 			gpuWatch.Restart();

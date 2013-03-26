@@ -4,9 +4,8 @@
 
 // Light and camera properties
 float3 lightDirection;
-float3 lightColor;
+float4 lightColor;
 float3 ambientTerm;
-float lightIntensity;
 float3 camPosition;
 
 texture Texture;
@@ -70,8 +69,7 @@ float4 PixelShaderLighting(VertexShaderOutput input) : COLOR0
 
 	// Gamma encoding
 	color.rgb *= color.rgb;
-
-	float4 finalColor = float4(color.rgb * (ambientTerm + light) * lightIntensity, 1);
+	float4 finalColor = float4(color.rgb * (ambientTerm + light) * lightColor.a, 1);
 
 	// Add fog based on exponential depth
 	float4 fogColor = float4(0.3, 0.5, 0.92, 1);

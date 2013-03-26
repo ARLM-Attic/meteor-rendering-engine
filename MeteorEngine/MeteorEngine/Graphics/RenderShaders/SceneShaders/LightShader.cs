@@ -78,7 +78,7 @@ namespace Meteor.Rendering
 		/// <param name="profile"></param>
 		/// <param name="content"></param>
 
-		public LightShader(RenderProfile profile, ResourceContentManager content)
+		public LightShader(RenderProfile profile, ContentManager content)
 			: base(profile, content)
 		{
 			// Lighting render target
@@ -115,7 +115,7 @@ namespace Meteor.Rendering
 		/// Update and draw all directional and point lights
 		/// </summary>
 
-		public override RenderTarget2D[] Draw()
+		public RenderTarget2D[] Draw(Scene scene, Camera camera)
 		{
 			renderStopWatch.Start();	
 
@@ -195,7 +195,7 @@ namespace Meteor.Rendering
 						camera.GetFrustumSplit(i, numCascades, splitLambda);
 						splitNearFar[i] = camera.farSplitPlaneDistance / camera.farPlaneDistance;
 
-						CreateLightViewProjMatrix(light.direction, lightCamera);
+						CreateLightViewProjMatrix(light.direction, camera, lightCamera);
 						lightViewProj[i] = lightCamera.view * lightCamera.projection;
 					}
 
@@ -221,7 +221,7 @@ namespace Meteor.Rendering
 		/// in the scene.
 		/// </summary>
 		/// <returns>The WorldViewProjection for the light</returns>
-		void CreateLightViewProjMatrix(Vector3 lightDirection, Camera lightCamera)
+		void CreateLightViewProjMatrix(Vector3 lightDirection, Camera camera, Camera lightCamera)
 		{
 			// Matrix with that will rotate in points the direction of the light
 			Matrix lightRotation = Matrix.CreateLookAt(Vector3.Zero, lightDirection, Vector3.Up);
@@ -408,7 +408,7 @@ namespace Meteor.Rendering
 			instanceVertexBuffer.SetData(lights.ToArray(), 0, totalInstances, SetDataOptions.Discard);
 
 			// Draw the point light
-
+#if XNA
 			foreach (ModelMesh mesh in sphereModel.Meshes)
 			{
 				foreach (ModelMeshPart meshPart in mesh.MeshParts)
@@ -434,6 +434,7 @@ namespace Meteor.Rendering
 					}
 				}
 			}
+#endif
 			// Finish rendering spheres
 		}
 
@@ -441,13 +442,11 @@ namespace Meteor.Rendering
 		/// Remove the vertex buffer and sphere model.
 		/// </summary> 
 
-		protected new void DisposeResources()
+		protected void DisposeResources()
 		{
 			if (instanceVertexBuffer != null)
 				instanceVertexBuffer.Dispose();
 			sphereModel.Meshes.GetEnumerator().Dispose();
-
-			base.DisposeResources();
 		}
 	}
 }

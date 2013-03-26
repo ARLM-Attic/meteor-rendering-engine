@@ -161,18 +161,27 @@ namespace Meteor
 
 				// Work out remainder we need to print after the d.p.
 				float remainder = Math.Abs(float_val - int_part);
+				uint places = decimal_places;
+				uint factor = 1;
 
 				// Multiply up to become an int that we can print
 				do
 				{
 					remainder *= 10;
+					factor *= 10;
 					decimal_places--;
 				}
 				while (decimal_places > 0);
 
 				// Round up. It's guaranteed to be a positive number, so no extra work required here.
-				remainder += 0.5f;
-
+				//remainder += 0.5f;
+				do
+				{
+					if (remainder / (float)factor < 0.1f)
+						string_builder.Append('0', 1);
+					factor /= 10;
+				}
+				while (factor > 1);
 				// All done, print that as an int!
 				string_builder.Concat((uint)remainder, 0, '0', 10);
 			}

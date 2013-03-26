@@ -44,7 +44,7 @@ namespace Meteor.Rendering
 		/// </summary>
 
 		public DeferredRenderer(GraphicsDevice graphics, 
-			ResourceContentManager content) : base(graphics, content) { }
+			ContentManager content) : base(graphics, content) { }
 
 		/// <summary>
 		/// Load all the renderers needed for this profile
@@ -54,33 +54,32 @@ namespace Meteor.Rendering
 		{
 			base.Initialize();
 
-			gBuffer = new GBufferShader(this, resxContent);
-			lights = new LightShader(this, resxContent);
-			depth = new DepthMapShader(this, resxContent);
-			composite = new CompositeShader(this, resxContent);
-			dof = new DepthOfFieldShader(this, resxContent);
-			blur = new BlurShader(this, resxContent);
-			copy = new CopyShader(this, resxContent);
-			bloom = new BloomShader(this, resxContent);
-			ssao = new SSAOShader(this, resxContent);
+			gBuffer = new GBufferShader(this, content);
+			lights = new LightShader(this, content);
+			depth = new DepthMapShader(this, content);
+			composite = new CompositeShader(this, content);
+			dof = new DepthOfFieldShader(this, content);
+			blur = new BlurShader(this, content);
+			copy = new CopyShader(this, content);
+			bloom = new BloomShader(this, content);
+			ssao = new SSAOShader(this, content);
 		}
 
 		/// <summary>
 		/// Map all render target inputs to link the shaders
 		/// </summary>
 
-		public override void MapInputs(Scene scene, Camera camera)
+		public override void MapInputs()
 		{
 			// Map the renderer inputs to outputs
-			gBuffer.SetInputs(scene, camera, null);
-			depth.SetInputs(scene, camera, null);
-			lights.SetInputs(scene, camera, gBuffer.outputs[0], gBuffer.outputs[1],
+			gBuffer.SetInputs(null);
+			depth.SetInputs(null);
+			lights.SetInputs(gBuffer.outputs[0], gBuffer.outputs[1],
 				gBuffer.outputs[3], depth.outputs[0]);
-			composite.SetInputs(scene, camera, 
-				gBuffer.outputs[2], lights.outputs[0], ssao.outputs[0], gBuffer.outputs[1]);
+			composite.SetInputs(gBuffer.outputs[2], lights.outputs[0], ssao.outputs[0], gBuffer.outputs[1]);
 			copy.SetInputs(composite.outputs);
 			blur.SetInputs(composite.outputs);
-			ssao.SetInputs(scene, camera, gBuffer.outputs[0], gBuffer.outputs[1]);
+			ssao.SetInputs(gBuffer.outputs[0], gBuffer.outputs[1]);
 			dof.SetInputs(composite.outputs[0], copy.outputs[0], gBuffer.outputs[1]);
 			bloom.SetInputs(dof.outputs);
 
@@ -93,12 +92,12 @@ namespace Meteor.Rendering
 			debugRenderTargets.Add(depth.outputs[0]);
 		}
 
-		public override void Draw()
+		public override void Draw(Scene scene, Camera camera)
 		{
 			// Create the lighting map
-			gBuffer.Draw();
-			depth.Draw();
-			lights.Draw();
+			gBuffer.Draw(scene, camera);
+			depth.Draw(scene, camera);
+			lights.Draw(scene, camera);
 
 			// Composite drawing
 			composite.Draw();

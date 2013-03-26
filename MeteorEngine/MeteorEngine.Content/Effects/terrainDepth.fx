@@ -2,18 +2,24 @@
 //	TerrainDepth
 //-----------------------------------------
 
-//--- Parameters ---
-
 float4x4 World;
 float4x4 LightViewProj;
 
+/// Visual texture features
+
 float textureScale;
 float mapScale;
+float heightScale;
 float meshSize;
-float clipLevel;
-float specIntensity;
 float specPower;
+float specIntensity;
 float bumpIntensity;
+
+/// Debug features
+
+float clipLevel;
+
+/// Base textures
 
 texture Texture;
 
@@ -40,7 +46,7 @@ VertexShaderOutput DepthMapVS(VertexShaderInput input)
 
 	float4 localPosition;
 	localPosition.x = input.position.x % meshSize;
-	localPosition.y = input.position.y;
+	localPosition.y = input.position.y * heightScale;
 	localPosition.z = -(int)(input.position.x / meshSize);
 	localPosition.w = 1;
 

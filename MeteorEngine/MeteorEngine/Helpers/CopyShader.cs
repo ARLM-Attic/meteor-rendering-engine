@@ -26,7 +26,7 @@ namespace Meteor.Rendering
 
 		Effect gBufferEffect;
 
-		public CopyShader(RenderProfile profile, ResourceContentManager content)
+		public CopyShader(RenderProfile profile, ContentManager content)
 			: base(profile, content)
 		{
 			hasSceneInput = true;
@@ -41,7 +41,7 @@ namespace Meteor.Rendering
 		/// Copy the view to another render target
 		/// </summary> 
 
-		public override RenderTarget2D[] Draw()
+		public RenderTarget2D[] Draw()
 		{
 			// Prepare the rendering
 			graphicsDevice.SetRenderTarget(copyRT);

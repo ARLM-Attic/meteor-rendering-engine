@@ -31,11 +31,7 @@ namespace Meteor.Resources
 		public Vector3 scaling;
 
 		/// Bounding sphere of object
-		private BoundingSphere bSphere;
-		public BoundingSphere BSphere
-		{
-			get { return bSphere; }
-		}
+		public BoundingSphere boundingSphere { private set; get; }
 
 		/// Unchanged bounding sphere of object
 		private readonly BoundingSphere originalBSphere;
@@ -53,7 +49,7 @@ namespace Meteor.Resources
 			transform = Matrix.Identity;
 
 			originalBSphere = sphere;
-			bSphere = sphere;
+			boundingSphere = sphere;
 
 			scaling = new Vector3(1, 1, 1);
 			largestScale = 1f;
@@ -66,7 +62,7 @@ namespace Meteor.Resources
 			transform.Decompose(out this.scaling, out this.rotation, out this.position);
 			
 			originalBSphere = sphere;
-			bSphere = originalBSphere.Transform(transform);
+			boundingSphere = originalBSphere.Transform(transform);
 		}
 
 		/// <summary>
@@ -80,7 +76,7 @@ namespace Meteor.Resources
 				Matrix.CreateTranslation(position);
 
 			// Update the bounding sphere
-			bSphere = originalBSphere.Transform(transform);
+			boundingSphere = originalBSphere.Transform(transform);
 
 			return transform;
 		}
@@ -95,7 +91,7 @@ namespace Meteor.Resources
 			position = worldTransform.Translation;
 
 			// Update the bounding sphere
-			bSphere = originalBSphere.Transform(transform);
+			boundingSphere = originalBSphere.Transform(transform);
 
 			return transform;
 		}

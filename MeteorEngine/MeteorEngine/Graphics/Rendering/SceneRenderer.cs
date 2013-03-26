@@ -36,16 +36,16 @@ namespace Meteor.Rendering
 		/// Dummy textures to use in case they are missing in the model.
 		Texture2D blankNormal, blankTexture, blankSpecular;
 
-		/// Rendering imposters for the scenes
-		Imposter imposter;
-
 		/// Containers for temp data, to avoid calling the GC
 		Vector3[] boxCorners;
 		Matrix[] tempBones;
 
 		/// Swap space for vertex buffer bindings
+#if MONOGAME
+		VertexBuffer[] vertexBufferBindings;
+#elif XNA
 		VertexBufferBinding[] vertexBufferBindings;
-
+#endif
 		/// Vertex data for a dummy box
 		VertexBuffer dummyBoxVB;
 
@@ -53,13 +53,12 @@ namespace Meteor.Rendering
 		/// Create a SceneRenderer with graphics device and content manager.
 		/// </summary>
 
-	    public SceneRenderer(GraphicsDevice device, ResourceContentManager content)
+	    public SceneRenderer(GraphicsDevice device, ContentManager content)
         {
 			this.graphicsDevice = device; 
 			this.content = content;
 
 			spriteBatch = new SpriteBatch(graphicsDevice);
-			imposter = new Imposter(graphicsDevice, content);
 
             // Use standard GBuffer as a default
             shaderTechnique = "GBuffer";
@@ -95,7 +94,11 @@ namespace Meteor.Rendering
 			tempBones = new Matrix[60];
 
 			// Create the instance data vertex buffer.
+#if XNA
 			vertexBufferBindings = new VertexBufferBinding[2];
+#elif MONOGAME
+			vertexBufferBindings = new VertexBuffer[2];
+#endif
 		}
 
 		/// <summary>
@@ -184,8 +187,12 @@ namespace Meteor.Rendering
 		{
 			if (scene.terrain != null)
 			{
+				// Create vertex buffer if necessary
+				if (scene.terrain.nextPatch > 0)
+					scene.terrain.BuildMeshData(graphicsDevice, 4);
+
 				effect.CurrentTechnique = effect.Techniques[shaderTechnique];
-				scene.totalPolys += scene.terrain.Draw(camera, effect);
+				scene.totalPolys += scene.terrain.Draw(graphicsDevice, camera, effect);
 			}
 		}
 
@@ -196,17 +203,19 @@ namespace Meteor.Rendering
 		public void DrawTerrainDefault(Scene scene, Camera camera, Effect effect)
 		{
 			if (scene.terrain != null)
-				scene.totalPolys += scene.terrain.Draw(camera, effect);
+			{
+				scene.totalPolys += scene.terrain.Draw(graphicsDevice, camera, effect);
+			}
 		}
 
 		/// <summary>
 		/// A bit hacky way to limit bone transforms. Will fix soon.
 		/// </summary>
-
+		
 		private void TrimBoneTransforms(Meteor.Resources.Model instancedModel)
 		{
 			//instancedModel.model.CopyAbsoluteBoneTransformsTo(instancedModel.boneMatrices);
-
+			
 			if (instancedModel.animationPlayer != null)
 			{
 				Matrix[] bones = instancedModel.animationPlayer.GetSkinTransforms();
@@ -223,11 +232,19 @@ namespace Meteor.Rendering
 
 		private int DrawModel(Meteor.Resources.Model model, String technique)
 		{
-			//if (model.animationPlayer != null)
-			//	technique += "Animated";
+			if (model.animationPlayer != null)
+			{
+				String animatedTechnique = technique += "Animated";
+				UseTechnique(animatedTechnique);
+				TrimBoneTransforms(model);
 
-			UseTechnique(technique);
-			TrimBoneTransforms(model);
+				// Set bones if the model is animated
+				currentEffect.Parameters["bones"].SetValue(tempBones);
+			}
+			else
+			{
+				UseTechnique(technique);
+			}
 
 			int meshIndex = 0;
 			int visibleInstances = 0;
@@ -235,7 +252,7 @@ namespace Meteor.Rendering
 			foreach (MeshInstanceGroup instanceGroup in model.MeshInstanceGroups.Values)
 			{
 				// Create vertex buffer if necessary
-				model.PrepareMeshData(graphicsDevice, instanceGroup);
+				model.BuildMeshData(graphicsDevice, instanceGroup);
 
 				// Retrieve the current mesh from the mesh list
 				ModelMesh mesh = model.modelMeshes[meshIndex];
@@ -246,10 +263,6 @@ namespace Meteor.Rendering
 
 				foreach (ModelMeshPart meshPart in model.modelMeshes[meshIndex].MeshParts)
 				{
-					// Set bones if the model is animated
-					if (model.animationPlayer != null)
-						currentEffect.Parameters["bones"].SetValue(tempBones);
-
 					Texture2D textureValue = (model.textures[meshIndex] != null) ?
 						model.textures[meshIndex] : blankTexture;
 
@@ -272,11 +285,19 @@ namespace Meteor.Rendering
 
 		private int DrawModel(Meteor.Resources.Model model, Effect effect, String technique)
 		{
-			//if (model.animationPlayer != null)
-			//	technique += "Animated";
+			if (model.animationPlayer != null)
+			{
+				String animatedTechnique = technique += "Animated";
+				UseTechnique(animatedTechnique);
+				TrimBoneTransforms(model);
 
-			UseTechnique(technique);
-			TrimBoneTransforms(model);
+				// Set bones if the model is animated
+				currentEffect.Parameters["bones"].SetValue(tempBones);
+			}
+			else
+			{
+				UseTechnique(technique);
+			}
 
 			int meshIndex = 0;
 			int visibleInstances = 0;
@@ -284,7 +305,7 @@ namespace Meteor.Rendering
 			foreach (MeshInstanceGroup instanceGroup in model.MeshInstanceGroups.Values)
 			{
 				// Create vertex buffer if necessary
-				model.PrepareMeshData(graphicsDevice, instanceGroup);
+				model.BuildMeshData(graphicsDevice, instanceGroup);
 
 				// Retrieve the current mesh from the mesh list
 				ModelMesh mesh = model.modelMeshes[meshIndex];
@@ -295,10 +316,6 @@ namespace Meteor.Rendering
 
 				foreach (ModelMeshPart meshPart in mesh.MeshParts)
 				{
-					// Set bones if the model is animated
-					if (model.animationPlayer != null)
-						currentEffect.Parameters["bones"].SetValue(tempBones);
-
 					Texture2D textureValue = (model.textures[meshIndex] != null) ?
 						model.textures[meshIndex] : blankTexture;
 
@@ -323,12 +340,19 @@ namespace Meteor.Rendering
 			// Skip rendering the mesh parts if they aren't visible
 			if (instanceGroup.totalVisible == 0)
 				return;
-
+#if XNA
 			vertexBufferBindings[0] = new VertexBufferBinding(meshPart.VertexBuffer, meshPart.VertexOffset, 0);
 			vertexBufferBindings[1] = new VertexBufferBinding(instanceGroup.instanceVB, 0, 1);
 
 			// Bind both mesh vertex buffer and per-instance matrix data
 			graphicsDevice.SetVertexBuffers(vertexBufferBindings);
+#elif MONOGAME
+			vertexBufferBindings[0] = meshPart.VertexBuffer;
+			vertexBufferBindings[1] = instanceGroup.instanceVB;
+
+			// Set mesh vertex buffer 
+			graphicsDevice.SetVertexBuffer(vertexBufferBindings[0]);
+#endif
 			graphicsDevice.Indices = meshPart.IndexBuffer;
 
 			// Assign effect technique
@@ -337,57 +361,18 @@ namespace Meteor.Rendering
 			for (int i = 0; i < currentEffect.CurrentTechnique.Passes.Count; i++)
 			{
 				currentEffect.CurrentTechnique.Passes[i].Apply();
-
+#if XNA
 				// Or draw the dummyBox
 				graphicsDevice.DrawInstancedPrimitives(
 					PrimitiveType.TriangleList, 0, 0,
 					meshPart.NumVertices, meshPart.StartIndex,
 					meshPart.PrimitiveCount, instanceGroup.totalVisible);
+#endif
 			}
 			// Add to the scene's polygon count
 			totalPolys += meshPart.NumVertices * instanceGroup.totalVisible;
 		}
 
-		/// <summary>
-		/// Draw a mesh dummy box with a default effect
-		/// </summary>
-
-		private void DrawInstancedMeshDummyBox(MeshInstanceGroup instanceGroup)
-		{
-			// Skip rendering the mesh parts if they aren't visible
-			if (instanceGroup.totalVisible == 0)
-				return;
-
-			vertexBufferBindings[0] = new VertexBufferBinding(dummyBoxVB, 0, 0);
-			vertexBufferBindings[1] = new VertexBufferBinding(instanceGroup.instanceVB, 0, 1);
-
-			// Bind both mesh vertex buffer and per-instance matrix data
-			graphicsDevice.SetVertexBuffers(vertexBufferBindings);
-
-			short[] boxIndices = new short[36];
-
-			for (short i = 0; i < 36; i++)
-				boxIndices[i] = i;
-
-			IndexBuffer dummyBoxIB = new IndexBuffer(graphicsDevice, IndexElementSize.SixteenBits, 36, BufferUsage.WriteOnly);
-			dummyBoxIB.SetData(boxIndices);
-			graphicsDevice.Indices = dummyBoxIB;
-
-			// Assign effect technique
-			currentEffect.CurrentTechnique = currentEffect.Techniques["BasicMesh"];
-
-			for (int i = 0; i < currentEffect.CurrentTechnique.Passes.Count; i++)
-			{
-				currentEffect.CurrentTechnique.Passes[i].Apply();
-
-				// Draw the dummyBox
-				graphicsDevice.DrawInstancedPrimitives(
-					PrimitiveType.TriangleList, 0, 0,
-					dummyBoxVB.VertexCount, 0,
-					dummyBoxIB.IndexCount / 3, instanceGroup.totalVisible);
-			}
-		}
-		
 		/// <summary>
 		/// Draw the scene's skybox
 		/// </summary>
@@ -511,7 +496,7 @@ namespace Meteor.Rendering
 					// TODO: Update these boxes only when intances are updated
 
 					// Render the bounding box for this instance
-					if (camera.frustum.Contains(meshInstance.BSphere) != ContainmentType.Disjoint)
+					if (camera.frustum.Contains(meshInstance.boundingSphere) != ContainmentType.Disjoint)
 					{
 						// Add a bounding sphere to the list of shapes to draw
 						//ShapeRenderer.AddBoundingSphere(meshInstance.BSphere, Color.Red);

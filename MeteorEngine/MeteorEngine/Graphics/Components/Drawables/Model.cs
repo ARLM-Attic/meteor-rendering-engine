@@ -254,11 +254,14 @@ namespace Meteor.Resources
 		/// <summary>
 		/// Resize mesh vertex buffer and/or get the bone matrices
 		/// </summary>
-		public void PrepareMeshData(GraphicsDevice graphicsDevice, MeshInstanceGroup instanceGroup)
+		public void BuildMeshData(GraphicsDevice graphicsDevice, MeshInstanceGroup instanceGroup)
 		{
 			int totalInstances = instanceGroup.instances.Count;
+#if XNA
 			graphicsDevice.SetVertexBuffers(null);
-
+#elif MONOGAME
+			graphicsDevice.SetVertexBuffer(null);
+#endif
 			/// Resize the vertex buffer for instances if needed
 			if (instanceGroup.instanceVB == null ||
 				totalInstances > instanceGroup.instanceVB.VertexCount)

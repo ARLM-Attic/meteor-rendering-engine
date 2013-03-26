@@ -42,6 +42,9 @@ namespace Meteor.Resources
 			get { return meshes; }
 		}
 
+		/// Set to active (for selection)
+		public bool active = false;
+
 		/// Current mipmap level being used to render
 		public int currentMipLevel = 0;
 

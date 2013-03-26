@@ -35,7 +35,7 @@ namespace Meteor.Rendering
 		/// </summary>
 
 		public ForwardRenderer(GraphicsDevice graphics, 
-			ResourceContentManager content) : base(graphics, content) { }
+			ContentManager content) : base(graphics, content) { }
 
 		/// <summary>
 		/// Load all the renderers needed for this profile
@@ -45,25 +45,25 @@ namespace Meteor.Rendering
 		{
 			base.Initialize();
 
-			forward = new ForwardShader(this, resxContent);
-			depth = new DepthMapShader(this, resxContent);
-			dof = new DepthOfFieldShader(this, resxContent);
-			blur = new BlurShader(this, resxContent);
-			copy = new CopyShader(this, resxContent);
-			bloom = new BloomShader(this, resxContent);
+			forward = new ForwardShader(this, content);
+			depth = new DepthMapShader(this, content);
+			//dof = new DepthOfFieldShader(this, content);
+			//blur = new BlurShader(this, content);
+			//copy = new CopyShader(this, content);
+			bloom = new BloomShader(this, content);
 		}
 
 		/// <summary>
 		/// Map all render target inputs to link the shaders
 		/// </summary>
 
-		public override void MapInputs(Scene scene, Camera camera)
+		public override void MapInputs()
 		{
 			// Map the renderer inputs to outputs
-			forward.SetInputs(scene, camera, null);
-			depth.SetInputs(scene, camera, null);
-			copy.SetInputs(forward.outputs);
-			blur.SetInputs(forward.outputs);
+			forward.SetInputs(null);
+			depth.SetInputs(null);
+			//copy.SetInputs(forward.outputs);
+			//blur.SetInputs(forward.outputs);
 			bloom.SetInputs(forward.outputs);
 
 			// Set the debug targets
@@ -71,9 +71,9 @@ namespace Meteor.Rendering
 			debugRenderTargets.Add(depth.outputs[0]);
 		}
 
-		public override void Draw()
+		public override void Draw(Scene scene, Camera camera)
 		{
-			forward.Draw();
+			forward.Draw(scene, camera);
 			/*
 			// Post effects
 			copy.Draw();

@@ -20,7 +20,7 @@ namespace Meteor.Rendering
 
 		Random randomNumber;
 
-		public CompositeShader(RenderProfile profile, ResourceContentManager content)
+		public CompositeShader(RenderProfile profile, ContentManager content)
 			: base(profile, content)
 		{
 			// Light and combined effect targets
@@ -45,7 +45,7 @@ namespace Meteor.Rendering
 		/// Draw the final composite scene with lights
 		/// </summary>
 
-		public override RenderTarget2D[] Draw()
+		public RenderTarget2D[] Draw()
 		{
 			renderStopWatch.Start();
 
@@ -66,7 +66,6 @@ namespace Meteor.Rendering
 
 			// Combine lighting effects with diffuse color
 			finalComboEffect.Parameters["includeSSAO"].SetValue(includeSSAO);
-			finalComboEffect.Parameters["ambientTerm"].SetValue(scene.ambientLight);
 			finalComboEffect.Parameters["halfPixel"].SetValue(halfPixel);
 
 			finalComboEffect.CurrentTechnique.Passes[0].Apply();

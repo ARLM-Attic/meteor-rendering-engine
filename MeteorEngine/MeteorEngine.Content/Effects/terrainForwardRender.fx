@@ -9,9 +9,8 @@
 
 float3 CameraPosition;
 float3 lightDirection;
-float3 lightColor;
+float4 lightColor;
 float3 ambientTerm;
-float lightIntensity;
 
 /// PixelShaders
 
@@ -70,6 +69,9 @@ float4 PixelTerrainForwardRender(VT_Output input) : COLOR0
 	// Blend with scaled texture
 	blendedColor = lerp(blendedColor, blendedColor2, 0.5f);
 	color = lerp(color, blendedColor, depth);
+	
+	color.b += clipLevel * 0.4f;
+	color.rg += clipLevel * 0.2f;
 	color.a = 1;
 
 	// Sample normal map color
@@ -94,12 +96,12 @@ float4 PixelTerrainForwardRender(VT_Output input) : COLOR0
 
 	float3 lightDir = -normalize(lightDirection);
     float ndl = saturate(dot(normal, lightDir));
-	float3 diffuse = ambientTerm + ndl * lightColor;
+	float lightIntensity = lightColor.a;
+	float3 diffuse = (ambientTerm + ndl * lightColor) * lightIntensity;
 
 	// Gamma encoding
 	color.rgb *= color.rgb;
-
-	float4 finalColor = float4(color.rgb * diffuse * lightIntensity, 1);
+	float4 finalColor = float4(color.rgb * diffuse, 1);
 
 	// Add fog based on exponential depth
 	float4 fogColor = float4(0.3, 0.5, 0.92, 1);
@@ -115,9 +117,8 @@ float4 PixelTerrainForwardRender(VT_Output input) : COLOR0
 
 float4 PixelTerrainBasic(VT_Output input) : COLOR0
 {
-	float4 color = TriplanarMapping(input, 5);
-	float4 blendedColor = TriplanarMapping(input, 0.4f);
-
+	float4 color = TriplanarMapping(input, 2.f);
+	float4 blendedColor = TriplanarMapping(input, 0.3f);
 	float depth = pow(abs(input.Depth.x / input.Depth.y), 50);
 
 	// Blend with scaled texture
@@ -138,16 +139,22 @@ float4 PixelTerrainBasic(VT_Output input) : COLOR0
 
 	float3 lightDir = -normalize(lightDirection);
     float ndl = saturate(dot(normal, lightDir));
-	float3 diffuse = ambientTerm + ndl * lightColor;
-	float4 finalColor = float4(color.rgb * diffuse * lightIntensity, 1);
+	float lightIntensity = lightColor.a;
+	float3 diffuse = (ambientTerm + ndl * lightColor) * lightIntensity;
+
+	// Gamma encoding
+	color.rgb *= color.rgb;
+	float4 finalColor = float4(color.rgb * diffuse, 1);
 
 	// Add fog based on exponential depth
 	float4 fogColor = float4(0.3, 0.5, 0.92, 1);
 
 	float4 outDepth = input.Depth.x / input.Depth.y;  
-	finalColor.rgb = lerp(finalColor.rgb, fogColor, pow(abs(outDepth), 1250));
+	//finalColor.rgb = lerp(finalColor.rgb, fogColor, pow(abs(outDepth), 1250));
 
-    return float4(diffuse, 1);
+	// Gamma correct inverse
+	finalColor.rgb = pow(finalColor.rgb, 1 / 2.f);
+    return float4(finalColor.rgb, 1);
 }
 
 float4 PixelTerrainDebug(VT_Output input) : COLOR0

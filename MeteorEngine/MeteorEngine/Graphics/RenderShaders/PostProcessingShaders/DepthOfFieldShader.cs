@@ -22,7 +22,7 @@ namespace Meteor.Rendering
 		/// Range of focus
 		public float focalRange = 0.5f;
 
-		public DepthOfFieldShader(RenderProfile profile, ResourceContentManager content)
+		public DepthOfFieldShader(RenderProfile profile, ContentManager content)
             : base(profile, content)
         {
             // Light and combined effect targets
@@ -43,7 +43,7 @@ namespace Meteor.Rendering
         /// Draw the blur effect
         /// </summary>
 
-		public override RenderTarget2D[] Draw()
+		public RenderTarget2D[] Draw()
         {
             blurEffect.CurrentTechnique = blurEffect.Techniques["DepthOfField"];
 

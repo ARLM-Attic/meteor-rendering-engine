@@ -12,44 +12,44 @@ namespace Meteor.Rendering
 	public class LightPrePassRenderer : RenderProfile
 	{
 		/// Used for drawing the GBuffer
-		BaseShader smallGBuffer;
+		SmallGBufferShader smallGBuffer;
 
 		/// Used for drawing the light map
-		BaseShader lights;
+		LightShader lights;
 
 		/// Draws depth map for shadows
 		DepthMapShader depth;
 
 		/// Forward render with diffuse color
-		BaseShader diffuse;
+		DiffuseShader diffuse;
 
 		/// Helper to copy image
-		BaseShader copy;
+		CopyShader copy;
 
 		/// Comination render for final image
-		BaseShader composite;
+		CompositeShader composite;
 
 		/// Render post process blur
-		BaseShader blur;
+		BlurShader blur;
 
 		/// The bloom shader
-		BaseShader bloom;
+		BloomShader bloom;
 
 		/// Depth of field effect
-		BaseShader dof;
+		DepthOfFieldShader dof;
 
 		/// FXAA effect
-		BaseShader fxaa;
+		FXAAShader fxaa;
 
 		/// SSAO effect
-		BaseShader ssao;
+		SSAOShader ssao;
 
 		/// <summary>
 		/// Constructor to initialize the renderer
 		/// </summary>
 
 		public LightPrePassRenderer(GraphicsDevice graphics, 
-			ResourceContentManager content) : base(graphics, content) { }
+			ContentManager content) : base(graphics, content) { }
 
 		/// <summary>
 		/// Load all the renderers needed for this profile
@@ -59,34 +59,32 @@ namespace Meteor.Rendering
 		{
 			base.Initialize();
 
-			smallGBuffer = new SmallGBufferShader(this, resxContent);
-			lights = new LightShader(this, resxContent);
-			depth = new DepthMapShader(this, resxContent);
-			diffuse = new DiffuseShader(this, resxContent);
-			composite = new CompositeShader(this, resxContent);
-			blur = new BlurShader(this, resxContent);
-			copy = new CopyShader(this, resxContent);
-			ssao = new SSAOShader(this, resxContent);
-			dof = new DepthOfFieldShader(this, resxContent);
-			bloom = new BloomShader(this, resxContent);
-			fxaa = new FXAAShader(this, resxContent);
+			smallGBuffer = new SmallGBufferShader(this, content);
+			lights = new LightShader(this, content);
+			depth = new DepthMapShader(this, content);
+			diffuse = new DiffuseShader(this, content);
+			composite = new CompositeShader(this, content);
+			blur = new BlurShader(this, content);
+			copy = new CopyShader(this, content);
+			ssao = new SSAOShader(this, content);
+			dof = new DepthOfFieldShader(this, content);
+			bloom = new BloomShader(this, content);
+			fxaa = new FXAAShader(this, content);
 		}
 
 		/// <summary>
 		/// Map all render target inputs to link the shaders
 		/// </summary>
 
-		public override void MapInputs(Scene scene, Camera camera)
+		public override void MapInputs()
 		{
 			// Map the renderer inputs to outputs
-			smallGBuffer.SetInputs(scene, camera, null);
-			diffuse.SetInputs(scene, camera, null);
-			depth.SetInputs(scene, camera, null);
-			lights.SetInputs(scene, camera, smallGBuffer.outputs[0], smallGBuffer.outputs[1],
-				diffuse.outputs[0], depth.outputs[0]);
-			ssao.SetInputs(scene, camera, smallGBuffer.outputs);
-			composite.SetInputs(scene, camera, 
-				diffuse.outputs[0], lights.outputs[0], ssao.outputs[0], smallGBuffer.outputs[1]);
+			smallGBuffer.SetInputs(null);
+			diffuse.SetInputs(null);
+			depth.SetInputs(null);
+			lights.SetInputs(smallGBuffer.outputs[0], smallGBuffer.outputs[1], diffuse.outputs[0], depth.outputs[0]);
+			ssao.SetInputs(smallGBuffer.outputs);
+			composite.SetInputs(diffuse.outputs[0], lights.outputs[0], ssao.outputs[0], smallGBuffer.outputs[1]);
 			fxaa.SetInputs(composite.outputs);
 			blur.SetInputs(composite.outputs);
 			copy.SetInputs(composite.outputs);
@@ -102,15 +100,15 @@ namespace Meteor.Rendering
 			debugRenderTargets.Add(depth.outputs[0]);
 		}
 
-		public override void Draw()
+		public override void Draw(Scene scene, Camera camera)
 		{
 			// Create the lighting map
-			smallGBuffer.Draw();
-			depth.Draw();
-			lights.Draw();
+			smallGBuffer.Draw(scene, camera);
+			depth.Draw(scene, camera);
+			lights.Draw(scene, camera);
 
 			// Forward render the scene with diffuse only 
-			diffuse.Draw();
+			diffuse.Draw(scene, camera);
 
 			// Combine with lighting
 			composite.Draw();

@@ -19,7 +19,7 @@ namespace Meteor.Rendering
 		/// Array for looping
 		Effect[] renderEffects;
 
-        public ForwardShader(RenderProfile profile, ResourceContentManager content)
+        public ForwardShader(RenderProfile profile, ContentManager content)
             : base(profile, content) 
 		{
 			hasSceneInput = true;
@@ -28,7 +28,7 @@ namespace Meteor.Rendering
 			forwardLightingRT = profile.AddRenderTarget(
 				(int)(backBufferWidth * bufferScaling),
 				(int)(backBufferHeight * bufferScaling),
-				SurfaceFormat.Rgba1010102, DepthFormat.Depth24, 4);
+				SurfaceFormat.Color, DepthFormat.Depth24, 4);
 
 			// Set new half-pixel values to reflect new sizes
 			halfPixel.X = 0.5f / (float)(backBufferWidth * bufferScaling);
@@ -40,8 +40,8 @@ namespace Meteor.Rendering
 			};
 
 			// Load the shader effects
-			forwardRenderEffect = content.Load<Effect>("forwardRender");
-			terrainForwardRenderEffect = content.Load<Effect>("terrainForwardRender");
+			forwardRenderEffect = LoadEffect("forwardRender");
+			terrainForwardRenderEffect = LoadEffect("terrainForwardRender");
 
 			renderEffects = new Effect[2] { forwardRenderEffect, terrainForwardRenderEffect };
         }
@@ -50,7 +50,7 @@ namespace Meteor.Rendering
         /// Simply draw the scene to the render target
         /// </summary> 
 
-        public override RenderTarget2D[] Draw()
+        public RenderTarget2D[] Draw(Scene scene, Camera camera)
         {
 			renderStopWatch.Reset();
 			renderStopWatch.Restart();
@@ -81,8 +81,8 @@ namespace Meteor.Rendering
 				foreach (DirectionLight light in scene.directionalLights)
 				{
 					renderEffect.Parameters["lightDirection"].SetValue(light.direction);
-					renderEffect.Parameters["lightColor"].SetValue(light.color.ToVector3());
-					renderEffect.Parameters["lightIntensity"].SetValue(light.intensity);
+					renderEffect.Parameters["lightColor"].SetValue(
+						new Vector4(light.color.ToVector3(), light.intensity));
 				}
 			}
             // Forward render the scene

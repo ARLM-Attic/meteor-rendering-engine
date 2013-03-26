@@ -54,7 +54,7 @@ namespace Meteor.Rendering
 		/// <param name="profile"></param>
 		/// <param name="content"></param>
 
-		public DepthMapShader(RenderProfile profile, ResourceContentManager content)
+		public DepthMapShader(RenderProfile profile, ContentManager content)
 			: base(profile, content)
 		{
 			halfPixel.X = 0.5f / (float)(backBufferWidth * bufferScaling);
@@ -80,18 +80,18 @@ namespace Meteor.Rendering
 			lightProjection = new Matrix[numCascades];
 
 			// Load depth mapping shader effects
-			depthEffect = content.Load<Effect>("depth");
-			terrainDepthEffect = content.Load<Effect>("terrainDepth");
+			depthEffect = LoadEffect("depth");
+			terrainDepthEffect = LoadEffect("terrainDepth");
 		}
 
 		/// <summary>
 		/// Update and draw all directional and point lights
 		/// </summary>
 
-		public override RenderTarget2D[] Draw()
+		public RenderTarget2D[] Draw(Scene scene, Camera camera)
 		{
 			renderStopWatch.Start();
-			Draw(scene, camera);
+			DrawDepthMap(scene, camera);
 
 			// Increment the shadow update time
 			shadowUpdateTimer = (shadowUpdateTimer == 8) ? 0 : shadowUpdateTimer + 1;
@@ -104,7 +104,7 @@ namespace Meteor.Rendering
 		/// Draw the shadow map(s) for directional lights
 		/// </summary>
 
-		private void Draw(Scene scene, Camera camera)
+		private void DrawDepthMap(Scene scene, Camera camera)
 		{
 			int lightID = 0;
 
@@ -137,7 +137,7 @@ namespace Meteor.Rendering
 						graphicsDevice.Viewport = viewport;
 
 						// Update view matrices
-						CreateLightViewProjMatrix(light.direction, lightCamera);
+						CreateLightViewProjMatrix(light.direction, camera, lightCamera);
 
 						// Draw the terrain here if you want self-shadowing
 						if (scene.terrain.castsShadows)
@@ -173,7 +173,7 @@ namespace Meteor.Rendering
 		/// in the scene.
 		/// </summary>
 		/// <returns>The WorldViewProjection for the light</returns>
-		void CreateLightViewProjMatrix(Vector3 lightDirection, Camera lightCamera)
+		void CreateLightViewProjMatrix(Vector3 lightDirection, Camera camera, Camera lightCamera)
 		{
 			// Matrix with that will rotate in points the direction of the light
 			Matrix lightRotation = Matrix.CreateLookAt(Vector3.Zero, lightDirection, Vector3.Up);

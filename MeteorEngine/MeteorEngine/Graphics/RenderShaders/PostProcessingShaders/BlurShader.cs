@@ -24,7 +24,7 @@ namespace Meteor.Rendering
         Effect blurEffect;
 		GaussianBlur blur;
 
-		public BlurShader(RenderProfile profile, ResourceContentManager content)
+		public BlurShader(RenderProfile profile, ContentManager content)
             : base(profile, content) 
 		{
 			float blurStep = 1.5f;
@@ -48,7 +48,7 @@ namespace Meteor.Rendering
         /// Draw the blur effect
         /// </summary>
 
-        public override RenderTarget2D[] Draw()
+        public RenderTarget2D[] Draw()
         {	
             finalRT[0] = inputTargets[0]; // This is the composite render target
             int totalPasses;

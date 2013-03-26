@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Resources;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -17,8 +18,8 @@ namespace Meteor
 		List <Camera> cameras; 
         Camera currentCamera;
 
-        /// Scenes used for rendering
-		List <Scene> scenes; 
+		/// List of models in the scene
+		public Dictionary<String, Scene> scenes;
         Scene currentScene;
 
 		/// Render profiles used for rendering
@@ -50,8 +51,11 @@ namespace Meteor
 		/// <summary>
 		/// Content loaders (by file or by resource)
 		/// </summary>
+#if XNA
+		ResourceContentManager content;
+#elif MONOGAME
         ContentManager content;
-		ResourceContentManager resxContent;
+#endif
 
 		/// Used to draw scenes
 		SceneRenderer sceneRenderer;
@@ -63,12 +67,14 @@ namespace Meteor
 		/// <summary>
 		/// Constructor without a default scene
 		/// </summary>
-
-		public Core(IServiceProvider services)
+		public Core(GameServiceContainer services)
 			: base(services)
 		{
+#if XNA
+			content = new ResourceContentManager(services, MeteorContentResource.ResourceManager);
+#elif MONOGAME
 			content = new ContentManager(services, "MeteorEngine.Content");
-			resxContent = new ResourceContentManager(services, MeteorContentResource.ResourceManager);
+#endif
 			renderStats = new RenderStats();
 
 			currentRenderProfile = null;
@@ -77,22 +83,36 @@ namespace Meteor
 
 			// Setup rendering components
 			cameras = new List<Camera>();
-			scenes = new List<Scene>();
+			scenes = new Dictionary<String, Scene>();
 		}
 
-		public Scene AddScene(Scene scene)
+		/// <summary>
+		/// Add a scene to the render list
+		/// </summary>
+
+		public Scene AddScene(String sceneName)
 		{
-			scenes.Add(scene);
-			currentScene = scenes[scenes.Count - 1];
+			scenes.Add(sceneName, new Scene(ServiceContainer as GameServiceContainer));
+			currentScene = scenes[sceneName];
 
 			return currentScene;
 		}
 
-		public void RemoveScenes()
+		/// <summary>
+		/// Add a scene to the render list (returning out)
+		/// </summary>
+
+		public void AddScene(String sceneName, out Scene scene)
 		{
-			scenes.Clear();
-			currentScene = null;
+			scenes.Add(sceneName, new Scene(ServiceContainer as GameServiceContainer));
+			currentScene = scenes[sceneName];
+
+			scene = currentScene;
 		}
+
+		/// <summary>
+		/// Add a camera to the renderer
+		/// </summary>
 
 		public Camera AddCamera(Camera camera)
 		{
@@ -112,11 +132,11 @@ namespace Meteor
 		{
 			/// Instantiate a render profile with the resource content manager
 			RenderProfile profile =
-				(RenderProfile)Activator.CreateInstance(renderProfileType, graphicsDevice, resxContent);
+				(RenderProfile)Activator.CreateInstance(renderProfileType, graphicsDevice, content);
 
 			renderProfiles.Add(profile);
 			currentRenderProfile = profile;
-			currentRenderProfile.MapInputs(currentScene, currentCamera);
+			currentRenderProfile.MapInputs();
 		}
 
 		/// <summary>
@@ -138,7 +158,7 @@ namespace Meteor
 			currentRenderProfile.Initialize();
 
 			// Reset the profile inputs
-			currentRenderProfile.MapInputs(currentScene, currentCamera);
+			currentRenderProfile.MapInputs();
 		}
 
 		/// <summary>
@@ -148,11 +168,11 @@ namespace Meteor
         protected override void LoadContent()
         {
             // Load debug resources
-            font = resxContent.Load<SpriteFont>("defaultFont");
+            font = content.Load<SpriteFont>("defaultFont");
             spriteBatch = new SpriteBatch(graphicsDevice);
 
 			// Load up all resource renderers
-			sceneRenderer = new SceneRenderer(graphicsDevice, resxContent);
+			sceneRenderer = new SceneRenderer(graphicsDevice, content);
 			quadRenderer = new QuadRenderComponent(graphicsDevice);
 
 			Color[] whitePixel = { Color.White };
@@ -199,11 +219,10 @@ namespace Meteor
 				return;
 			}
 
-			foreach (Scene scene in scenes)
+			foreach (Scene scene in scenes.Values)
 				scene.Update(gameTime);
 
 			currentCamera.Update(gameTime);
-
 			base.Update(gameTime);
         }
         
@@ -220,7 +239,7 @@ namespace Meteor
 			{
 				if (renderProfile != null)
 				{
-					renderProfile.Draw();
+					renderProfile.Draw(currentScene, currentCamera);
 					outputs.Add(renderProfile.Output);
 				}
 			}
@@ -252,12 +271,34 @@ namespace Meteor
             if (rtIndex == 1)
                 DrawDebugData();
 
-			if (debugText == true && currentScene != null)
+			if (debugText == true)
 				DrawDebugText(renderStats.frameRate, (int)renderStats.totalFrames);
 
 			base.Draw(gameTime);
 			renderStats.Finish();
         }
+
+		/// <summary>
+		/// Remove all associated scenes, cameras and render profiles
+		/// </summary>
+		public void ClearContent()
+		{
+			scenes.Clear();
+			cameras.Clear();
+			renderProfiles.Clear();
+
+			currentScene = null;
+			currentCamera = null;
+		}
+
+		/// <summary>
+		/// Wrapper to remove associated content
+		/// </summary>
+		protected override void UnloadContent()
+		{
+			base.UnloadContent();
+			ClearContent();
+		}
 
         /// <summary>
         /// Draw rendering stats and debug targets
@@ -318,26 +359,26 @@ namespace Meteor
 				new Vector2(4, font.LineSpacing * 2 + height), timeColor);
 			debugString.Clear();
 
-			debugString.Concat(currentScene.totalPolys).Append(" triangles ");
-			debugString.Concat(currentScene.totalLights).Append(" lights");
+			debugString.Concat(renderStats.totalTriangles).Append(" triangles ");
+			debugString.Concat(renderStats.totalLights).Append(" lights");
 
 			spriteBatch.DrawString(font, debugString,
 				new Vector2(4, font.LineSpacing * 3 + height), Color.White);
 			debugString.Clear();
 
 			// Display camera position
-
+			/*
 			debugString.Concat(currentCamera.position.X).Append(", ");
 			debugString.Concat(currentCamera.position.Y).Append(", ");
 			debugString.Concat(currentCamera.position.Z).Append(" ");
-
+			*/
 			spriteBatch.DrawString(font, debugString,
 				new Vector2(4, font.LineSpacing * 4 + height), Color.White);
 			debugString.Clear();
 
 			// Display mesh and memory data
 
-			spriteBatch.DrawString(font, debugString.Append("Visible meshes: ").Concat(currentScene.visibleMeshes),
+			spriteBatch.DrawString(font, debugString.Append("Visible meshes: ").Concat(renderStats.visibleMeshes),
 				new Vector2(4, font.LineSpacing * 5 + height), Color.White);
 			debugString.Clear();
 

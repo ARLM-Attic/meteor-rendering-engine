@@ -81,6 +81,8 @@ PixelShaderOutput1 PixelTerrainGBuffer(VT_Output input)
 	// Blend with scaled texture
 	blendedColor = lerp(blendedColor, blendedColor2, 0.5f);
 	output.Color = lerp(color, blendedColor, blendDepth);
+	output.Color.b += clipLevel * 0.4f;
+	output.Color.rg += clipLevel * 0.2f;
 	output.Color.a = 1;
 
 	// Sample normal map color

@@ -41,7 +41,7 @@ namespace Meteor.Rendering
 				foreach (MeshInstance meshInstance in instanceGroup.instances)
 				{
 					// Add mesh and instances to visible list if they're contained in the frustum
-					if (camera.frustum.Contains(meshInstance.BSphere) != ContainmentType.Disjoint)
+					if (camera.frustum.Contains(meshInstance.boundingSphere) != ContainmentType.Disjoint)
 						instanceGroup.visibleInstances[instanceGroup.totalVisible++] = meshInstance;
 				}
 

@@ -35,7 +35,7 @@ namespace Meteor.Rendering
 		/// Implementation for blur
 		GaussianBlur blur;
 
-		public SSAOShader(RenderProfile profile, ResourceContentManager content)	
+		public SSAOShader(RenderProfile profile, ContentManager content)	
 			: base(profile, content) 
 		{
 			// Light and combined effect targets
@@ -76,7 +76,7 @@ namespace Meteor.Rendering
 		/// Draw the anti-aliasing effect
 		/// </summary>
 
-		public override RenderTarget2D[] Draw()
+		public RenderTarget2D[] Draw(Camera camera)
 		{
 			renderStopWatch.Start();
 			ssaoEffect.CurrentTechnique = ssaoEffect.Techniques[0];

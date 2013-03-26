@@ -17,7 +17,6 @@ namespace Meteor.Rendering
 
 		/// Reference to the ContentManagers to load assets
 		protected ContentManager content;
-		protected ResourceContentManager resxContent;
 
 		/// Track all possible starting points for this profile
 		/// (Currently not yet implemented)
@@ -60,7 +59,7 @@ namespace Meteor.Rendering
 		/// <param name="service"></param>
 		/// <param name="content"></param>
 
-		public RenderProfile(GraphicsDevice graphics, ResourceContentManager content)
+		public RenderProfile(GraphicsDevice graphics, ContentManager content)
 		{
 			// Build a map of available RenderShaders
 			renderTasks = new Dictionary<string, BaseShader>();
@@ -72,7 +71,7 @@ namespace Meteor.Rendering
 			renderTaskTargets = new List<RenderTarget2D>();
 
 			//this.Disposed += new EventHandler<EventArgs>(DisposeRenderers);
-			this.resxContent = content;
+			this.content = content;
 			this.graphicsDevice = graphics;
 
 			Initialize();
@@ -92,7 +91,7 @@ namespace Meteor.Rendering
 		/// Mapping input and output of scenes, cameras and render targets.
 		/// </summary> 
 
-		public abstract void MapInputs(Scene scene, Camera camera);
+		public abstract void MapInputs();
 
 		/// <summary>
 		/// Helper to add a render task and return that one after newly added
@@ -123,8 +122,9 @@ namespace Meteor.Rendering
 		public RenderTarget2D AddRenderTarget(int width, int height, SurfaceFormat surfaceFormat,
 			DepthFormat depthFormat, RenderTargetUsage usage, int samples = 1)
 		{
-			renderTaskTargets.Add(new RenderTarget2D(
-				graphicsDevice, width, height, false, surfaceFormat, depthFormat, samples, usage));
+			RenderTarget2D rt = new RenderTarget2D(
+				graphicsDevice, width, height, false, surfaceFormat, depthFormat, samples, usage);
+			renderTaskTargets.Add(rt);
 
 			return renderTaskTargets.Last();
 		}
@@ -134,7 +134,7 @@ namespace Meteor.Rendering
 		/// </summary>
 		/// <param name="gameTime"></param>
 
-		public abstract void Draw();
+		public abstract void Draw(Scene scene, Camera camera);
 
 		/// <summary>
 		/// Dispose of all contents of Renderers used by this render profile.
@@ -142,12 +142,6 @@ namespace Meteor.Rendering
 
 		public void DisposeRenderers(Object sender, EventArgs e)
 		{
-			foreach (BaseShader renderTask in renderTasks.Values)
-				renderTask.DisposeResources();
-
-			foreach (RenderTarget2D target in renderTaskTargets)
-				target.Dispose();
-
 			renderTaskTargets.Clear();
 		}
 	}

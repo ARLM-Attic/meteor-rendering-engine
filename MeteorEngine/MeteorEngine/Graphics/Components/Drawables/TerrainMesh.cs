@@ -24,11 +24,7 @@ namespace Meteor.Resources
 		/// vertex buffer insertion.
 		/// </summary>
 		public VertexPositionNormal[] vertices { private set; get; }
-		private ushort updatedVertices;
-		public ushort UpdatedVertices
-		{
-			get { return updatedVertices; }
-		}
+		public ushort updatedVertices { private set; get; }
 
 		// Terrain patch that this mesh belongs to.
 		TerrainPatch terrainPatch;
@@ -100,7 +96,7 @@ namespace Meteor.Resources
 			{
 				for (int x = left, j = 0; x < right; x += next, j += next)
 				{
-					ushort height = (ushort)(heightData[x, y] / 256);
+					ushort height = (ushort)(heightData[x, y] >> 8);
 					ushort vertexID = (ushort)(i * fullMeshSize + j);
 
 					vertices[index].VertexID = vertexID;

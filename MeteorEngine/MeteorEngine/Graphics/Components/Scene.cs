@@ -15,7 +15,10 @@ namespace Meteor.Resources
 	public class Scene
 	{
 		/// For loading scene content
-		ContentManager content;
+		private ContentManager content;
+
+		/// Used for graphics and other content managers
+		private GameServiceContainer services;
 
 		/// List of models in the scene
 		public Dictionary<String, Model> sceneModels;
@@ -66,9 +69,10 @@ namespace Meteor.Resources
 		/// Create a new scene to reference content with.
 		/// </summary>
 
-		public Scene(ContentManager content)
+		public Scene(GameServiceContainer services)
 		{
-			this.content = content;
+			this.content = new ContentManager(services, "Content");
+			this.services = services;
 
 			// Set up lists for models
 			sceneModels = new Dictionary<string, Model>();
@@ -146,7 +150,7 @@ namespace Meteor.Resources
 		/// Wrapper to add a model with a full file path
 		/// </summary>
 
-		private Model AddModel(String modelPath, Model model = null)
+		public Model AddModel(String modelPath, Model model = null)
 		{
 			return AddModel(modelPath, modelPath, model);
 		}
@@ -214,11 +218,11 @@ namespace Meteor.Resources
 		/// </summary>
 		/// <param name="imagePath"></param>
 
-		public void AddTerrain(Terrain terrain)
+		public void AddTerrain(Terrain newTerrain)
 		{
 			// Set up terrain map
-			this.terrain = terrain;
-			this.terrain.GenerateFromImage();
+			terrain = newTerrain;
+			terrain.GenerateFromImage(services);
 		}
 
 		/// <summary>
@@ -232,7 +236,7 @@ namespace Meteor.Resources
 				if (skinnedModel.animationPlayer != null)
 				{
 					skinnedModel.animationPlayer.playSpeed = 1f;
-					skinnedModel.animationPlayer.Update(gameTime.ElapsedGameTime, true, Matrix.Identity);					
+					//skinnedModel.animationPlayer.Update(gameTime.ElapsedGameTime, true, Matrix.Identity);					
 				}
 				// Finished updating mesh
 			}

@@ -15,9 +15,11 @@ namespace Meteor
 		/// <summary>
 		/// Content loaders (by file or by resource)
 		/// </summary>
+#if MONOGAME
 		ContentManager content;
-		ResourceContentManager resxContent;
-
+#elif XNA
+		ResourceContentManager content;
+#endif
 		/// Camera and scene used to obtain debug info
 		Scene debugScene;
 		Camera debugCamera;
@@ -44,9 +46,11 @@ namespace Meteor
 		public DebugGUI(IServiceProvider services)
 			: base(services)
 		{
+#if XNA
+			content = new ResourceContentManager(services, MeteorContentResource.ResourceManager);
+#elif MONOGAME
 			content = new ContentManager(services, "MeteorEngine.Content");
-			resxContent = new ResourceContentManager(services, MeteorContentResource.ResourceManager);
-
+#endif
 			// Set statistic resources
 			renderStats = new RenderStats();
 			debugString = new StringBuilder(64, 64);
@@ -59,7 +63,7 @@ namespace Meteor
 		protected override void LoadContent()
 		{
 			// Load debug resources
-			font = resxContent.Load<SpriteFont>("defaultFont");
+			font = content.Load<SpriteFont>("defaultFont");
 			spriteBatch = new SpriteBatch(graphicsDevice);
 
 			// Load up all resource renderers
@@ -83,10 +87,10 @@ namespace Meteor
 					if (meshInstance == null) continue;
 
 					// Sphere collision test in world space.
-					if (meshInstance.BSphere.Intersects(ray) != null)
+					if (meshInstance.boundingSphere.Intersects(ray) != null)
 					{
 						instanceMatrix = meshInstance.Transform;
-						bSphere = meshInstance.BSphere;
+						bSphere = meshInstance.boundingSphere;
 						return true;
 					}
 				}

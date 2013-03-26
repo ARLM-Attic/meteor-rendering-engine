@@ -137,15 +137,7 @@ namespace Meteor.Resources
 			}
 
 			cameraYawRotation += currentGamePadState.ThumbSticks.Right.X * time;
-			cameraYawRotation += targetYawRotation - (cameraYawRotation / smoothing);
-
-			if (currentGamePadState.Buttons.RightStick == ButtonState.Pressed ||
-				currentKeyboardState.IsKeyDown(Keys.R))
-			{
-				cameraArcRotation = -30;
-				cameraYawRotation = 0;
-			}
-			
+			cameraYawRotation += targetYawRotation - (cameraYawRotation / smoothing);		
 		}
 	}
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Content;
+using Meteor.Resources;
 
 namespace Meteor.Rendering
 {
@@ -20,7 +21,7 @@ namespace Meteor.Rendering
 		/// Load the GBuffer content
 		/// </summary> 
 
-		public GBufferShader(RenderProfile profile, ResourceContentManager content)
+		public GBufferShader(RenderProfile profile, ContentManager content)
 			: base(profile, content)
 		{
 			// Diffuse/albedo render target
@@ -52,7 +53,7 @@ namespace Meteor.Rendering
 		/// Clear the GBuffer and render scene to it
 		/// </summary> 
 
-		public override RenderTarget2D[] Draw()
+		public RenderTarget2D[] Draw(Scene scene, Camera camera)
 		{
 			renderStopWatch.Reset();
 			renderStopWatch.Restart();
@@ -125,7 +126,7 @@ namespace Meteor.Rendering
 		/// Load the GBuffer content
 		/// </summary> 
 
-		public SmallGBufferShader(RenderProfile profile, ResourceContentManager content)
+		public SmallGBufferShader(RenderProfile profile, ContentManager content)
 			: base(profile, content)
 		{
 			// Normal render targets
@@ -161,7 +162,7 @@ namespace Meteor.Rendering
 		/// Clear the small GBuffer and render scene to it
 		/// </summary> 
 
-		public override RenderTarget2D[] Draw()
+		public RenderTarget2D[] Draw(Scene scene, Camera camera)
 		{
 			renderStopWatch.Reset();
 			renderStopWatch.Restart();
