@@ -29,7 +29,7 @@ namespace Meteor.Rendering
 		/// should be the same values as those in LightShader.cs
 
 		/// Texture dimensions for individual shadow cascade
-		const int shadowMapSize = 800;
+		const int shadowMapSize = 1600;
 
 		/// Total number of cascades for CSM
 		const int numCascades = 4;
@@ -140,10 +140,10 @@ namespace Meteor.Rendering
 						CreateLightViewProjMatrix(light.direction, camera, lightCamera);
 
 						// Draw the terrain here if you want self-shadowing
-						if (scene.terrain.castsShadows)
+						if (scene.terrain != null && scene.terrain.castsShadows)
 						{
 							terrainDepthEffect.Parameters["LightViewProj"].SetValue(lightCamera.view * lightCamera.projection);
-							sceneCuller.CullTerrainPatches(scene, lightCamera);
+							sceneCuller.CullTerrainPatches(scene, lightCamera, false);
 							sceneRenderer.DrawTerrainDefault(scene, lightCamera, terrainDepthEffect);
 						}
 

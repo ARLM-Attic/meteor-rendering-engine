@@ -20,50 +20,37 @@ namespace Meteor.Resources
 		/// Used for graphics and other content managers
 		private GameServiceContainer services;
 
-		/// List of models in the scene
-		public Dictionary<String, Model> sceneModels;
+		/// <summary>
+		/// Drawable scene assets
+		/// </summary>
+		
+		/// List of Models in the scene
+		public Dictionary<String, Model> sceneModels { private set; get; }
+
+		/// List of unique ModelMeshes, for rendering
+		public Dictionary<String, ModelMesh> sceneMeshes { private set; get; }
 
 		/// Directional light list
 		public List<DirectionLight> directionalLights = new List<DirectionLight>();
 
-		/// Point light position to setup current lights
+		/// Point light list
 		public List<PointLight> pointLights = new List<PointLight>();
 
 		/// Instanced data used for rendering
-		public List<PointLight> visibleLights = new List<PointLight>();
+		public List<PointLight> visiblePointLights = new List<PointLight>();
 
 		/// Ambient lighting
 		public Vector3 ambientLight = Vector3.Zero;
 
-		/// <summary>
 		/// Terrain height map generator
-		/// </summary>
 		public Terrain terrain;
 
-		public List<PointLight> VisiblePointLights
-		{
-			get { return visibleLights; }
-		}
-
-		public int totalLights
-		{
-			get { return visibleLights.Count; }
-		}
-
 		/// Skybox mesh
-		Model skyboxModel;
-
-		public Model Skybox
-		{
-			get { return skyboxModel; }
-		}
+		public Model skybox { private set; get; }
 
 		/// Scene rendering stats
 		public int totalPolys;
-		public bool debug = false;
 		public int visibleMeshes = 0;
-		public int culledMeshes = 0;
-		public int drawCalls = 0;
 
 		/// <summary>
 		/// Create a new scene to reference content with.
@@ -93,7 +80,7 @@ namespace Meteor.Resources
 
 		/// <summary>
 		/// Attempt to find the location of the model to be loaded.
-		/// </summary>
+			/// </summary>
 		private XnaModel FindModel(String directory, String modelPath)
 		{
 			XnaModel model = null;
@@ -141,7 +128,11 @@ namespace Meteor.Resources
 			else
 			{
 				sceneModels.Add(modelPath, new Model(FindModel(directory, modelPath)));
-			}				
+			}
+
+			// Add all the meshes to the resource pool
+			//foreach (ModelMesh mesh in sceneModels[modelPath].modelMeshes)
+			//	sceneMeshes.Add(modelPath + "." + mesh.Name, mesh);
 
 			return sceneModels[modelPath];
 		}
@@ -209,8 +200,8 @@ namespace Meteor.Resources
 
 		public Model AddSkybox(String modelPath)
 		{
-			skyboxModel = new Model(FindModel(modelPath));
-			return skyboxModel;
+			skybox = new Model(FindModel(modelPath));
+			return skybox;
 		}
 
 		/// <summary>
@@ -218,11 +209,13 @@ namespace Meteor.Resources
 		/// </summary>
 		/// <param name="imagePath"></param>
 
-		public void AddTerrain(Terrain newTerrain)
+		public Terrain AddTerrain(Terrain newTerrain)
 		{
 			// Set up terrain map
 			terrain = newTerrain;
 			terrain.GenerateFromImage(services);
+
+			return terrain;
 		}
 
 		/// <summary>

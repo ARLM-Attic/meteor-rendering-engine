@@ -15,17 +15,20 @@ namespace Meteor.Resources
 	public class Terrain
 	{
 		/// Content manager to load images
-		ContentManager terrainContent;
+		private ContentManager terrainContent;
 
 		/// Heightmap dimensions
-		int terrainWidth;
-		int terrainHeight;
+		private int terrainWidth;
+		private int terrainHeight;
 
 		/// Array to store the data of each map pixel
-		ushort[,] heightData;
+		private ushort[,] heightData;
 
 		/// Terrain patch grid dimensions
 		public static Vector2 gridSize;
+
+		/// Number of terrain tiles for building/updating on each pass
+		private int tilesToBuild = 4;
 
 		/// Amount to scale terrain mesh
 		public float scale = 1f;
@@ -126,12 +129,6 @@ namespace Meteor.Resources
 				SetUpIndices(graphicsDevice, i);
 		}
 
-		public Terrain(GraphicsDeviceManager graphics)
-		{
-			// TODO: Complete member initialization
-			this.graphics = graphics;
-		}
-
 		/// <summary>
 		/// Create a heightmap from a grayscale image
 		/// </summary>
@@ -164,8 +161,7 @@ namespace Meteor.Resources
 
 			// Calculate heightmap position
 			mapPosition = new Vector3(
-				-(terrainWidth * scale) / 2, -40f * scale,
-				(terrainHeight * scale) / 2);
+				-(terrainWidth * scale) / 2, 0f, (terrainHeight * scale) / 2);
 
 			// Heightmap source no longer needed. Now load the textures.
 			terrainContent.Unload();
@@ -227,7 +223,7 @@ namespace Meteor.Resources
 		/// Build the array of terrain patches to draw with
 		/// </summary>
 
-		public bool BuildMeshData(GraphicsDevice graphicsDevice, int tilesToBuild = 10)
+		public bool BuildMeshData(GraphicsDevice graphicsDevice)
 		{
 			// Iterate backwards because we need to grab neighboring edges for normals
 			for (int i = 0; i < tilesToBuild; i++)
@@ -269,9 +265,13 @@ namespace Meteor.Resources
 			float[,] floatHeights = new float[terrainHeight, terrainWidth];
 
 			for (int y = 0; y < terrainHeight; y++)
+			{
 				for (int x = 0; x < terrainWidth; x++)
-					floatHeights[y, x] = heightData[y, x];
-
+				{
+					// normalize the values to local space
+					floatHeights[y, x] = heightData[y, x] >> 8;
+				}
+			}
 			return floatHeights;
 		}
 

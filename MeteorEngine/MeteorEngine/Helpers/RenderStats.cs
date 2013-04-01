@@ -71,10 +71,10 @@ namespace Meteor.Resources
 		/// Collect rendering statistics for a scene
 		/// </summary>
 
-		public void SceneStats(Scene scene)
+		public void GetSceneStats(Scene scene)
 		{
 			totalTriangles += scene.totalPolys;
-			totalLights += scene.totalLights;
+			totalLights += scene.pointLights.Count;
 			visibleMeshes += scene.visibleMeshes;
 		}
 

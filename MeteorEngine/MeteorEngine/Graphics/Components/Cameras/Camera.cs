@@ -17,11 +17,7 @@ namespace Meteor.Resources
 		protected float targetYawRotation = -90;
 
 		/// Camera's world space matrix
-		protected Matrix worldMatrix;
-		public Matrix WorldMatrix
-		{
-			get { return worldMatrix; }
-		}
+		public Matrix worldMatrix { protected set; get; }
 
 		/// Camera's view matrix
 		public Matrix view;
@@ -50,8 +46,8 @@ namespace Meteor.Resources
 			get { return (float)viewAspect.X / (float)viewAspect.Y; }
 		}
 
-        public float nearPlaneDistance = 2.5f;
-        public float farPlaneDistance = 25000f;
+        public float nearPlaneDistance = 8f;
+        public float farPlaneDistance = 10000f;
 		public float nearSplitPlaneDistance;
 		public float farSplitPlaneDistance;
 
@@ -137,6 +133,7 @@ namespace Meteor.Resources
 			viewAspect.Y = (int)height;
 			viewAngle = MathHelper.PiOver4 * 4f / 3f;
 
+			// Set up the view frustum for use with other cameras
 			frustum = new BoundingFrustum(Matrix.Identity);
 			frustumCorners = new Vector3[8];
 			worldMatrix = Matrix.Identity;
@@ -144,6 +141,8 @@ namespace Meteor.Resources
 			float aspectRatio = (float)viewAspect.X / (float)viewAspect.Y;
 			projection = Matrix.CreatePerspectiveFieldOfView(
 				viewAngle, aspectRatio, nearPlaneDistance, farPlaneDistance);
+			//Matrix orthoProjection = Matrix.CreateOrthographic(
+			//	viewAspect.X
 
 			UpdateMatrices();
         }
@@ -171,6 +170,10 @@ namespace Meteor.Resources
 			targetYawRotation = orientation.X; // yaw
 			targetArcRotation = orientation.Y; // pitch			
 		}
+
+		/// <summary>
+		/// Automatic matrix update
+		/// </summary>
 
 		public virtual void Update(GameTime gameTime = null)
 		{
@@ -211,18 +214,18 @@ namespace Meteor.Resources
 
 			// Calculate the near and far plane centers
 			Vector3 nearPlaneCenter = camera.position +
-				Vector3.Normalize(camera.WorldMatrix.Forward) * camera.nearSplitPlaneDistance;
+				Vector3.Normalize(camera.worldMatrix.Forward) * camera.nearSplitPlaneDistance;
 			Vector3 farPlaneCenter = camera.position +
-				Vector3.Normalize(camera.WorldMatrix.Forward) * camera.farSplitPlaneDistance;
+				Vector3.Normalize(camera.worldMatrix.Forward) * camera.farSplitPlaneDistance;
 
 			// Get the vertical and horizontal extent locations from the center
 			float nearExtentDistance = (float)Math.Tan(camera.viewAngle / 2f) * camera.nearSplitPlaneDistance;
-			Vector3 nearExtentY = nearExtentDistance * camera.WorldMatrix.Up;
-			Vector3 nearExtentX = nearExtentDistance * camera.AspectRatio * camera.WorldMatrix.Left;
+			Vector3 nearExtentY = nearExtentDistance * camera.worldMatrix.Up;
+			Vector3 nearExtentX = nearExtentDistance * camera.AspectRatio * camera.worldMatrix.Left;
 
 			float farExtentDistance = (float)Math.Tan(camera.viewAngle / 2f) * camera.farSplitPlaneDistance;
-			Vector3 farExtentY = farExtentDistance * camera.WorldMatrix.Up;
-			Vector3 farExtentX = farExtentDistance * camera.AspectRatio * camera.WorldMatrix.Left;
+			Vector3 farExtentY = farExtentDistance * camera.worldMatrix.Up;
+			Vector3 farExtentX = farExtentDistance * camera.AspectRatio * camera.worldMatrix.Left;
 
 			// Calculate the frustum corners by adding/subtracting the extents
 			// Starting clockwise and from the near plane first

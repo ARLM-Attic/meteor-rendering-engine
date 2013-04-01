@@ -16,6 +16,9 @@ namespace Meteor.Resources
 		/// List of ModelMeshes
 		public List<ModelMesh> modelMeshes { private set; get; }
 
+		/// List of Materials for this model
+		public List<Material> materials { private set; get; }
+
 		/// Pointer for the last updated instance
 		private int lastInstance;
 
@@ -99,6 +102,8 @@ namespace Meteor.Resources
 			// Set up model lists
 			textures = new List<Texture2D>();
 			normalMapTextures = new List<Texture2D>();
+			materials = new List<Material>();
+
 			modelMeshes = new List<ModelMesh>();
 			meshInstanceGroups = new Dictionary<string, MeshInstanceGroup>();
 
@@ -159,8 +164,16 @@ namespace Meteor.Resources
 				// Extract textures from each mesh
 				foreach (ModelMeshPart meshPart in mesh.MeshParts)
 				{
-					textures.Add(meshPart.Effect.Parameters["Texture"].GetValueTexture2D());
-					normalMapTextures.Add(meshPart.Effect.Parameters["NormalMap"].GetValueTexture2D());
+					Material meshMaterial = new Material();
+
+					Texture2D texture = meshPart.Effect.Parameters["Texture"].GetValueTexture2D();
+					Texture2D normalMap = meshPart.Effect.Parameters["NormalMap"].GetValueTexture2D();
+
+					if (texture != null)
+						meshMaterial.textures.Add("Texture", texture);
+					meshMaterial.textures.Add("NormalMap", normalMap);
+
+					materials.Add(meshMaterial);
 				}
 			}
 		}
@@ -372,17 +385,17 @@ namespace Meteor.Resources
 		/// Returns the last instance of this model.
 		/// </summary>
 
-		public Vector3 Position
+		public Matrix WorldMatrix
 		{
 			get 
 			{ 
-				Vector3 position = new Vector3();
+				Matrix matrix = Matrix.Identity;
 				foreach (MeshInstanceGroup instanceGroup in meshInstanceGroups.Values)
 				{
 					int last = instanceGroup.instances.Count - 1;
-					position = instanceGroup.instances[last].Transform.Translation;
+					matrix = instanceGroup.instances[last].Transform;
 				}
-				return position;
+				return matrix;
 			}
 		}
 

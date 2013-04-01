@@ -2,8 +2,8 @@
 // TerrainGBuffer
 //-----------------------------------------
 
-#include "terrainConstants.fxh"
-#include "vertexTerrain.fxh"
+#include "Includes/terrainConstants.fxh"
+#include "Includes/vertexTerrain.fxh"
 
 //--- PixelShaders ---//
 
@@ -12,7 +12,6 @@ struct PixelShaderOutput1
     float4 Normal : COLOR0;
     float4 Depth : COLOR1;
     float4 Color : COLOR2;
-	float4 Specular : COLOR3;
 };
 
 struct PixelShaderOutput2
@@ -23,7 +22,7 @@ struct PixelShaderOutput2
 
 float4 TriplanarMapping(VT_Output input, float scale = 1)
 {
-	float tighten = 0.34679f; 
+	float tighten = 0.434679f; 
 
 	float mXY = saturate(abs(input.Normal.z) - tighten);
 	float mXZ = saturate(abs(input.Normal.y) - tighten);
@@ -44,7 +43,7 @@ float4 TriplanarMapping(VT_Output input, float scale = 1)
 
 float3 TriplanarNormalMapping(VT_Output input, float scale = 1)
 {
-	float tighten = 0.34679f; 
+	float tighten = 0.434679f; 
 
 	float mXY = saturate(abs(input.Normal.z) - tighten);
 	float mXZ = saturate(abs(input.Normal.y) - tighten);
@@ -73,17 +72,28 @@ PixelShaderOutput1 PixelTerrainGBuffer(VT_Output input)
 
 	// Determine diffuse texture color
 	float4 color = TriplanarMapping(input, 2); // close
-	float4 blendedColor = TriplanarMapping(input, 0.3f); // far
-	float4 blendedColor2 = TriplanarMapping(input, 0.22f);
+	float4 blendedColor = TriplanarMapping(input, 0.1f); // far
+	float4 blendedColor2 = TriplanarMapping(input, 0.12f);
 
 	float blendDepth = pow(input.Depth.x / input.Depth.y, 2 * textureScale);
 
+	// Calculate the projected texture coordinates.
+    float2 projectedTexCoord;
+	projectedTexCoord.x =  input.ViewPosition.x / input.ViewPosition.w / 2.0f + 0.5f;
+    projectedTexCoord.y = -input.ViewPosition.y / input.ViewPosition.w / 2.0f + 0.5f;
+
+	float4 projectionColor = 0;
+
+    if ((saturate(projectedTexCoord.x) == projectedTexCoord.x) && 
+		(saturate(projectedTexCoord.y) == projectedTexCoord.y))
+    {
+        projectionColor = 0.5f;// projectionTexture.Sample(SampleType, projectTexCoord);
+    }
+
 	// Blend with scaled texture
-	blendedColor = lerp(blendedColor, blendedColor2, 0.5f);
+	//blendedColor = lerp(blendedColor, blendedColor2, 0.5f);
 	output.Color = lerp(color, blendedColor, blendDepth);
-	output.Color.b += clipLevel * 0.4f;
-	output.Color.rg += clipLevel * 0.2f;
-	output.Color.a = 1;
+	//output.Color += projectionColor;
 
 	// Sample normal map color
 	float3 normal = TriplanarNormalMapping(input, 2);
@@ -100,11 +110,8 @@ PixelShaderOutput1 PixelTerrainGBuffer(VT_Output input)
 	normalFromMap = normalize(normalFromMap);
 	output.Normal.rgb = 0.5f * (normalFromMap + 1.0f);
 
-	// Terrain doesn't need any specular component
-    output.Normal.a = 1;
-
-	float3 specularIntensity = specIntensity;
-	output.Specular = float4(specularIntensity, specPower);
+	// Assign some specular power if needed
+    output.Normal.a = specIntensity;
 
 	// Output Depth
 	output.Depth = input.Depth.x / input.Depth.y; 
@@ -158,7 +165,6 @@ PixelShaderOutput1 PixelTerrainDebug(VT_Output input)
 
 	// Output Depth and Specular
 	output.Depth = input.Depth.x / input.Depth.y; 
-	output.Specular = 0;
 
     return output;
 }

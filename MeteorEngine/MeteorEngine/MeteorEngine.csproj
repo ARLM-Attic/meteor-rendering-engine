@@ -118,6 +118,7 @@
     <Compile Include="Graphics\Components\Lights\PointLight.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Graphics\Components\Material.cs" />
     <Compile Include="Graphics\Components\MeteorComponent.cs">
       <SubType>Code</SubType>
     </Compile>

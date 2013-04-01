@@ -38,28 +38,7 @@ sampler depthSampler : register (s4) = sampler_state
 	Texture = <depthMap>;
 };
 
-struct VertexShaderInput
-{
-    float3 Position : POSITION0;
-	float2 TexCoord : TEXCOORD0;
-};
-
-struct VertexShaderOutput
-{
-    float4 Position : POSITION0;
-	float2 TexCoord : TEXCOORD0;
-};
-
-VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
-{
-    VertexShaderOutput output;
-
-	// Just pass these through
-    output.Position = float4(input.Position, 1);
-	output.TexCoord = input.TexCoord + halfPixel;
-
-    return output;
-}
+#include "Includes/screenQuad.fxh"
 
 // This will set how many texture samples to blur from.
 // If you want a larger blur change the sample_count to a higher odd number.

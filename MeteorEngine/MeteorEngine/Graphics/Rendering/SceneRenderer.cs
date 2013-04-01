@@ -113,61 +113,43 @@ namespace Meteor.Rendering
 		/// Draw the entire scene with an effect using camera parameters
 		/// </summary>
 
-		public void Draw(Scene scene, Camera camera, Effect effect, BlendState blendState)
+		public void Draw(Scene scene, Effect effect, BlendState blendState, Camera camera = null)
 		{
 			Viewport viewport = graphicsDevice.Viewport;
 			viewport.MinDepth = 0.0f;
 			viewport.MaxDepth = farDepth;
+
 			graphicsDevice.Viewport = viewport;
 			graphicsDevice.BlendState = blendState;
 			graphicsDevice.RasterizerState = RasterizerState.CullNone;
 
-			totalPolys = 0;
-			scene.visibleMeshes = 0;
-
 			currentEffect = effect;
 
-			// Set camera parameters
-			currentEffect.Parameters["View"].SetValue(camera.view);
-			currentEffect.Parameters["Projection"].SetValue(camera.projection);
-			currentEffect.Parameters["CameraPosition"].SetValue(camera.position);
+			if (camera != null)
+			{
+				// Set camera parameters
+				currentEffect.Parameters["View"].SetValue(camera.view);
+				currentEffect.Parameters["Projection"].SetValue(camera.projection);
+				currentEffect.Parameters["CameraPosition"].SetValue(camera.position);
+			}
 
+			// Draw the meshes
 			foreach (Meteor.Resources.Model instancedModel in scene.sceneModels.Values)					
-				scene.visibleMeshes += DrawModel(instancedModel, this.shaderTechnique);
+				DrawModel(instancedModel, effect, this.shaderTechnique);
 
-			scene.totalPolys = totalPolys;
+			//scene.totalPolys = totalPolys;
 
 			// Debug bounding volumes
 			DrawBoundingVolumes(scene, camera);
 		}
 
 		/// <summary>
-		/// Draw with a custom effect not requiring a camera
-		/// </summary>
-
-		public void Draw(Scene scene, Effect effect, BlendState blendState)
-		{
-			Viewport viewport = graphicsDevice.Viewport;
-			viewport.MinDepth = 0.0f;
-			viewport.MaxDepth = farDepth;
-
-			graphicsDevice.Viewport = viewport;
-			graphicsDevice.BlendState = blendState;
-			graphicsDevice.RasterizerState = RasterizerState.CullNone;
-
-			currentEffect = effect;
-
-			foreach (Meteor.Resources.Model instancedModel in scene.sceneModels.Values)
-				DrawModel(instancedModel, effect, this.shaderTechnique);
-		}
-
-		/// <summary>
 		/// Overload for drawing with an effect with camera parameters
-		/// </summary>	
+		/// </summary>
 
 		public void Draw(Scene scene, Camera camera, Effect effect)
 		{
-			Draw(scene, camera, effect, BlendState.Opaque);
+			Draw(scene, effect, BlendState.Opaque, camera);
 		}
 
 		/// <summary>
@@ -189,10 +171,10 @@ namespace Meteor.Rendering
 			{
 				// Create vertex buffer if necessary
 				if (scene.terrain.nextPatch > 0)
-					scene.terrain.BuildMeshData(graphicsDevice, 4);
+					scene.terrain.BuildMeshData(graphicsDevice);
 
 				effect.CurrentTechnique = effect.Techniques[shaderTechnique];
-				scene.totalPolys += scene.terrain.Draw(graphicsDevice, camera, effect);
+				scene.terrain.Draw(graphicsDevice, camera, effect);
 			}
 		}
 
@@ -203,9 +185,7 @@ namespace Meteor.Rendering
 		public void DrawTerrainDefault(Scene scene, Camera camera, Effect effect)
 		{
 			if (scene.terrain != null)
-			{
-				scene.totalPolys += scene.terrain.Draw(graphicsDevice, camera, effect);
-			}
+				scene.terrain.Draw(graphicsDevice, camera, effect);
 		}
 
 		/// <summary>
@@ -213,9 +193,7 @@ namespace Meteor.Rendering
 		/// </summary>
 		
 		private void TrimBoneTransforms(Meteor.Resources.Model instancedModel)
-		{
-			//instancedModel.model.CopyAbsoluteBoneTransformsTo(instancedModel.boneMatrices);
-			
+		{			
 			if (instancedModel.animationPlayer != null)
 			{
 				Matrix[] bones = instancedModel.animationPlayer.GetSkinTransforms();
@@ -224,59 +202,6 @@ namespace Meteor.Rendering
 				// Not very efficient to do, need a way to avoid copying arrays
 				Array.Copy(bones, tempBones, maxBones);
 			}
-		}
-
-		/// <summary>
-		/// Draw all visible meshes for this model with camera effect parameters.
-		/// </summary>
-
-		private int DrawModel(Meteor.Resources.Model model, String technique)
-		{
-			if (model.animationPlayer != null)
-			{
-				String animatedTechnique = technique += "Animated";
-				UseTechnique(animatedTechnique);
-				TrimBoneTransforms(model);
-
-				// Set bones if the model is animated
-				currentEffect.Parameters["bones"].SetValue(tempBones);
-			}
-			else
-			{
-				UseTechnique(technique);
-			}
-
-			int meshIndex = 0;
-			int visibleInstances = 0;
-
-			foreach (MeshInstanceGroup instanceGroup in model.MeshInstanceGroups.Values)
-			{
-				// Create vertex buffer if necessary
-				model.BuildMeshData(graphicsDevice, instanceGroup);
-
-				// Retrieve the current mesh from the mesh list
-				ModelMesh mesh = model.modelMeshes[meshIndex];
-				Matrix world = model.World * model.boneMatrices[mesh.ParentBone.Index];
-
-				// Set world matrix for all mesh parts
-				currentEffect.Parameters["World"].SetValue(world);
-
-				foreach (ModelMeshPart meshPart in model.modelMeshes[meshIndex].MeshParts)
-				{
-					Texture2D textureValue = (model.textures[meshIndex] != null) ?
-						model.textures[meshIndex] : blankTexture;
-
-					currentEffect.Parameters["Texture"].SetValue(textureValue);
-					currentEffect.Parameters["NormalMap"].SetValue(model.normalMapTextures[meshIndex]);
-
-					DrawInstancedMeshPart(meshPart, instanceGroup);
-					meshIndex++;
-				}
-				// Finished drawing mesh parts
-				visibleInstances += instanceGroup.totalVisible;
-			}
-			// Finished model rendering
-			return visibleInstances;
 		}
 
 		/// <summary>
@@ -316,10 +241,16 @@ namespace Meteor.Rendering
 
 				foreach (ModelMeshPart meshPart in mesh.MeshParts)
 				{
-					Texture2D textureValue = (model.textures[meshIndex] != null) ?
-						model.textures[meshIndex] : blankTexture;
+					Material meshMaterial = model.materials[meshIndex];
+					Texture2D textureValue = (meshMaterial.textures["Texture"] != null) ?
+						meshMaterial.textures["Texture"] : blankTexture;
 
-					currentEffect.Parameters["Texture"].SetValue(textureValue);
+					// Assign all proper textures to the effect
+					foreach (EffectParameter effectParam in currentEffect.Parameters)
+					{
+						if (meshMaterial.textures.ContainsKey(effectParam.Name))
+							effectParam.SetValue(meshMaterial.textures[effectParam.Name]);
+					}
 
 					DrawInstancedMeshPart(meshPart, instanceGroup);
 					meshIndex++;
@@ -388,16 +319,16 @@ namespace Meteor.Rendering
 			viewport.MaxDepth = 1.0f;
 			graphicsDevice.Viewport = viewport;
 
-			if (scene.Skybox == null)
+			if (scene.skybox == null)
 				return;
 			
 			// Make skybox visible and copy instance data
-			scene.Skybox.MeshInstanceGroups["DefaultName_0"].totalVisible = 1;
-			scene.Skybox.MeshInstanceGroups["DefaultName_0"].visibleInstances[0] =
-				scene.Skybox.MeshInstanceGroups["DefaultName_0"].instances[0];
+			scene.skybox.MeshInstanceGroups["DefaultName_0"].totalVisible = 1;
+			scene.skybox.MeshInstanceGroups["DefaultName_0"].visibleInstances[0] =
+				scene.skybox.MeshInstanceGroups["DefaultName_0"].instances[0];
 
-			scene.Skybox.Translate(camera.position);
-			DrawModel(scene.Skybox, this.shaderTechnique);
+			scene.skybox.Translate(camera.position);
+			DrawModel(scene.skybox, currentEffect, this.shaderTechnique);
 		}
 		
 		/// <summary>
@@ -406,14 +337,14 @@ namespace Meteor.Rendering
 
 		public void DrawBoundingVolumes(Scene scene, Camera camera)
 		{
-			if (scene.debug == true)
-			{
+			//if (scene.debug == true)
+			/*{
 				basicEffect.View = camera.view;
 				basicEffect.Projection = camera.projection;
 
 				foreach (Meteor.Resources.Model model in scene.sceneModels.Values)
 					DrawBoundingBoxes(model, camera);
-			}
+			}*/
 		}
 
 		/// <summary>
@@ -489,8 +420,8 @@ namespace Meteor.Rendering
 						rectMax.Y = (int)Math.Max((float)clientResult.Y, (float)rectMax.Y);
 					}
 
-					Vector3 topLeft = v.Unproject(new Vector3(rectMin, minDistance), camera.projection, camera.view, camera.WorldMatrix);
-					Vector3 bottomRight = v.Unproject(new Vector3(rectMax, minDistance), camera.projection, camera.view, camera.WorldMatrix);
+					Vector3 topLeft = v.Unproject(new Vector3(rectMin, minDistance), camera.projection, camera.view, camera.worldMatrix);
+					Vector3 bottomRight = v.Unproject(new Vector3(rectMax, minDistance), camera.projection, camera.view, camera.worldMatrix);
 
 					// Transform the temporary bounding boxes with the model instance's world matrix
 					// TODO: Update these boxes only when intances are updated
@@ -517,7 +448,6 @@ namespace Meteor.Rendering
 					visible++;
 				}			
 				spriteBatch.End();
-
 				meshIndex++;
 			}
 			

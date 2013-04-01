@@ -73,6 +73,7 @@ namespace Meteor.Rendering
 
 		public override void Draw(Scene scene, Camera camera)
 		{
+			depth.Draw(scene, camera);
 			forward.Draw(scene, camera);
 			/*
 			// Post effects

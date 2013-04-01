@@ -40,20 +40,20 @@ namespace Meteor.Rendering
 			outputTargets[0] = normalRT;
 			outputTargets[1] = depthRT;
 			outputTargets[2] = diffuseRT;
-			outputTargets[3] = specularRT;
+			//outputTargets[3] = specularRT;
 
-			bindingTargets = new RenderTargetBinding[4];
+			bindingTargets = new RenderTargetBinding[3];
 			bindingTargets[0] = outputTargets[0];
 			bindingTargets[1] = outputTargets[1];
 			bindingTargets[2] = outputTargets[2];
-			bindingTargets[3] = outputTargets[3];
+			//bindingTargets[3] = outputTargets[3];
 		}
 
 		/// <summary>
 		/// Clear the GBuffer and render scene to it
 		/// </summary> 
 
-		public RenderTarget2D[] Draw(Scene scene, Camera camera)
+		public new RenderTarget2D[] Draw(Scene scene, Camera camera)
 		{
 			renderStopWatch.Reset();
 			renderStopWatch.Restart();

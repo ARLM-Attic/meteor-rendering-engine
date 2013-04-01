@@ -27,7 +27,7 @@ sampler normalMapSampler : register(s2) = sampler_state
 	AddressV = Wrap;
 };
 
-#include "vertexInstanced.fxh"
+#include "Includes/vertexInstanced.fxh"
 
 //--- PixelShaders ---//
 

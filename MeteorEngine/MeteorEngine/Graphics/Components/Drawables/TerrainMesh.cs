@@ -129,6 +129,12 @@ namespace Meteor.Resources
 				int index1 = indices[i * 3 + 1];
 				int index2 = indices[i * 3 + 2];
 
+				vertexNormals[index0] += Vector3.Up;
+				vertexNormals[index1] += Vector3.Up;
+				vertexNormals[index2] += Vector3.Up;
+
+				//continue;
+
 				Vector3 vertexPos0 = new Vector3
 				(
 					vertices[index0].VertexID % fullMeshSize,
@@ -163,7 +169,8 @@ namespace Meteor.Resources
 			for (int i = 0; i < vertices.Length; i++)
 			{
 				vertexNormals[i].Normalize();
-				
+				//continue;
+
 				// Fix side edges and we're done for this vertex
 				if (i % meshSize == meshSize - 1 && terrainPatch.mapOffset.X < Terrain.gridSize.X - 1)
 				{

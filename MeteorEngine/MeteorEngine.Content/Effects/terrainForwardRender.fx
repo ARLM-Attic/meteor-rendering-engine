@@ -2,8 +2,8 @@
 // TerrainForwardRender
 //-----------------------------------------
 
-#include "terrainConstants.fxh"
-#include "vertexTerrain.fxh"
+#include "Includes/terrainConstants.fxh"
+#include "Includes/vertexTerrain.fxh"
 
 // Light and camera properties
 

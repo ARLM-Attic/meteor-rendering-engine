@@ -47,30 +47,7 @@ sampler ssaoSampler : register(s5) = sampler_state
 	Texture = <ssaoMap>;
 };
 
-struct VertexShaderInput
-{
-    float3 Position : POSITION0;
-	float2 TexCoord : TEXCOORD0;
-};
-
-struct VertexShaderOutput
-{
-    float4 Position : POSITION0;
-	float2 TexCoord : TEXCOORD0;
-};
-
-static const float3 LUM_CONVERT = float3(0.299f, 0.587f, 0.114f); 
-
-VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
-{
-    VertexShaderOutput output;
-
-	// Just pass these through
-    output.Position = float4(input.Position, 1);
-	output.TexCoord = input.TexCoord + halfPixel;
-
-    return output;
-}
+#include "Includes/screenQuad.fxh"
 
 // Helper for modifying the saturation of a color.
 float4 AdjustSaturation(float4 color, float saturation)
@@ -104,7 +81,7 @@ float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 
 	float depth = tex2D(depthSampler, input.TexCoord);
 	if (diffuse.a > 0.499f)
-		finalColor.rgb = lerp(finalColor.rgb, fogColor, pow(depth, 1250));
+		finalColor.rgb = lerp(finalColor.rgb, fogColor, pow(depth, 1000));
 
 	// Gamma correct inverse
 	finalColor.rgb = pow(finalColor.rgb, 1 / 2.f);

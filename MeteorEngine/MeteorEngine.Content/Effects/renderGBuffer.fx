@@ -47,7 +47,7 @@ sampler environmentMapSampler : register(s3) = sampler_state
 	AddressV = Mirror; 
 };
 
-#include "vertexInstanced.fxh"
+#include "Includes/vertexInstanced.fxh"
 
 //--- PixelShaders ---//
 
@@ -56,7 +56,6 @@ struct PixelShaderOutput1
     float4 Normal : COLOR0;
     float4 Depth : COLOR1;
     float4 Color : COLOR2;
-	float4 Specular : COLOR3;
 };
 
 struct PixelShaderOutput2
@@ -86,10 +85,7 @@ PixelShaderOutput1 PixelShaderGBuffer(VertexShaderOutput input)
     output.Normal.a = specularAttributes.r;
 
 	// Output Depth
-    //output.Depth = -input.Depth / 2000.f;	//output Depth in linear space, [0..1] 
 	output.Depth = input.Depth.x / input.Depth.y;  
-
-	output.Specular = specularAttributes;
     return output;
 }
 
@@ -114,7 +110,6 @@ PixelShaderOutput2 PixelShaderSmallGBuffer(VertexShaderOutput input)
     output.Normal.a = specularAttributes.r; //specularIntensity;
 
 	// Output Depth
-    //output.Depth = -input.Depth / 2000.f;	//output Depth in linear space, [0..1] 
 	output.Depth = input.Depth.x / input.Depth.y; 
     return output;
 }
@@ -242,7 +237,6 @@ PixelShaderOutput1 SkyboxPS(VertexShaderOutput input) : COLOR0
 	// No normal mapping, pushes the skybox way to the far plane
 	output.Normal = 0.5f;
 	output.Depth = 0.999995f;
-	output.Specular = 0;
 
 	return output;
 }

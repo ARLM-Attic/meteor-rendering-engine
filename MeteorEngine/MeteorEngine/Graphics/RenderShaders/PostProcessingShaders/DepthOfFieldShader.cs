@@ -20,7 +20,7 @@ namespace Meteor.Rendering
 		public float focalDistance = 0.15f;
 
 		/// Range of focus
-		public float focalRange = 0.5f;
+		public float focalRange = 0.95f;
 
 		public DepthOfFieldShader(RenderProfile profile, ContentManager content)
             : base(profile, content)

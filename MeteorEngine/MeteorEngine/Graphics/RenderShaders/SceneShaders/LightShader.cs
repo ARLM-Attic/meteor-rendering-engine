@@ -33,7 +33,7 @@ namespace Meteor.Rendering
 		/// should be the same values as those in DepthMapShader.cs
 
 		/// Texture dimensions for individual shadow cascade
-		const int shadowMapSize = 800;
+		const int shadowMapSize = 1600;
 
 		/// Total number of cascades for CSM
 		const int numCascades = 4;
@@ -130,7 +130,7 @@ namespace Meteor.Rendering
 				// Make some lights
 				DrawDirectionalLights(scene, camera, inputTargets);
 
-				if (scene.totalLights > 0)
+				if (scene.pointLights.Count > 0)
 					DrawPointLights(scene, camera, inputTargets);
 			}
 
@@ -342,7 +342,7 @@ namespace Meteor.Rendering
 			innerLights.Clear();
 			outerLights.Clear();
 
-			foreach (PointLight light in scene.VisiblePointLights)
+			foreach (PointLight light in scene.visiblePointLights)
 			{
 				lightPosition.X = light.instance.transform.M41;
 				lightPosition.Y = light.instance.transform.M42;

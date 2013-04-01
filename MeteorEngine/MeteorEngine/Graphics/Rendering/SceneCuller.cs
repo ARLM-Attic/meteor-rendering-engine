@@ -26,6 +26,9 @@ namespace Meteor.Rendering
 		/// Minimum distance to limit full mesh rendering.
 		public float maxLODdistance = 25000f;
 
+		/// Number of meshes culled so far
+		public int culledMeshes { private set; get; }
+
 		/// <summary>
 		/// Cull an InstancedModel and its mesh groups.
 		/// </summary>
@@ -73,7 +76,7 @@ namespace Meteor.Rendering
 		/// Cull all terrain patches outside the view frustum.
 		/// </summary>
 
-		public void CullTerrainPatches(Scene scene, Camera camera)
+		public void CullTerrainPatches(Scene scene, Camera camera, bool enableLOD = true)
 		{
 			if (scene.terrain == null)
 				return;
@@ -92,14 +95,18 @@ namespace Meteor.Rendering
 
 				float distance = Vector3.Distance(camera.position, patch.center);
 
-				// Update LOD for this patch
-				if (distance > 1000 * scene.terrain.scale)
-					patch.currentMipLevel = 3;
-				else if (distance > 450 * scene.terrain.scale)
-					patch.currentMipLevel = 2;
-				else if(distance > 180 * scene.terrain.scale)
-					patch.currentMipLevel = 1;
+				if (enableLOD)
+				{
+					// Update LOD for this patch
+					if (distance > 1000 * scene.terrain.scale)
+						patch.currentMipLevel = 3;
+					else if (distance > 450 * scene.terrain.scale)
+						patch.currentMipLevel = 2;
+					else if(distance > 180 * scene.terrain.scale)
+						patch.currentMipLevel = 1;
+				}
 			}
+			// Finished culling terrain patches
 		}
 
 		/// <summary>
@@ -108,7 +115,7 @@ namespace Meteor.Rendering
 
 		public void CullModelMeshes(Scene scene, Camera camera)
 		{
-			scene.culledMeshes = 0;
+			culledMeshes = 0;
 			CullFromList(camera, scene.sceneModels);
 		}
 
@@ -137,7 +144,7 @@ namespace Meteor.Rendering
 			Vector3 radiusVector = Vector3.Zero;
 
 			// Refresh the list of visible point lights
-			scene.visibleLights.Clear();
+			scene.visiblePointLights.Clear();
 			BoundingSphere bounds = new BoundingSphere();
 
 			// Pre-cull point lights
@@ -160,7 +167,7 @@ namespace Meteor.Rendering
 
 				if (camera.frustum.Contains(bounds) != ContainmentType.Disjoint)
 				{
-					scene.visibleLights.Add(light);
+					scene.visiblePointLights.Add(light);
 				}
 			}
 			// Finished culling lights

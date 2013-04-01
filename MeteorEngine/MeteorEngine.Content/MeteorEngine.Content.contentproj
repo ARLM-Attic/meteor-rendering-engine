@@ -174,13 +174,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AreaTexDX9.dds">
-      <Name>AreaTexDX9</Name>
-      <Importer>TextureImporter</Importer>
-      <Processor>TextureProcessor</Processor>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="Fonts\defaultFont.spritefont">
       <Name>defaultFont</Name>
       <Importer>FontDescriptionImporter</Importer>
@@ -204,15 +197,26 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Effects\vertexTerrain.fxh">
+    <None Include="Effects\Includes\vertexStandard.fxh">
+      <Name>vertexStandard</Name>
+    </None>
+    <None Include="Effects\Includes\screenQuad.fxh">
+      <Name>screenQuad</Name>
+    </None>
+    <None Include="Effects\Includes\shadows.fxh">
+      <Name>shadows</Name>
+      <Importer>EffectImporter</Importer>
+      <Processor>EffectProcessor</Processor>
+    </None>
+    <None Include="Effects\Includes\vertexTerrain.fxh">
       <Name>vertexTerrain</Name>
     </None>
-    <None Include="Effects\terrainConstants.fxh">
+    <None Include="Effects\Includes\terrainConstants.fxh">
       <Name>terrainConstants</Name>
       <Importer>EffectImporter</Importer>
       <Processor>EffectProcessor</Processor>
     </None>
-    <None Include="Effects\vertexInstanced.fxh">
+    <None Include="Effects\Includes\vertexInstanced.fxh">
       <Name>vertexInstanced</Name>
       <Importer>EffectImporter</Importer>
       <Processor>EffectProcessor</Processor>

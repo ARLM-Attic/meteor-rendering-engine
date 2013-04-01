@@ -209,7 +209,7 @@ namespace Meteor
 			if (currentKeyboardState.IsKeyDown(Keys.V) &&
 				lastKeyboardState.IsKeyUp(Keys.V))
 			{
-				currentScene.debug = !currentScene.debug;
+				//currentScene.debug = !currentScene.debug;
 			}
 
 			// If resources are null, skip updating
@@ -240,6 +240,7 @@ namespace Meteor
 				if (renderProfile != null)
 				{
 					renderProfile.Draw(currentScene, currentCamera);
+					renderStats.GetSceneStats(currentScene);
 					outputs.Add(renderProfile.Output);
 				}
 			}
@@ -367,11 +368,12 @@ namespace Meteor
 			debugString.Clear();
 
 			// Display camera position
-			/*
-			debugString.Concat(currentCamera.position.X).Append(", ");
-			debugString.Concat(currentCamera.position.Y).Append(", ");
-			debugString.Concat(currentCamera.position.Z).Append(" ");
-			*/
+			if (currentCamera != null)
+			{
+				debugString.Concat(currentCamera.position.X).Append(", ");
+				debugString.Concat(currentCamera.position.Y).Append(", ");
+				debugString.Concat(currentCamera.position.Z).Append(" ");
+			}
 			spriteBatch.DrawString(font, debugString,
 				new Vector2(4, font.LineSpacing * 4 + height), Color.White);
 			debugString.Clear();
